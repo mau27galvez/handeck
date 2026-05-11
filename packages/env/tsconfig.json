@@ -1,0 +1,3 @@
+{
+  "extends": "@handeck/config/tsconfig.base.json"
+}

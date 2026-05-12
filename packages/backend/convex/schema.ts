@@ -50,8 +50,8 @@ export default defineSchema({
     traditional_hanzi: v.string(),
     pinyin: v.string(),
     normalized_pinyin: v.string(),
-    tanslation: v.string(),
-    audio_url: v.union(v.string(), v.null()), // temorarily nullable
+    translation: v.string(),
+    audio_url: v.union(v.string(), v.null()), // temporarily nullable
     created_at: v.number(),
     updated_at: v.number(),
   }),

@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
-    "@types/node": "^24.3.0",
+    "@types/node": "^25.7.0",
     "typescript": "catalog:"
   }
 }

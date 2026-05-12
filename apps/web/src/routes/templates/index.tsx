@@ -3,9 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireAuth } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/templates/")({
-  beforeLoad({ context, location }) {
-    requireAuth({ context, location });
-  },
+  beforeLoad: requireAuth,
   component: RouteComponent,
 });
 

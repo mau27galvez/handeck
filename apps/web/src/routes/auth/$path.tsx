@@ -2,21 +2,22 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { Auth } from "@handeck/ui/components/auth/auth";
 
-import {
-  coerceSearchRedirect,
-  isCanonicalAuthRedirectSearch,
-  sanitizeRedirectTo,
-} from "@/lib/route-auth";
+import { withCanonicalAuthRedirectSearch } from "@/lib/route-auth";
 import { isAllowedAuthPath } from "@/lib/auth-ui-config";
 
 export const Route = createFileRoute("/auth/$path")({
   beforeLoad({ context, location, params }) {
     const { path } = params;
 
+    const search = location.search ?? ({} satisfies Record<string, unknown>);
+    const searchRecord = search as Record<string, unknown>;
+
     if (!isAllowedAuthPath(path)) {
+      const { search: nextSearch } = withCanonicalAuthRedirectSearch(searchRecord);
       throw redirect({
         to: "/auth/$path",
         params: { path: "sign-in" },
+        search: nextSearch as never,
         replace: true,
       });
     }
@@ -28,22 +29,9 @@ export const Route = createFileRoute("/auth/$path")({
       });
     }
 
-    const search = location.search ?? ({} satisfies Record<string, unknown>);
-
-    const searchRecord = search as Record<string, unknown>;
-
-    if (isCanonicalAuthRedirectSearch(searchRecord)) {
+    const { canonical, search: nextSearch } = withCanonicalAuthRedirectSearch(searchRecord);
+    if (canonical) {
       return;
-    }
-
-    const raw = coerceSearchRedirect(searchRecord.redirectTo);
-    const sanitized = sanitizeRedirectTo(raw ?? undefined);
-    const nextSearch: Record<string, unknown> = { ...search };
-
-    if (sanitized === "/") {
-      delete nextSearch.redirectTo;
-    } else {
-      nextSearch.redirectTo = sanitized;
     }
 
     throw redirect({

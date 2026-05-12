@@ -60,6 +60,27 @@ export function isCanonicalAuthRedirectSearch(
   return raw === sanitized;
 }
 
+/**
+ * Returns search params with a sanitized `redirectTo` (or removed when `/`).
+ * When already canonical, `search` is returned unchanged.
+ */
+export function withCanonicalAuthRedirectSearch(
+  searchRecord: Record<string, unknown>,
+): { canonical: boolean; search: Record<string, unknown> } {
+  if (isCanonicalAuthRedirectSearch(searchRecord)) {
+    return { canonical: true, search: searchRecord };
+  }
+  const raw = coerceSearchRedirect(searchRecord.redirectTo);
+  const sanitized = sanitizeRedirectTo(raw ?? undefined);
+  const nextSearch: Record<string, unknown> = { ...searchRecord };
+  if (sanitized === "/") {
+    delete nextSearch.redirectTo;
+  } else {
+    nextSearch.redirectTo = sanitized;
+  }
+  return { canonical: false, search: nextSearch };
+}
+
 export function requireAuth({ context, location }: RequireAuthParams) {
   if (!context.isAuthenticated) {
     const redirectTo = sanitizeRedirectTo(

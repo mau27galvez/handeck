@@ -46,7 +46,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <UserButton
             size="icon"
-            visibleOptions={["sign-out", "account", "sign-in", "theme"]}
+            visibleOptions={["sign-out", "account", "sign-in"]}
           />
         </div>
       </div>

@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   server: {
+    // Keep in sync with `DEFAULT_DEV_APP_ORIGIN` in `src/lib/auth-app-origin.ts` (SSR auth baseURL fallback).
     port: 3001,
   },
   resolve: {

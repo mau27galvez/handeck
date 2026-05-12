@@ -28,7 +28,6 @@
     "check": "oxlint && oxfmt --write"
   },
   "dependencies": {
-    "@handeck/env": "workspace:*",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },

@@ -15,7 +15,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { authClient } from "@/lib/auth-client";
 import { getToken } from "@/lib/auth-server";
 
-import Header from "../components/header";
+import { AppProviders } from "../components/providers";
+import { RootShell } from "../components/root-shell";
 
 import appCss from "../index.css?url";
 
@@ -26,6 +27,9 @@ const getAuth = createServerFn({ method: "GET" }).handler(async () => {
 export interface RouterAppContext {
   queryClient: QueryClient;
   convexQueryClient: ConvexQueryClient;
+  /** Set by root `beforeLoad` after reading the session token. */
+  isAuthenticated?: boolean;
+  token?: string | null;
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
@@ -71,20 +75,21 @@ function RootDocument() {
       authClient={authClient}
       initialToken={context.token}
     >
-      <html lang="en" className="dark">
-        <head>
-          <HeadContent />
-        </head>
-        <body>
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            <Header />
-            <Outlet />
-          </div>
-          <Toaster richColors />
-          <TanStackRouterDevtools position="bottom-left" />
-          <Scripts />
-        </body>
-      </html>
+      <AppProviders queryClient={context.queryClient}>
+        <html lang="en" suppressHydrationWarning>
+          <head>
+            <HeadContent />
+          </head>
+          <body>
+            <RootShell>
+              <Outlet />
+            </RootShell>
+            <Toaster richColors />
+            <TanStackRouterDevtools position="bottom-left" />
+            <Scripts />
+          </body>
+        </html>
+      </AppProviders>
     </ConvexBetterAuthProvider>
   );
 }

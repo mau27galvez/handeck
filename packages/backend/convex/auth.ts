@@ -1,3 +1,8 @@
+/**
+ * Better Auth on Convex: keep `SITE_URL` / `trustedOrigins` in sync with the web app’s
+ * public origin (`VITE_APP_ORIGIN` + `VITE_CONVEX_SITE_URL` in `@handeck/env/web`) and
+ * Google OAuth redirect URIs on the app host (`{app}/api/auth/...`).
+ */
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
@@ -13,10 +18,26 @@ const siteUrl = process.env.SITE_URL!;
 const clientId = process.env.GOOGLE_CLIENT_ID!;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 
-export function createAuthOptions(ctx: GenericCtx<DataModel>) {
+/** Browser origins + Convex HTTP site; optional extras via `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated). */
+function trustedOriginsForSite(site: string): string[] {
+  const convexSite = process.env.CONVEX_SITE_URL?.trim();
+  const fromEnv =
+    process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) ?? [];
+  return [
+    ...new Set([site, ...(convexSite ? [convexSite] : []), ...fromEnv].filter(Boolean)),
+  ];
+}
+
+/**
+ * Creates the Better Auth instance with full configuration.
+ * Use this in mutation/query handlers where ctx is available.
+ */
+export function createAuth(ctx: GenericCtx<DataModel>) {
   return betterAuth({
     baseURL: siteUrl,
-    trustedOrigins: [siteUrl],
+    trustedOrigins: trustedOriginsForSite(siteUrl),
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: false,
@@ -37,14 +58,6 @@ export function createAuthOptions(ctx: GenericCtx<DataModel>) {
       multiSession(),
     ],
   });
-}
-
-/**
- * Creates the Better Auth instance with full configuration.
- * Use this in mutation/query handlers where ctx is available.
- */
-export function createAuth(ctx: GenericCtx<DataModel>) {
-  return createAuthOptions(ctx);
 }
 
 export const authComponent = createClient<DataModel, typeof betterAuthSchema>(

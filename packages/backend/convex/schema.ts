@@ -42,7 +42,6 @@ export default defineSchema({
 
     word: defineTable({
         simplified_hanzi: v.string(),
-        traditional_hanzi: v.string(),
         pinyin: v.string(),
         normalized_pinyin: v.string(),
         tanslation: v.string(),
@@ -51,9 +50,16 @@ export default defineSchema({
         updated_at: v.number(),
     }),
 
+    dictionary_entry: defineTable({
+        simplified_hanzi: v.string(),
+        numbered_pinyin: v.string(),
+        diacritic_pinyin: v.string(),
+        normalized_pinyin: v.string(),
+        meaning: v.string(),
+    }),
+
     sentence: defineTable({
         simplified_hanzi: v.string(),
-        traditional_hanzi: v.string(),
         translation: v.string(),
         audio_url: v.union(v.string(), v.null()), // temporarily nullable
         created_at: v.number(),

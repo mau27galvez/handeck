@@ -10,11 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@handeck/ui/components/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-} from "@handeck/ui/components/field";
+import { Field, FieldDescription, FieldLabel } from "@handeck/ui/components/field";
 import { Input } from "@handeck/ui/components/input";
 import {
   Select,
@@ -47,9 +43,7 @@ export default function CreateTemplateDialog({
   const isFromBase = mode === "FromBase";
   const [pending, setPending] = useState(false);
 
-  const [selectedBaseId, setSelectedBaseId] = useState<
-    Id<"baseTemplate"> | undefined
-  >(undefined);
+  const [selectedBaseId, setSelectedBaseId] = useState<Id<"baseTemplate"> | undefined>(undefined);
   const bases = useQuery(api.baseTemplate.list);
   const createTemplate = useMutation(api.template.create);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -86,9 +80,7 @@ export default function CreateTemplateDialog({
     try {
       const templateId = await createTemplate({
         name: name.trim(),
-        ...(isFromBase && selectedBaseId != null
-          ? { baseTemplateId: selectedBaseId }
-          : {}),
+        ...(isFromBase && selectedBaseId != null ? { baseTemplateId: selectedBaseId } : {}),
       });
       toast.success("Template created");
       if (templateId) {
@@ -142,15 +134,13 @@ export default function CreateTemplateDialog({
                   </FieldDescription>
                 ) : !hasBases ? (
                   <FieldDescription>
-                    No starter templates are available yet. Check back later or
-                    create from scratch.
+                    No starter templates are available yet. Check back later or create from scratch.
                   </FieldDescription>
                 ) : (
                   <Select
                     value={selectedBaseId ?? undefined}
                     onValueChange={(value) => {
-                      if (value)
-                        setSelectedBaseId(value as Id<"baseTemplate">);
+                      if (value) setSelectedBaseId(value as Id<"baseTemplate">);
                     }}
                     items={bases!.map((b) => ({
                       value: b._id,
@@ -175,11 +165,7 @@ export default function CreateTemplateDialog({
 
           <DialogFooter className="mt-2">
             <DialogClose type="button">Cancel</DialogClose>
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              aria-busy={pending}
-            >
+            <Button type="submit" disabled={!canSubmit} aria-busy={pending}>
               {pending ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>

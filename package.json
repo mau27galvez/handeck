@@ -25,7 +25,9 @@
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @handeck/backend dev",
     "dev:setup": "turbo -F @handeck/backend dev:setup",
-    "check": "oxlint && oxfmt --write"
+    "lint": "oxlint",
+    "format": "oxfmt .",
+    "check": "oxlint && oxfmt --check ."
   },
   "dependencies": {
     "dotenv": "catalog:",

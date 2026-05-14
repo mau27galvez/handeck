@@ -49,12 +49,9 @@ function TemplateDetail() {
         </Button>
       </div>
       <header className="mb-6">
-        <h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">
-          {template.name}
-        </h1>
+        <h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">{template.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Configure this template for submission, then preview output before
-          generating.
+          Configure this template for submission, then preview output before generating.
         </p>
       </header>
 
@@ -63,8 +60,7 @@ function TemplateDetail() {
           <CardHeader className="border-b pb-4 shrink-0">
             <CardTitle>Configuration</CardTitle>
             <CardDescription>
-              Topics, sentences per word, base template, and card layout will be
-              editable here.
+              Topics, sentences per word, base template, and card layout will be editable here.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-4">
@@ -88,8 +84,7 @@ function TemplateDetail() {
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto pt-4">
             <p className="text-center text-sm text-muted-foreground">
-              Preview and submit controls will be wired once generation is
-              ready.
+              Preview and submit controls will be wired once generation is ready.
             </p>
           </CardContent>
         </Card>

@@ -23,11 +23,7 @@ export type TemplateListItem = {
   baseTemplate?: string;
 };
 
-export default function TemplateCard({
-  template,
-}: {
-  template: TemplateListItem;
-}) {
+export default function TemplateCard({ template }: { template: TemplateListItem }) {
   const { _id, name, words, configs, creditCost, baseTemplate } = template;
   const { topics, sentencesPerWord } = configs;
 
@@ -77,11 +73,7 @@ export default function TemplateCard({
         {topics.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {topics.map((topic) => (
-              <Badge
-                key={topic}
-                variant="secondary"
-                className="rounded-sm text-xs"
-              >
+              <Badge key={topic} variant="secondary" className="rounded-sm text-xs">
                 {topic}
               </Badge>
             ))}

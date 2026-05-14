@@ -3,9 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@handeck/backend/convex/_generated/api";
-import CreateTemplateDialog, {
-  type CreateMode,
-} from "./-create-template-dialog";
+import CreateTemplateDialog, { type CreateMode } from "./-create-template-dialog";
 import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
 
@@ -20,16 +18,14 @@ export const Route = createFileRoute("/templates/")({
     );
 
     // Map Convex templates to UI shape with hardcoded kuai cost
-    const templateListItems: TemplateListItem[] = templates.map(
-      (template) => ({
-        _id: template._id as string,
-        name: template.name,
-        words: template.words ?? [],
-        configs: template.configs,
-        creditCost: KUAI_COST_PLACEHOLDER,
-        baseTemplate: template.baseTemplate,
-      }),
-    );
+    const templateListItems: TemplateListItem[] = templates.map((template) => ({
+      _id: template._id as string,
+      name: template.name,
+      words: template.words ?? [],
+      configs: template.configs,
+      creditCost: KUAI_COST_PLACEHOLDER,
+      baseTemplate: template.baseTemplate,
+    }));
 
     return { templates: templateListItems };
   },
@@ -52,12 +48,7 @@ function TemplatesPageHeader({
         </p>
       </div>
       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
-        <Button
-          className="text-base"
-          size="lg"
-          type="button"
-          onClick={onUseBase}
-        >
+        <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
           Use a base template
         </Button>
         <Button
@@ -74,9 +65,7 @@ function TemplatesPageHeader({
   );
 }
 
-type CreateDialogState =
-  | { kind: "closed" }
-  | { kind: "open"; mode: CreateMode };
+type CreateDialogState = { kind: "closed" } | { kind: "open"; mode: CreateMode };
 
 function EmptyTemplatesCTA({
   onUseBase,
@@ -87,20 +76,13 @@ function EmptyTemplatesCTA({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-      <p className="text-lg font-semibold text-foreground sm:text-xl">
-        No templates yet
-      </p>
+      <p className="text-lg font-semibold text-foreground sm:text-xl">No templates yet</p>
       <p className="max-w-md text-sm text-muted-foreground">
-        Start from a base template or an empty template, then configure topics
-        and card layout when you edit.
+        Start from a base template or an empty template, then configure topics and card layout when
+        you edit.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button
-          className="text-base"
-          size="lg"
-          type="button"
-          onClick={onUseBase}
-        >
+        <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
           Use a base template
         </Button>
         <Button
@@ -125,10 +107,7 @@ function Templates() {
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <TemplatesPageHeader
-        onUseBase={openFromBase}
-        onCreateScratch={openScratch}
-      />
+      <TemplatesPageHeader onUseBase={openFromBase} onCreateScratch={openScratch} />
       <CreateTemplateDialog
         open={dialog.kind === "open"}
         onOpenChange={(open) => {
@@ -137,10 +116,7 @@ function Templates() {
         mode={dialog.kind === "open" ? dialog.mode : "scratch"}
       />
       {templates.length === 0 ? (
-        <EmptyTemplatesCTA
-          onUseBase={openFromBase}
-          onCreateScratch={openScratch}
-        />
+        <EmptyTemplatesCTA onUseBase={openFromBase} onCreateScratch={openScratch} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (

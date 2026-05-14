@@ -34,7 +34,7 @@ export const create = mutation({
       name: trimmed,
       configs: {
         topics: configs.topics,
-        sentencesPerWord: configs.sentences_per_word,
+        sentencesPerWord: configs.sentencesPerWord,
       },
       ...(baseTemplateId ? { baseTemplateId } : {}),
       createdAt: now,

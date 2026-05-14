@@ -62,7 +62,7 @@ export default function TemplateCard({
           )}
           {creditCost !== undefined && <KuaiBadge cost={creditCost} />}
         </div>
-        {topics.length > 0 && (
+        {topics.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {topics.map((topic) => (
               <Badge
@@ -74,7 +74,7 @@ export default function TemplateCard({
               </Badge>
             ))}
           </div>
-        )}
+        ) : <p className="text-xs text-muted-foreground">Please edit the template to add topics.</p>}
       </CardContent>
 
       <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t py-2 px-3">

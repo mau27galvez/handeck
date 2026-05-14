@@ -35,7 +35,13 @@ export default function TemplateCard({
     <Card size="sm" className="flex flex-col">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm font-semibold leading-snug">
-          {name}
+          <Link
+            to="/templates/$id"
+            params={{ id: _id }}
+            className="rounded-sm outline-none hover:underline focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {name}
+          </Link>
         </CardTitle>
         {baseTemplate && (
           <CardDescription className="mt-0.5 flex items-center gap-1">
@@ -45,20 +51,26 @@ export default function TemplateCard({
         )}
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-2 pt-0 mt-auto">
+      <CardContent className="mt-auto flex flex-col gap-2 pt-0">
         <div className="flex flex-wrap items-center gap-2">
-          {words.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              <Hash className="size-3" />
-              {words.length} words
-            </span>
-          )}
-          {sentencesPerWord > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            <Hash className="size-3" />
+            {words.length} {words.length === 1 ? "word" : "words"}
+          </span>
+          {sentencesPerWord > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               <AlignLeft className="size-3" />
               {sentencesPerWord} sentence
               {sentencesPerWord === 1 ? "" : "s"} / word
             </span>
+          ) : (
+            <>
+              {/* Valid templates should never have 0 sentences per word; this branch is for invalid or legacy data only. */}
+              <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                <AlignLeft className="size-3" />
+                Sentences per word not set
+              </span>
+            </>
           )}
           {creditCost !== undefined && <KuaiBadge cost={creditCost} />}
         </div>
@@ -68,21 +80,22 @@ export default function TemplateCard({
               <Badge
                 key={topic}
                 variant="secondary"
-                className="capitalize text-xs rounded-sm"
+                className="rounded-sm text-xs"
               >
                 {topic}
               </Badge>
             ))}
           </div>
-        ) : <p className="text-xs text-muted-foreground">Please edit the template to add topics.</p>}
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No topics yet. Add topics when you edit this template.
+          </p>
+        )}
       </CardContent>
 
-      <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t py-2 px-3">
+      <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t px-3 py-2">
         <Button size="sm" className="gap-1.5" asChild>
-          <Link
-            to="/templates/$id"
-            params={{ id: _id }}
-          >
+          <Link to="/templates/$id" params={{ id: _id }}>
             <Pencil className="size-3" />
             Edit
           </Link>

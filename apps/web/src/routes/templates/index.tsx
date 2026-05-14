@@ -1,6 +1,6 @@
 import { Button } from "@handeck/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@handeck/backend/convex/_generated/api";
 import CreateTemplateDialog, {
@@ -44,15 +44,25 @@ function TemplatesPageHeader({
   onCreateScratch: () => void;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-      <h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">Templates</h1>
-      <div className="flex flex-wrap gap-2">
-        <Button className="text-md" size="lg" type="button" onClick={onUseBase}>
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <div>
+        <h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">Templates</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Create and manage reusable setups for submission and card generation.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
+        <Button
+          className="text-base"
+          size="lg"
+          type="button"
+          onClick={onUseBase}
+        >
           Use a base template
         </Button>
         <Button
           variant="outline"
-          className="text-md"
+          className="text-base"
           size="lg"
           type="button"
           onClick={onCreateScratch}
@@ -68,14 +78,56 @@ type CreateDialogState =
   | { kind: "closed" }
   | { kind: "open"; mode: CreateMode };
 
-function TemplatesShell({ children }: { children: ReactNode }) {
+function EmptyTemplatesCTA({
+  onUseBase,
+  onCreateScratch,
+}: {
+  onUseBase: () => void;
+  onCreateScratch: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+      <p className="text-lg font-semibold text-foreground sm:text-xl">
+        No templates yet
+      </p>
+      <p className="max-w-md text-sm text-muted-foreground">
+        Start from a base template or an empty template, then configure topics
+        and card layout when you edit.
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button
+          className="text-base"
+          size="lg"
+          type="button"
+          onClick={onUseBase}
+        >
+          Use a base template
+        </Button>
+        <Button
+          variant="outline"
+          className="text-base"
+          size="lg"
+          type="button"
+          onClick={onCreateScratch}
+        >
+          Create from scratch
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Templates() {
+  const { templates } = Route.useLoaderData();
   const [dialog, setDialog] = useState<CreateDialogState>({ kind: "closed" });
+  const openFromBase = () => setDialog({ kind: "open", mode: "FromBase" });
+  const openScratch = () => setDialog({ kind: "open", mode: "scratch" });
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
       <TemplatesPageHeader
-        onUseBase={() => setDialog({ kind: "open", mode: "FromBase" })}
-        onCreateScratch={() => setDialog({ kind: "open", mode: "scratch" })}
+        onUseBase={openFromBase}
+        onCreateScratch={openScratch}
       />
       <CreateTemplateDialog
         open={dialog.kind === "open"}
@@ -84,33 +136,18 @@ function TemplatesShell({ children }: { children: ReactNode }) {
         }}
         mode={dialog.kind === "open" ? dialog.mode : "scratch"}
       />
-      {children}
-    </div>
-  );
-}
-
-function Templates() {
-  const { templates } = Route.useLoaderData();
-
-  if (templates.length === 0) {
-    return (
-      <TemplatesShell>
-        <div className="flex flex-col items-center justify-center gap-4 py-16">
-          <p className="text-center text-2xl font-bold sm:text-3xl lg:text-4xl">
-            Create your first template to get started!
-          </p>
+      {templates.length === 0 ? (
+        <EmptyTemplatesCTA
+          onUseBase={openFromBase}
+          onCreateScratch={openScratch}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {templates.map((template) => (
+            <TemplateCard key={template._id} template={template} />
+          ))}
         </div>
-      </TemplatesShell>
-    );
-  }
-
-  return (
-    <TemplatesShell>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => (
-          <TemplateCard key={template._id} template={template} />
-        ))}
-      </div>
-    </TemplatesShell>
+      )}
+    </div>
   );
 }

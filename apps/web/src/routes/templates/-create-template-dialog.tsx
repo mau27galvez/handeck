@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@handeck/ui/components/select";
 import { useMutation, useQuery } from "convex/react";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -52,6 +52,7 @@ export default function CreateTemplateDialog({
   >(undefined);
   const bases = useQuery(api.baseTemplate.list);
   const createTemplate = useMutation(api.template.create);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const basesReady = bases !== undefined;
   const hasBases = (bases?.length ?? 0) > 0;
@@ -69,6 +70,14 @@ export default function CreateTemplateDialog({
     }
     onOpenChange(nextOpen);
   }
+
+  useEffect(() => {
+    if (!open) return;
+    const id = requestAnimationFrame(() => {
+      nameInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   async function handleCreate(e: SubmitEvent) {
     e.preventDefault();
@@ -115,6 +124,7 @@ export default function CreateTemplateDialog({
             <Field>
               <FieldLabel htmlFor="template-name">Name</FieldLabel>
               <Input
+                ref={nameInputRef}
                 id="template-name"
                 autoComplete="off"
                 value={name}
@@ -127,11 +137,13 @@ export default function CreateTemplateDialog({
               <Field>
                 <FieldLabel htmlFor="template-base">Base template</FieldLabel>
                 {!basesReady ? (
-                  <FieldDescription>Loading bases…</FieldDescription>
+                  <FieldDescription role="status" aria-live="polite">
+                    Loading bases…
+                  </FieldDescription>
                 ) : !hasBases ? (
                   <FieldDescription>
-                    No base templates yet. Add rows to the baseTemplate table,
-                    then try again.
+                    No starter templates are available yet. Check back later or
+                    create from scratch.
                   </FieldDescription>
                 ) : (
                   <Select
@@ -161,10 +173,14 @@ export default function CreateTemplateDialog({
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-2">
             <DialogClose type="button">Cancel</DialogClose>
-            <Button type="submit" disabled={!canSubmit}>
-              Create
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              aria-busy={pending}
+            >
+              {pending ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>
         </form>

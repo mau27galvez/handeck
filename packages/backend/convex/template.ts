@@ -4,10 +4,6 @@ import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
 
-function slugify(name: string) {
-  return name.trim().toLowerCase().replace(/ /g, "-");
-}
-
 export const create = mutation({
   args: {
     name: v.string(),
@@ -31,40 +27,78 @@ export const create = mutation({
       configs = parsed.data;
     }
 
-    const slug = slugify(trimmed);
     const profileId = await ensureProfileForAuthUser(ctx, authUser);
     const now = Date.now();
-    await ctx.db.insert("template", {
+    const templateId = await ctx.db.insert("template", {
       userId: profileId,
       name: trimmed,
-      slug: slug,
       configs: {
         topics: configs.topics,
-        sentencesPerWord: configs.sentences_per_word,
+        sentencesPerWord: configs.sentencesPerWord,
       },
       ...(baseTemplateId ? { baseTemplateId } : {}),
       createdAt: now,
       updatedAt: now,
     });
-    return slug;
+    return templateId;
   },
 });
 
-export const getBySlug = query({
-  args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
+export const getById = query({
+  args: { templateId: v.id("template") },
+  handler: async (ctx, { templateId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
     if (!authUser) return null;
 
     const profileId = await getProfileIdForAuthUser(ctx, authUser);
     if (!profileId) return null;
 
-    const template = await ctx.db
+    const template = await ctx.db.get(templateId);
+    if (!template || template.userId !== profileId) return null;
+
+    return template;
+  },
+});
+
+export const listForCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const authUser = await authComponent.safeGetAuthUser(ctx);
+    if (!authUser) return [];
+
+    const profileId = await getProfileIdForAuthUser(ctx, authUser);
+    if (!profileId) return [];
+
+    const templates = await ctx.db
       .query("template")
       .withIndex("by_user", (q) => q.eq("userId", profileId))
-      .filter((q) => q.eq(q.field("slug"), slug))
-      .unique();
+      .collect();
 
-    return template ?? null;
+    // Sort by updatedAt descending (recent first)
+    templates.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    // Batch fetch base template names to avoid N+1
+    const baseTemplateIds = [
+      ...new Set(
+        templates
+          .map((t) => t.baseTemplateId)
+          .filter((id): id is NonNullable<typeof id> => id !== undefined),
+      ),
+    ];
+
+    const baseTemplateMap = new Map<string, string>();
+    for (const baseId of baseTemplateIds) {
+      const base = await ctx.db.get(baseId);
+      if (base && "name" in base) {
+        baseTemplateMap.set(baseId as string, base.name);
+      }
+    }
+
+    return templates.map((template) => ({
+      ...template,
+      baseTemplate: template.baseTemplateId
+        ? baseTemplateMap.get(template.baseTemplateId)
+        : undefined,
+    }));
   },
 });

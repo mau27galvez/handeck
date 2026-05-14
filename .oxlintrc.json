@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc"],
+  "ignorePatterns": ["apps/web/src/routeTree.gen.ts", "packages/backend/convex/_generated/**"],
   "categories": {
     "correctness": "error"
   },

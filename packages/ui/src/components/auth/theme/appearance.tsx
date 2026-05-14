@@ -125,7 +125,7 @@ function ThemeOption({
     <label
       htmlFor={id}
       className={cn(
-        "flex min-w-0 cursor-pointer flex-col gap-2 rounded-lg border p-2.5 transition-colors sm:p-3",
+        "flex min-w-0 cursor-pointer flex-col gap-2 rounded-md border p-2.5 transition-colors sm:p-3",
         selected
           ? "border-primary bg-muted/50 shadow-sm"
           : "border-border bg-muted/5 hover:border-border hover:bg-muted/20",

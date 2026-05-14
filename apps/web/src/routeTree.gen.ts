@@ -8,163 +8,190 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as TemplatesIndexRouteImport } from "./routes/templates/index";
-import { Route as DecksIndexRouteImport } from "./routes/decks/index";
-import { Route as AuthIndexRouteImport } from "./routes/auth/index";
-import { Route as SettingsPathRouteImport } from "./routes/settings/$path";
-import { Route as AuthPathRouteImport } from "./routes/auth/$path";
-import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TemplatesIndexRouteImport } from './routes/templates/index'
+import { Route as DecksIndexRouteImport } from './routes/decks/index'
+import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as SettingsPathRouteImport } from './routes/settings/$path'
+import { Route as AuthPathRouteImport } from './routes/auth/$path'
+import { Route as TemplatesIdIndexRouteImport } from './routes/templates/$id/index'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
-  id: "/templates/",
-  path: "/templates/",
+  id: '/templates/',
+  path: '/templates/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DecksIndexRoute = DecksIndexRouteImport.update({
-  id: "/decks/",
-  path: "/decks/",
+  id: '/decks/',
+  path: '/decks/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
-  id: "/auth/",
-  path: "/auth/",
+  id: '/auth/',
+  path: '/auth/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsPathRoute = SettingsPathRouteImport.update({
-  id: "/settings/$path",
-  path: "/settings/$path",
+  id: '/settings/$path',
+  path: '/settings/$path',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthPathRoute = AuthPathRouteImport.update({
-  id: "/auth/$path",
-  path: "/auth/$path",
+  id: '/auth/$path',
+  path: '/auth/$path',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const TemplatesIdIndexRoute = TemplatesIdIndexRouteImport.update({
+  id: '/templates/$id/',
+  path: '/templates/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: "/api/auth/$",
-  path: "/api/auth/$",
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/auth/$path": typeof AuthPathRoute;
-  "/settings/$path": typeof SettingsPathRoute;
-  "/auth/": typeof AuthIndexRoute;
-  "/decks/": typeof DecksIndexRoute;
-  "/templates/": typeof TemplatesIndexRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
+  '/': typeof IndexRoute
+  '/auth/$path': typeof AuthPathRoute
+  '/settings/$path': typeof SettingsPathRoute
+  '/auth/': typeof AuthIndexRoute
+  '/decks/': typeof DecksIndexRoute
+  '/templates/': typeof TemplatesIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/templates/$id/': typeof TemplatesIdIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/auth/$path": typeof AuthPathRoute;
-  "/settings/$path": typeof SettingsPathRoute;
-  "/auth": typeof AuthIndexRoute;
-  "/decks": typeof DecksIndexRoute;
-  "/templates": typeof TemplatesIndexRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
+  '/': typeof IndexRoute
+  '/auth/$path': typeof AuthPathRoute
+  '/settings/$path': typeof SettingsPathRoute
+  '/auth': typeof AuthIndexRoute
+  '/decks': typeof DecksIndexRoute
+  '/templates': typeof TemplatesIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/templates/$id': typeof TemplatesIdIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/auth/$path": typeof AuthPathRoute;
-  "/settings/$path": typeof SettingsPathRoute;
-  "/auth/": typeof AuthIndexRoute;
-  "/decks/": typeof DecksIndexRoute;
-  "/templates/": typeof TemplatesIndexRoute;
-  "/api/auth/$": typeof ApiAuthSplatRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/auth/$path': typeof AuthPathRoute
+  '/settings/$path': typeof SettingsPathRoute
+  '/auth/': typeof AuthIndexRoute
+  '/decks/': typeof DecksIndexRoute
+  '/templates/': typeof TemplatesIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/templates/$id/': typeof TemplatesIdIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/auth/$path"
-    | "/settings/$path"
-    | "/auth/"
-    | "/decks/"
-    | "/templates/"
-    | "/api/auth/$";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth/$path" | "/settings/$path" | "/auth" | "/decks" | "/templates" | "/api/auth/$";
+    | '/'
+    | '/auth/$path'
+    | '/settings/$path'
+    | '/auth/'
+    | '/decks/'
+    | '/templates/'
+    | '/api/auth/$'
+    | '/templates/$id/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/auth/$path'
+    | '/settings/$path'
+    | '/auth'
+    | '/decks'
+    | '/templates'
+    | '/api/auth/$'
+    | '/templates/$id'
   id:
-    | "__root__"
-    | "/"
-    | "/auth/$path"
-    | "/settings/$path"
-    | "/auth/"
-    | "/decks/"
-    | "/templates/"
-    | "/api/auth/$";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/auth/$path'
+    | '/settings/$path'
+    | '/auth/'
+    | '/decks/'
+    | '/templates/'
+    | '/api/auth/$'
+    | '/templates/$id/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AuthPathRoute: typeof AuthPathRoute;
-  SettingsPathRoute: typeof SettingsPathRoute;
-  AuthIndexRoute: typeof AuthIndexRoute;
-  DecksIndexRoute: typeof DecksIndexRoute;
-  TemplatesIndexRoute: typeof TemplatesIndexRoute;
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
+  IndexRoute: typeof IndexRoute
+  AuthPathRoute: typeof AuthPathRoute
+  SettingsPathRoute: typeof SettingsPathRoute
+  AuthIndexRoute: typeof AuthIndexRoute
+  DecksIndexRoute: typeof DecksIndexRoute
+  TemplatesIndexRoute: typeof TemplatesIndexRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  TemplatesIdIndexRoute: typeof TemplatesIdIndexRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/templates/": {
-      id: "/templates/";
-      path: "/templates";
-      fullPath: "/templates/";
-      preLoaderRoute: typeof TemplatesIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/decks/": {
-      id: "/decks/";
-      path: "/decks";
-      fullPath: "/decks/";
-      preLoaderRoute: typeof DecksIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/auth/": {
-      id: "/auth/";
-      path: "/auth";
-      fullPath: "/auth/";
-      preLoaderRoute: typeof AuthIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/settings/$path": {
-      id: "/settings/$path";
-      path: "/settings/$path";
-      fullPath: "/settings/$path";
-      preLoaderRoute: typeof SettingsPathRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/auth/$path": {
-      id: "/auth/$path";
-      path: "/auth/$path";
-      fullPath: "/auth/$path";
-      preLoaderRoute: typeof AuthPathRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/auth/$": {
-      id: "/api/auth/$";
-      path: "/api/auth/$";
-      fullPath: "/api/auth/$";
-      preLoaderRoute: typeof ApiAuthSplatRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/': {
+      id: '/templates/'
+      path: '/templates'
+      fullPath: '/templates/'
+      preLoaderRoute: typeof TemplatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decks/': {
+      id: '/decks/'
+      path: '/decks'
+      fullPath: '/decks/'
+      preLoaderRoute: typeof DecksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/$path': {
+      id: '/settings/$path'
+      path: '/settings/$path'
+      fullPath: '/settings/$path'
+      preLoaderRoute: typeof SettingsPathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/$path': {
+      id: '/auth/$path'
+      path: '/auth/$path'
+      fullPath: '/auth/$path'
+      preLoaderRoute: typeof AuthPathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates/$id/': {
+      id: '/templates/$id/'
+      path: '/templates/$id'
+      fullPath: '/templates/$id/'
+      preLoaderRoute: typeof TemplatesIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -176,16 +203,17 @@ const rootRouteChildren: RootRouteChildren = {
   DecksIndexRoute: DecksIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-};
+  TemplatesIdIndexRoute: TemplatesIdIndexRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { createStart } from "@tanstack/react-start";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

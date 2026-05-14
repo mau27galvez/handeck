@@ -1,15 +1,38 @@
 import { Button } from "@handeck/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
+import { convexQuery } from "@convex-dev/react-query";
+import { api } from "@handeck/backend/convex/_generated/api";
 import CreateTemplateDialog, {
   type CreateMode,
 } from "./-create-template-dialog";
-import { MOCK_TEMPLATES } from "./-mock-data";
-import TemplateCard from "./-template-card";
+import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
+
+// Placeholder kuai cost until real pricing exists
+const KUAI_COST_PLACEHOLDER = 0;
 
 export const Route = createFileRoute("/templates/")({
   beforeLoad: requireAuth,
+  loader: async ({ context }) => {
+    const templates = await context.queryClient.ensureQueryData(
+      convexQuery(api.template.listForCurrentUser, {}),
+    );
+
+    // Map Convex templates to UI shape with hardcoded kuai cost
+    const templateListItems: TemplateListItem[] = templates.map(
+      (template) => ({
+        _id: template._id as string,
+        name: template.name,
+        words: template.words ?? [],
+        configs: template.configs,
+        creditCost: KUAI_COST_PLACEHOLDER,
+        baseTemplate: template.baseTemplate,
+      }),
+    );
+
+    return { templates: templateListItems };
+  },
   component: Templates,
 });
 
@@ -67,7 +90,9 @@ function TemplatesShell({ children }: { children: ReactNode }) {
 }
 
 function Templates() {
-  if (MOCK_TEMPLATES.length === 0) {
+  const { templates } = Route.useLoaderData();
+
+  if (templates.length === 0) {
     return (
       <TemplatesShell>
         <div className="flex flex-col items-center justify-center gap-4 py-16">
@@ -82,7 +107,7 @@ function Templates() {
   return (
     <TemplatesShell>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {MOCK_TEMPLATES.map((template) => (
+        {templates.map((template) => (
           <TemplateCard key={template._id} template={template} />
         ))}
       </div>

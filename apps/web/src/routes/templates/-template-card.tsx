@@ -7,12 +7,28 @@ import {
   CardFooter,
 } from "@handeck/ui/components/card";
 import { Button } from "@handeck/ui/components/button";
-import { BookOpen, Pencil, Sparkles, AlignLeft, Hash } from "lucide-react";
-import { Template } from "./-mock-data";
+import { BookOpen, Pencil, AlignLeft, Hash } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@handeck/ui/components/badge";
 
-export default function TemplateCard({ template }: { template: Template }) {
-  const { name, words, configs, creditCost, baseTemplate } = template;
+export type TemplateListItem = {
+  _id: string;
+  name: string;
+  words: string[];
+  configs: {
+    topics: string[];
+    sentencesPerWord: number;
+  };
+  creditCost?: number;
+  baseTemplate?: string;
+};
+
+export default function TemplateCard({
+  template,
+}: {
+  template: TemplateListItem;
+}) {
+  const { _id, name, words, configs, creditCost, baseTemplate } = template;
   const { topics, sentencesPerWord } = configs;
 
   return (
@@ -61,14 +77,15 @@ export default function TemplateCard({ template }: { template: Template }) {
         )}
       </CardContent>
 
-      <CardFooter className="mt-auto flex flex-row items-center justify-between gap-2 border-t py-2 px-3">
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Pencil className="size-3" />
-          Edit
-        </Button>
-        <Button size="sm" className="gap-1.5 hover:bg-primary/80">
-          <Sparkles className="size-3" />
-          Generate
+      <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t py-2 px-3">
+        <Button size="sm" className="gap-1.5" asChild>
+          <Link
+            to="/templates/$id"
+            params={{ id: _id }}
+          >
+            <Pencil className="size-3" />
+            Edit
+          </Link>
         </Button>
       </CardFooter>
     </Card>

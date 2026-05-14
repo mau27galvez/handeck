@@ -89,5 +89,5 @@ handeck/
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
 - `bun run dev:setup`: Setup and configure your Convex project
-- `bun run check-types`: Check TypeScript types across all apps
+- `bun run typecheck`: Check TypeScript types across all apps
 - `bun run check`: Run Oxlint and Oxfmt

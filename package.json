@@ -21,11 +21,13 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @handeck/backend dev",
     "dev:setup": "turbo -F @handeck/backend dev:setup",
-    "check": "oxlint && oxfmt --write"
+    "lint": "oxlint --report-unused-disable-directives",
+    "typecheck": "turbo typecheck",
+    "format": "oxfmt",
+    "check": "bun run lint && bun run format --check"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

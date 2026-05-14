@@ -24,7 +24,7 @@ export const insertBatch = mutation({
     }
 
     for (const entry of args.entries) {
-      await ctx.db.insert("dictionary_entry", entry);
+      await ctx.db.insert("dictionaryEntry", entry);
     }
 
     return { inserted: args.entries.length };
@@ -40,7 +40,7 @@ export const clearBatch = mutation({
     validateImportToken(args.importToken);
 
     const limit = Math.min(Math.max(Math.trunc(args.limit ?? 200), 1), maxImportBatchSize);
-    const existingEntries = await ctx.db.query("dictionary_entry").take(limit);
+    const existingEntries = await ctx.db.query("dictionaryEntry").take(limit);
 
     for (const entry of existingEntries) {
       await ctx.db.delete(entry._id);

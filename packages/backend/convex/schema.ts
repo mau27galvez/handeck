@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-    base_template: defineTable({
+    baseTemplate: defineTable({
         name: v.string(),
         slug: v.string(), // stable key; owner adds label/metadata later
         configs: v.object({
@@ -24,7 +24,7 @@ export default defineSchema({
         userId: v.id("profiles"),
         name: v.string(),
         slug: v.string(),
-        baseTemplateId: v.optional(v.id("base_template")),
+        baseTemplateId: v.optional(v.id("baseTemplate")),
         words: v.optional(v.array(v.id("word"))), // optional until words are seeded
         cardTemplate: v.optional(
             v.object({
@@ -50,7 +50,7 @@ export default defineSchema({
         updatedAt: v.number(),
     }),
 
-    dictionary_entry: defineTable({
+    dictionaryEntry: defineTable({
         simplifiedHanzi: v.string(),
         numberedPinyin: v.string(),
         diacriticPinyin: v.string(),

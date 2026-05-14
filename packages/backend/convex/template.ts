@@ -15,9 +15,9 @@ function slugify(name: string) {
 export const create = mutation({
   args: {
     name: v.string(),
-    base_template_id: v.optional(v.id("base_template")),
+    baseTemplateId: v.optional(v.id("baseTemplate")),
   },
-  handler: async (ctx, { name, base_template_id }) => {
+  handler: async (ctx, { name, baseTemplateId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
     if (!authUser) throw new Error("Not authenticated");
 
@@ -25,8 +25,8 @@ export const create = mutation({
     if (!trimmed) throw new Error("Name is required");
 
     let configs: TemplateConfigs = DEFAULT_CONFIGS;
-    if (base_template_id != null) {
-      const base = await ctx.db.get(base_template_id);
+    if (baseTemplateId != null) {
+      const base = await ctx.db.get(baseTemplateId);
       if (!base) throw new Error("Base template not found");
       const parsed = templateConfigsSchema.safeParse(base.configs);
       if (!parsed.success) {
@@ -48,7 +48,7 @@ export const create = mutation({
         topics: configs.topics,
         sentencesPerWord: configs.sentences_per_word,
       },
-      ...(base_template_id ? { baseTemplateId: base_template_id } : {}),
+      ...(baseTemplateId ? { baseTemplateId } : {}),
       createdAt: now,
       updatedAt: now,
     });

@@ -1,3 +1,4 @@
+import { isConvexArgumentValidationError } from "@/lib/convex-errors";
 import { requireAuth } from "@/lib/route-auth";
 import { api } from "@handeck/backend/convex/_generated/api";
 import type { Id } from "@handeck/backend/convex/_generated/dataModel";
@@ -16,11 +17,17 @@ import { ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/templates/$id/")({
   beforeLoad: requireAuth,
   loader: async ({ context, params }) => {
-    const template = await context.queryClient.ensureQueryData(
-      convexQuery(api.template.getById, {
-        templateId: params.id as Id<"template">,
-      }),
-    );
+    let template;
+    try {
+      template = await context.queryClient.ensureQueryData(
+        convexQuery(api.template.getById, {
+          templateId: params.id as Id<"template">,
+        }),
+      );
+    } catch (error) {
+      if (isConvexArgumentValidationError(error)) throw notFound();
+      throw error;
+    }
     if (template == null) throw notFound();
     return { template };
   },

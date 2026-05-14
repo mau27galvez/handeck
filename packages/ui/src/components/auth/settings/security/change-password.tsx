@@ -3,30 +3,30 @@ import {
   useChangePassword,
   useListAccounts,
   useRequestPasswordReset,
-  useSession
-} from "@better-auth-ui/react"
-import { Eye, EyeOff } from "lucide-react"
-import { type SyntheticEvent, useState } from "react"
-import { toast } from "sonner"
+  useSession,
+} from "@better-auth-ui/react";
+import { Eye, EyeOff } from "lucide-react";
+import { type SyntheticEvent, useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@handeck/ui/components/button"
-import { Card, CardContent, CardFooter } from "@handeck/ui/components/card"
-import { Field, FieldError } from "@handeck/ui/components/field"
-import { Input } from "@handeck/ui/components/input"
+import { Button } from "@handeck/ui/components/button";
+import { Card, CardContent, CardFooter } from "@handeck/ui/components/card";
+import { Field, FieldError } from "@handeck/ui/components/field";
+import { Input } from "@handeck/ui/components/input";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput
-} from "@handeck/ui/components/input-group"
-import { Label } from "@handeck/ui/components/label"
-import { Skeleton } from "@handeck/ui/components/skeleton"
-import { Spinner } from "@handeck/ui/components/spinner"
-import { cn } from "@handeck/ui/lib/utils"
+  InputGroupInput,
+} from "@handeck/ui/components/input-group";
+import { Label } from "@handeck/ui/components/label";
+import { Skeleton } from "@handeck/ui/components/skeleton";
+import { Spinner } from "@handeck/ui/components/spinner";
+import { cn } from "@handeck/ui/lib/utils";
 
 export type ChangePasswordProps = {
-  className?: string
-}
+  className?: string;
+};
 
 /**
  * Render a card form for changing the authenticated user's password.
@@ -38,17 +38,14 @@ export type ChangePasswordProps = {
  * @returns A JSX element containing the change-password or set-password card
  */
 export function ChangePassword({ className }: ChangePasswordProps) {
-  const { authClient, emailAndPassword, localization } = useAuth()
-  const { data: session } = useSession(authClient)
-  const { data: accounts, isPending: isAccountsPending } =
-    useListAccounts(authClient)
+  const { authClient, emailAndPassword, localization } = useAuth();
+  const { data: session } = useSession(authClient);
+  const { data: accounts, isPending: isAccountsPending } = useListAccounts(authClient);
 
-  const hasCredentialAccount = accounts?.some(
-    (account) => account.providerId === "credential"
-  )
+  const hasCredentialAccount = accounts?.some((account) => account.providerId === "credential");
 
   if (!isAccountsPending && !hasCredentialAccount) {
-    return <SetPassword className={className} />
+    return <SetPassword className={className} />;
   }
 
   return (
@@ -58,49 +55,38 @@ export function ChangePassword({ className }: ChangePasswordProps) {
       localization={localization}
       session={isAccountsPending ? undefined : session}
     />
-  )
+  );
 }
 
 function SetPassword({ className }: { className?: string }) {
-  const { authClient, localization } = useAuth()
-  const { data: session } = useSession(authClient)
+  const { authClient, localization } = useAuth();
+  const { data: session } = useSession(authClient);
 
-  const { mutate: requestPasswordReset, isPending } = useRequestPasswordReset(
-    authClient,
-    {
-      onSuccess: () => toast.success(localization.auth.passwordResetEmailSent)
-    }
-  )
+  const { mutate: requestPasswordReset, isPending } = useRequestPasswordReset(authClient, {
+    onSuccess: () => toast.success(localization.auth.passwordResetEmailSent),
+  });
 
   const handleSetPassword = () => {
-    if (!session) return
+    if (!session) return;
 
-    requestPasswordReset({ email: session.user.email })
-  }
+    requestPasswordReset({ email: session.user.email });
+  };
 
   return (
     <div>
-      <h2 className="text-sm font-semibold mb-3">
-        {localization.settings.changePassword}
-      </h2>
+      <h2 className="text-sm font-semibold mb-3">{localization.settings.changePassword}</h2>
 
       <Card className={cn(className)}>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium leading-tight">
-              {localization.settings.setPassword}
-            </p>
+            <p className="text-sm font-medium leading-tight">{localization.settings.setPassword}</p>
 
             <p className="text-muted-foreground text-xs mt-0.5">
               {localization.settings.setPasswordDescription}
             </p>
           </div>
 
-          <Button
-            size="sm"
-            disabled={isPending || !session}
-            onClick={handleSetPassword}
-          >
+          <Button size="sm" disabled={isPending || !session} onClick={handleSetPassword}>
             {isPending && <Spinner />}
 
             {localization.auth.sendResetLink}
@@ -108,81 +94,76 @@ function SetPassword({ className }: { className?: string }) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function ChangePasswordForm({
   className,
   emailAndPassword,
   localization,
-  session
+  session,
 }: {
-  className?: string
-  emailAndPassword: ReturnType<typeof useAuth>["emailAndPassword"]
-  localization: ReturnType<typeof useAuth>["localization"]
-  session: ReturnType<typeof useSession>["data"]
+  className?: string;
+  emailAndPassword: ReturnType<typeof useAuth>["emailAndPassword"];
+  localization: ReturnType<typeof useAuth>["localization"];
+  session: ReturnType<typeof useSession>["data"];
 }) {
-  const { authClient } = useAuth()
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const { authClient } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const { mutate: changePassword, isPending } = useChangePassword(authClient, {
     onError: (error) => {
-      setCurrentPassword("")
-      setNewPassword("")
-      setConfirmPassword("")
-      toast.error(error.error?.message || error.message)
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.error(error.error?.message || error.message);
     },
     onSuccess: () => {
-      setCurrentPassword("")
-      setNewPassword("")
-      setConfirmPassword("")
-      toast.success(localization.settings.changePasswordSuccess)
-    }
-  })
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(localization.settings.changePasswordSuccess);
+    },
+  });
 
-  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false)
-  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
-    useState(false)
+  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<{
-    currentPassword?: string
-    newPassword?: string
-    confirmPassword?: string
-  }>({})
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (emailAndPassword.confirmPassword && newPassword !== confirmPassword) {
-      setCurrentPassword("")
-      setNewPassword("")
-      setConfirmPassword("")
-      toast.error(localization.auth.passwordsDoNotMatch)
-      return
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.error(localization.auth.passwordsDoNotMatch);
+      return;
     }
 
     changePassword({
       currentPassword,
       newPassword,
-      revokeOtherSessions: true
-    })
-  }
+      revokeOtherSessions: true,
+    });
+  };
 
   return (
     <div>
-      <h2 className="text-sm font-semibold mb-3">
-        {localization.settings.changePassword}
-      </h2>
+      <h2 className="text-sm font-semibold mb-3">{localization.settings.changePassword}</h2>
 
       <form onSubmit={handleSubmit}>
         <Card className={cn(className)}>
           <CardContent className="flex flex-col gap-6">
             <Field data-invalid={!!fieldErrors.currentPassword}>
-              <Label htmlFor="currentPassword">
-                {localization.settings.currentPassword}
-              </Label>
+              <Label htmlFor="currentPassword">{localization.settings.currentPassword}</Label>
 
               {session ? (
                 <Input
@@ -193,23 +174,22 @@ function ChangePasswordForm({
                   placeholder={localization.settings.currentPasswordPlaceholder}
                   value={currentPassword}
                   onChange={(e) => {
-                    setCurrentPassword(e.target.value)
+                    setCurrentPassword(e.target.value);
 
                     setFieldErrors((prev) => ({
                       ...prev,
-                      currentPassword: undefined
-                    }))
+                      currentPassword: undefined,
+                    }));
                   }}
                   disabled={isPending}
                   required
                   onInvalid={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
 
                     setFieldErrors((prev) => ({
                       ...prev,
-                      currentPassword: (e.target as HTMLInputElement)
-                        .validationMessage
-                    }))
+                      currentPassword: (e.target as HTMLInputElement).validationMessage,
+                    }));
                   }}
                   aria-invalid={!!fieldErrors.currentPassword}
                 />
@@ -223,9 +203,7 @@ function ChangePasswordForm({
             </Field>
 
             <Field data-invalid={!!fieldErrors.newPassword}>
-              <Label htmlFor="newPassword">
-                {localization.auth.newPassword}
-              </Label>
+              <Label htmlFor="newPassword">{localization.auth.newPassword}</Label>
 
               {session ? (
                 <InputGroup>
@@ -237,24 +215,23 @@ function ChangePasswordForm({
                     placeholder={localization.auth.newPasswordPlaceholder}
                     value={newPassword}
                     onChange={(e) => {
-                      setNewPassword(e.target.value)
+                      setNewPassword(e.target.value);
 
                       setFieldErrors((prev) => ({
                         ...prev,
-                        newPassword: undefined
-                      }))
+                        newPassword: undefined,
+                      }));
                     }}
                     minLength={emailAndPassword.minPasswordLength}
                     maxLength={emailAndPassword.maxPasswordLength}
                     disabled={isPending}
                     required
                     onInvalid={(e) => {
-                      e.preventDefault()
+                      e.preventDefault();
                       setFieldErrors((prev) => ({
                         ...prev,
-                        newPassword: (e.target as HTMLInputElement)
-                          .validationMessage
-                      }))
+                        newPassword: (e.target as HTMLInputElement).validationMessage,
+                      }));
                     }}
                     aria-invalid={!!fieldErrors.newPassword}
                   />
@@ -267,9 +244,7 @@ function ChangePasswordForm({
                           ? localization.auth.hidePassword
                           : localization.auth.showPassword
                       }
-                      onClick={() =>
-                        setIsNewPasswordVisible(!isNewPasswordVisible)
-                      }
+                      onClick={() => setIsNewPasswordVisible(!isNewPasswordVisible)}
                       disabled={isPending}
                     >
                       {isNewPasswordVisible ? <EyeOff /> : <Eye />}
@@ -287,9 +262,7 @@ function ChangePasswordForm({
 
             {emailAndPassword.confirmPassword && (
               <Field data-invalid={!!fieldErrors.confirmPassword}>
-                <Label htmlFor="confirmPassword">
-                  {localization.auth.confirmPassword}
-                </Label>
+                <Label htmlFor="confirmPassword">{localization.auth.confirmPassword}</Label>
 
                 {session ? (
                   <InputGroup>
@@ -301,25 +274,24 @@ function ChangePasswordForm({
                       placeholder={localization.auth.confirmPasswordPlaceholder}
                       value={confirmPassword}
                       onChange={(e) => {
-                        setConfirmPassword(e.target.value)
+                        setConfirmPassword(e.target.value);
 
                         setFieldErrors((prev) => ({
                           ...prev,
-                          confirmPassword: undefined
-                        }))
+                          confirmPassword: undefined,
+                        }));
                       }}
                       minLength={emailAndPassword.minPasswordLength}
                       maxLength={emailAndPassword.maxPasswordLength}
                       disabled={isPending}
                       required
                       onInvalid={(e) => {
-                        e.preventDefault()
+                        e.preventDefault();
 
                         setFieldErrors((prev) => ({
                           ...prev,
-                          confirmPassword: (e.target as HTMLInputElement)
-                            .validationMessage
-                        }))
+                          confirmPassword: (e.target as HTMLInputElement).validationMessage,
+                        }));
                       }}
                       aria-invalid={!!fieldErrors.confirmPassword}
                     />
@@ -332,9 +304,7 @@ function ChangePasswordForm({
                             ? localization.auth.hidePassword
                             : localization.auth.showPassword
                         }
-                        onClick={() =>
-                          setIsConfirmPasswordVisible(!isConfirmPasswordVisible)
-                        }
+                        onClick={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
                         disabled={isPending}
                       >
                         {isConfirmPasswordVisible ? <EyeOff /> : <Eye />}
@@ -362,5 +332,5 @@ function ChangePasswordForm({
         </Card>
       </form>
     </div>
-  )
+  );
 }

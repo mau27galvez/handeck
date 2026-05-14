@@ -15,8 +15,7 @@ const settingsViewPaths = {
 } as const;
 
 export type AuthPath = (typeof authViewPaths)[keyof typeof authViewPaths];
-export type SettingsPath =
-  (typeof settingsViewPaths)[keyof typeof settingsViewPaths];
+export type SettingsPath = (typeof settingsViewPaths)[keyof typeof settingsViewPaths];
 
 const emailAndPasswordEnabled = false;
 const magicLinkEnabled = false;
@@ -40,9 +39,7 @@ export const allowedAuthPaths = [
   authViewPaths.signOut,
   ...(signUpEnabled ? [authViewPaths.signUp] : []),
   ...(magicLinkEnabled ? [authViewPaths.magicLink] : []),
-  ...(emailAndPasswordEnabled
-    ? [authViewPaths.forgotPassword, authViewPaths.resetPassword]
-    : []),
+  ...(emailAndPasswordEnabled ? [authViewPaths.forgotPassword, authViewPaths.resetPassword] : []),
 ] as const satisfies readonly AuthPath[];
 
 export function isAllowedAuthPath(path: string): path is AuthPath {

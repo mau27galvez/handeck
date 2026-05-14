@@ -31,7 +31,9 @@ type ThemePluginContext = {
  * Theme submenu for `UserButton` (registered via `themePlugin`).
  */
 export function ThemeToggleItem() {
-  const { useTheme, localization } = useAuthPlugin(coreThemePlugin) as unknown as ThemePluginContext;
+  const { useTheme, localization } = useAuthPlugin(
+    coreThemePlugin,
+  ) as unknown as ThemePluginContext;
   const { theme, setTheme, themes = [] } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);

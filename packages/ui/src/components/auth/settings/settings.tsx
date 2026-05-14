@@ -1,19 +1,19 @@
-import type { SettingsView } from "@better-auth-ui/core"
-import { useAuth, useAuthenticate } from "@better-auth-ui/react"
-import { useMemo } from "react"
+import type { SettingsView } from "@better-auth-ui/core";
+import { useAuth, useAuthenticate } from "@better-auth-ui/react";
+import { useMemo } from "react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@handeck/ui/components/tabs"
-import { cn } from "@handeck/ui/lib/utils"
-import { AccountSettings } from "./account/account-settings"
-import { SecuritySettings } from "./security/security-settings"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@handeck/ui/components/tabs";
+import { cn } from "@handeck/ui/lib/utils";
+import { AccountSettings } from "./account/account-settings";
+import { SecuritySettings } from "./security/security-settings";
 
 export type SettingsProps = {
-  className?: string
-  path?: string
+  className?: string;
+  path?: string;
   /** @remarks `SettingsView` */
-  view?: SettingsView
-  hideNav?: boolean
-}
+  view?: SettingsView;
+  hideNav?: boolean;
+};
 
 /**
  * Renders the settings UI and activates the appropriate settings view based on `view` or `path`.
@@ -25,33 +25,41 @@ export type SettingsProps = {
  * @returns A JSX element rendering the settings layout and the selected settings panel
  */
 export function Settings({ className, view, path, hideNav }: SettingsProps) {
-  const { authClient, basePaths, localization, viewPaths, Link } = useAuth()
-  useAuthenticate(authClient)
+  const { authClient, basePaths, localization, viewPaths, Link } = useAuth();
+  useAuthenticate(authClient);
 
   if (!view && !path) {
-    throw new Error("[Better Auth UI] Either `view` or `path` must be provided")
+    throw new Error("[Better Auth UI] Either `view` or `path` must be provided");
   }
 
   const settingsPathViews = useMemo(
     () =>
-      Object.fromEntries(
-        Object.entries(viewPaths.settings).map(([k, v]) => [v, k])
-      ) as Record<string, SettingsView>,
-    [viewPaths.settings]
-  )
+      Object.fromEntries(Object.entries(viewPaths.settings).map(([k, v]) => [v, k])) as Record<
+        string,
+        SettingsView
+      >,
+    [viewPaths.settings],
+  );
 
-  const currentView = view || (path ? settingsPathViews[path] : undefined)
+  const currentView = view || (path ? settingsPathViews[path] : undefined);
 
   return (
-    <Tabs
-      value={currentView}
-      className={cn("w-full gap-4 md:gap-6", className)}
-    >
+    <Tabs value={currentView} className={cn("w-full gap-4 md:gap-6", className)}>
       <div className={cn(hideNav && "hidden")}>
         <TabsList aria-label={localization.settings.settings}>
-          <TabsTrigger value="account" render={<Link href={`${basePaths.settings}/${viewPaths.settings.account}`} />}>{localization.settings.account}</TabsTrigger>
+          <TabsTrigger
+            value="account"
+            render={<Link href={`${basePaths.settings}/${viewPaths.settings.account}`} />}
+          >
+            {localization.settings.account}
+          </TabsTrigger>
 
-          <TabsTrigger value="security" render={<Link href={`${basePaths.settings}/${viewPaths.settings.security}`} />}>{localization.settings.security}</TabsTrigger>
+          <TabsTrigger
+            value="security"
+            render={<Link href={`${basePaths.settings}/${viewPaths.settings.security}`} />}
+          >
+            {localization.settings.security}
+          </TabsTrigger>
         </TabsList>
       </div>
 
@@ -63,5 +71,5 @@ export function Settings({ className, view, path, hideNav }: SettingsProps) {
         <SecuritySettings />
       </TabsContent>
     </Tabs>
-  )
+  );
 }

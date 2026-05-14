@@ -230,7 +230,7 @@ async function insertBatch(entries: DictionaryEntry[]): Promise<number> {
 async function clearDictionaryEntries() {
   let deleted = 0;
 
-  for (; ;) {
+  for (;;) {
     const result = await client!.mutation(dictionaryEntriesApi.clearBatch, {
       importToken: importToken!,
       limit: 200,

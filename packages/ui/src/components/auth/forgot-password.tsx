@@ -1,27 +1,18 @@
-import {
-  useAuth,
-  useFetchOptions,
-  useRequestPasswordReset
-} from "@better-auth-ui/react"
-import { type SyntheticEvent, useState } from "react"
-import { toast } from "sonner"
+import { useAuth, useFetchOptions, useRequestPasswordReset } from "@better-auth-ui/react";
+import { type SyntheticEvent, useState } from "react";
+import { toast } from "sonner";
 
-import { Button } from "@handeck/ui/components/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@handeck/ui/components/card"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup
-} from "@handeck/ui/components/field"
-import { Input } from "@handeck/ui/components/input"
-import { Label } from "@handeck/ui/components/label"
-import { Spinner } from "@handeck/ui/components/spinner"
-import { cn } from "@handeck/ui/lib/utils"
+import { Button } from "@handeck/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@handeck/ui/components/card";
+import { Field, FieldDescription, FieldError, FieldGroup } from "@handeck/ui/components/field";
+import { Input } from "@handeck/ui/components/input";
+import { Label } from "@handeck/ui/components/label";
+import { Spinner } from "@handeck/ui/components/spinner";
+import { cn } from "@handeck/ui/lib/utils";
 
 export type ForgotPasswordProps = {
-  className?: string
-}
+  className?: string;
+};
 
 /**
  * Render a card-based "Forgot Password" form that sends a password-reset email.
@@ -33,45 +24,37 @@ export type ForgotPasswordProps = {
  * @returns The forgot-password form UI as a JSX element
  */
 export function ForgotPassword({ className }: ForgotPasswordProps) {
-  const { authClient, basePaths, localization, plugins, viewPaths, Link } =
-    useAuth()
+  const { authClient, basePaths, localization, plugins, viewPaths, Link } = useAuth();
 
-  const { fetchOptions, resetFetchOptions } = useFetchOptions()
+  const { fetchOptions, resetFetchOptions } = useFetchOptions();
 
-  const { mutate: requestPasswordReset, isPending } = useRequestPasswordReset(
-    authClient,
-    {
-      onError: (error) => {
-        toast.error(error.error?.message || error.message)
-        resetFetchOptions()
-      },
-      onSuccess: () => toast.success(localization.auth.passwordResetEmailSent)
-    }
-  )
+  const { mutate: requestPasswordReset, isPending } = useRequestPasswordReset(authClient, {
+    onError: (error) => {
+      toast.error(error.error?.message || error.message);
+      resetFetchOptions();
+    },
+    onSuccess: () => toast.success(localization.auth.passwordResetEmailSent),
+  });
 
   function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     requestPasswordReset({
       email: formData.get("email") as string,
-      fetchOptions
-    })
+      fetchOptions,
+    });
   }
 
-  const Captcha = plugins.find(
-    (plugin) => plugin.captchaComponent
-  )?.captchaComponent
+  const Captcha = plugins.find((plugin) => plugin.captchaComponent)?.captchaComponent;
 
   const [fieldErrors, setFieldErrors] = useState<{
-    email?: string
-  }>({})
+    email?: string;
+  }>({});
 
   return (
     <Card className={cn("w-full max-w-sm", className)}>
       <CardHeader>
-        <CardTitle className="text-xl font-semibold">
-          {localization.auth.forgotPassword}
-        </CardTitle>
+        <CardTitle className="text-xl font-semibold">{localization.auth.forgotPassword}</CardTitle>
       </CardHeader>
 
       <CardContent>
@@ -91,16 +74,16 @@ export function ForgotPassword({ className }: ForgotPasswordProps) {
                 onChange={() => {
                   setFieldErrors((prev) => ({
                     ...prev,
-                    email: undefined
-                  }))
+                    email: undefined,
+                  }));
                 }}
                 onInvalid={(e) => {
-                  e.preventDefault()
+                  e.preventDefault();
 
                   setFieldErrors((prev) => ({
                     ...prev,
-                    email: (e.target as HTMLInputElement).validationMessage
-                  }))
+                    email: (e.target as HTMLInputElement).validationMessage,
+                  }));
                 }}
                 aria-invalid={!!fieldErrors.email}
               />
@@ -133,5 +116,5 @@ export function ForgotPassword({ className }: ForgotPasswordProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -2,9 +2,7 @@ import { authComponent } from "./auth";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 
-type AuthUser = NonNullable<
-  Awaited<ReturnType<typeof authComponent.safeGetAuthUser>>
->;
+type AuthUser = NonNullable<Awaited<ReturnType<typeof authComponent.safeGetAuthUser>>>;
 
 export async function getProfileIdForAuthUser(
   ctx: QueryCtx,
@@ -13,9 +11,7 @@ export async function getProfileIdForAuthUser(
   const betterAuthUserId = authUser._id as string;
   const existing = await ctx.db
     .query("profiles")
-    .withIndex("by_betterAuthUserId", (q) =>
-      q.eq("betterAuthUserId", betterAuthUserId),
-    )
+    .withIndex("by_betterAuthUserId", (q) => q.eq("betterAuthUserId", betterAuthUserId))
     .unique();
   return existing ? existing._id : null;
 }
@@ -27,9 +23,7 @@ export async function ensureProfileForAuthUser(
   const betterAuthUserId = authUser._id as string;
   const existing = await ctx.db
     .query("profiles")
-    .withIndex("by_betterAuthUserId", (q) =>
-      q.eq("betterAuthUserId", betterAuthUserId),
-    )
+    .withIndex("by_betterAuthUserId", (q) => q.eq("betterAuthUserId", betterAuthUserId))
     .unique();
 
   const now = Date.now();

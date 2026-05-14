@@ -1,22 +1,18 @@
-"use client"
+"use client";
 
-import {
-  type UsernameAuthClient,
-  useAuth,
-  useSession
-} from "@better-auth-ui/react"
-import type { User } from "better-auth"
+import { type UsernameAuthClient, useAuth, useSession } from "@better-auth-ui/react";
+import type { User } from "better-auth";
 
-import { Skeleton } from "@handeck/ui/components/skeleton"
-import { cn } from "@handeck/ui/lib/utils"
-import { UserAvatar } from "./user-avatar"
+import { Skeleton } from "@handeck/ui/components/skeleton";
+import { cn } from "@handeck/ui/lib/utils";
+import { UserAvatar } from "./user-avatar";
 
 export type UserViewProps = {
-  className?: string
-  isPending?: boolean
+  className?: string;
+  isPending?: boolean;
   /** @remarks `User` */
-  user?: User & { username?: string | null; displayUsername?: string | null }
-}
+  user?: User & { username?: string | null; displayUsername?: string | null };
+};
 
 /**
  * Render a compact user item with an avatar, a primary label (display username, name, or email), and an optional secondary email line.
@@ -27,13 +23,13 @@ export type UserViewProps = {
  * @returns A React element showing the user's avatar with their identifying information
  */
 export function UserView({ className, isPending, user }: UserViewProps) {
-  const { authClient } = useAuth()
+  const { authClient } = useAuth();
   const { data: session, isPending: sessionPending } = useSession(
     authClient as UsernameAuthClient,
-    { enabled: !user && !isPending }
-  )
+    { enabled: !user && !isPending },
+  );
 
-  const resolvedUser = user ?? session?.user
+  const resolvedUser = user ?? session?.user;
 
   if ((isPending || sessionPending) && !user) {
     return (
@@ -45,7 +41,7 @@ export function UserView({ className, isPending, user }: UserViewProps) {
           <Skeleton className="h-3 w-32" />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -54,17 +50,13 @@ export function UserView({ className, isPending, user }: UserViewProps) {
 
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium text-foreground">
-          {resolvedUser?.displayUsername ||
-            resolvedUser?.name ||
-            resolvedUser?.email}
+          {resolvedUser?.displayUsername || resolvedUser?.name || resolvedUser?.email}
         </span>
 
         {(resolvedUser?.displayUsername || resolvedUser?.name) && (
-          <span className="text-muted-foreground truncate text-xs">
-            {resolvedUser?.email}
-          </span>
+          <span className="text-muted-foreground truncate text-xs">{resolvedUser?.email}</span>
         )}
       </div>
     </div>
-  )
+  );
 }

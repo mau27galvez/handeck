@@ -25,9 +25,7 @@ function trustedOriginsForSite(site: string): string[] {
     process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",")
       .map((s) => s.trim())
       .filter(Boolean) ?? [];
-  return [
-    ...new Set([site, ...(convexSite ? [convexSite] : []), ...fromEnv].filter(Boolean)),
-  ];
+  return [...new Set([site, ...(convexSite ? [convexSite] : []), ...fromEnv].filter(Boolean))];
 }
 
 /**

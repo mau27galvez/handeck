@@ -22,9 +22,7 @@ export default function Header() {
 
           <div className="flex items-center gap-1">
             {links.map(({ to, label }) => {
-              const isActive =
-                currentPath === to ||
-                (to !== "/" && currentPath.startsWith(to));
+              const isActive = currentPath === to || (to !== "/" && currentPath.startsWith(to));
               return (
                 <Link
                   key={to}
@@ -44,10 +42,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <UserButton
-            size="icon"
-            visibleOptions={["sign-out", "account", "sign-in"]}
-          />
+          <UserButton size="icon" visibleOptions={["sign-out", "account", "sign-in"]} />
         </div>
       </div>
     </header>

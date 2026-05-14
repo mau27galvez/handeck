@@ -1,11 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { authComponent } from "./auth";
-import {
-  templateConfigsSchema,
-  type TemplateConfigs,
-  DEFAULT_CONFIGS,
-} from "./schemas";
+import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
 
 function slugify(name: string) {
@@ -30,9 +26,7 @@ export const create = mutation({
       if (!base) throw new Error("Base template not found");
       const parsed = templateConfigsSchema.safeParse(base.configs);
       if (!parsed.success) {
-        throw new Error(
-          `Invalid configs in base template: ${parsed.error.message}`
-        );
+        throw new Error(`Invalid configs in base template: ${parsed.error.message}`);
       }
       configs = parsed.data;
     }

@@ -3,6 +3,7 @@ import { providerIcons, useAuth, useSignInSocial } from "@better-auth-ui/react";
 import { useIsMutating } from "@tanstack/react-query";
 import type { SocialProvider } from "better-auth/social-providers";
 import type { ComponentProps } from "react";
+import { UserIcon } from "lucide-react";
 
 import { Button } from "@handeck/ui/components/button";
 import { Spinner } from "@handeck/ui/components/spinner";
@@ -34,7 +35,7 @@ export function ProviderButton({
 
   const { mutate: signInSocial, isPending: signInSocialPending } = useSignInSocial(authClient);
 
-  const ProviderIcon = providerIcons[provider];
+  const ProviderIcon = providerIcons[provider] ?? UserIcon;
 
   const signInMutating = useIsMutating({
     mutationKey: authMutationKeys.signIn.all,

@@ -15,12 +15,7 @@ function HomeComponent() {
           <Button className="text-sm rounded-md" size="lg" asChild>
             <Link to="/templates">Create a new deck</Link>
           </Button>
-          <Button
-            variant="outline"
-            className="text-sm rounded-md"
-            size="lg"
-            asChild
-          >
+          <Button variant="outline" className="text-sm rounded-md" size="lg" asChild>
             <Link to="/decks">Created decks</Link>
           </Button>
         </div>

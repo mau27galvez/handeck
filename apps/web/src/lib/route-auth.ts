@@ -64,9 +64,10 @@ export function isCanonicalAuthRedirectSearch(
  * Returns search params with a sanitized `redirectTo` (or removed when `/`).
  * When already canonical, `search` is returned unchanged.
  */
-export function withCanonicalAuthRedirectSearch(
-  searchRecord: Record<string, unknown>,
-): { canonical: boolean; search: Record<string, unknown> } {
+export function withCanonicalAuthRedirectSearch(searchRecord: Record<string, unknown>): {
+  canonical: boolean;
+  search: Record<string, unknown>;
+} {
   if (isCanonicalAuthRedirectSearch(searchRecord)) {
     return { canonical: true, search: searchRecord };
   }

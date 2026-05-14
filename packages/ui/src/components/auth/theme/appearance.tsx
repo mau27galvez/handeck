@@ -40,7 +40,9 @@ const previewWrapBase =
  * Theme selector card for account settings (registered via `themePlugin`).
  */
 export function Appearance({ className }: AppearanceProps) {
-  const { useTheme, localization } = useAuthPlugin(coreThemePlugin) as unknown as ThemePluginContext;
+  const { useTheme, localization } = useAuthPlugin(
+    coreThemePlugin,
+  ) as unknown as ThemePluginContext;
   const { theme, setTheme, themes = [] } = useTheme();
 
   const [isMounted, setIsMounted] = useState(false);

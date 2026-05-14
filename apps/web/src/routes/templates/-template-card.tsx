@@ -13,7 +13,7 @@ import { Badge } from "@handeck/ui/components/badge";
 
 export default function TemplateCard({ template }: { template: Template }) {
   const { name, words, configs, creditCost, baseTemplate } = template;
-  const { topics, sentences_per_word } = configs;
+  const { topics, sentencesPerWord } = configs;
 
   return (
     <Card size="sm" className="flex flex-col">
@@ -37,11 +37,11 @@ export default function TemplateCard({ template }: { template: Template }) {
               {words.length} words
             </span>
           )}
-          {sentences_per_word > 0 && (
+          {sentencesPerWord > 0 && (
             <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               <AlignLeft className="size-3" />
-              {sentences_per_word} sentence
-              {sentences_per_word === 1 ? "" : "s"} / word
+              {sentencesPerWord} sentence
+              {sentencesPerWord === 1 ? "" : "s"} / word
             </span>
           )}
           {creditCost !== undefined && <KuaiBadge cost={creditCost} />}

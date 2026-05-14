@@ -1,5 +1,6 @@
 import { requireAuth } from "@/lib/route-auth";
 import { api } from "@handeck/backend/convex/_generated/api";
+import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import {
   Card,
   CardContent,
@@ -12,11 +13,13 @@ import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-export const Route = createFileRoute("/templates/$slug/")({
+export const Route = createFileRoute("/templates/$id/")({
   beforeLoad: requireAuth,
   loader: async ({ context, params }) => {
     const template = await context.queryClient.ensureQueryData(
-      convexQuery(api.template.getBySlug, { slug: params.slug }),
+      convexQuery(api.template.getById, {
+        templateId: params.id as Id<"template">,
+      }),
     );
     if (template == null) throw notFound();
     return { template };

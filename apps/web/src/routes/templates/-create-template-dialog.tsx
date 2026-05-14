@@ -75,15 +75,18 @@ export default function CreateTemplateDialog({
     if (!canSubmit) return;
     setPending(true);
     try {
-      const slug = await createTemplate({
+      const templateId = await createTemplate({
         name: name.trim(),
         ...(isFromBase && selectedBaseId != null
           ? { baseTemplateId: selectedBaseId }
           : {}),
       });
       toast.success("Template created");
-      if (slug) {
-        await navigate({ to: "/templates/$slug", params: { slug } });
+      if (templateId) {
+        await navigate({
+          to: "/templates/$id",
+          params: { id: templateId },
+        });
       }
       handleDialogOpenChange(false);
     } catch (e) {

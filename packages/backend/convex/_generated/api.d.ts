@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as baseTemplate from "../baseTemplate.js";
 import type * as dictionaryEntries from "../dictionaryEntries.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
@@ -21,6 +22,7 @@ import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  baseTemplate: typeof baseTemplate;
   dictionaryEntries: typeof dictionaryEntries;
   healthCheck: typeof healthCheck;
   http: typeof http;

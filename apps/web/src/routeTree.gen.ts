@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as TemplatesIndexRouteImport } from "./routes/templates/index";
+import { Route as TemplatesSlugIndexRouteImport } from "./routes/templates/$slug/index";
 import { Route as DecksIndexRouteImport } from "./routes/decks/index";
 import { Route as AuthIndexRouteImport } from "./routes/auth/index";
 import { Route as SettingsPathRouteImport } from "./routes/settings/$path";
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
   id: "/templates/",
   path: "/templates/",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TemplatesSlugIndexRoute = TemplatesSlugIndexRouteImport.update({
+  id: "/templates/$slug/",
+  path: "/templates/$slug/",
   getParentRoute: () => rootRouteImport,
 } as any);
 const DecksIndexRoute = DecksIndexRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   "/auth/": typeof AuthIndexRoute;
   "/decks/": typeof DecksIndexRoute;
   "/templates/": typeof TemplatesIndexRoute;
+  "/templates/$slug/": typeof TemplatesSlugIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   "/auth": typeof AuthIndexRoute;
   "/decks": typeof DecksIndexRoute;
   "/templates": typeof TemplatesIndexRoute;
+  "/templates/$slug": typeof TemplatesSlugIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   "/auth/": typeof AuthIndexRoute;
   "/decks/": typeof DecksIndexRoute;
   "/templates/": typeof TemplatesIndexRoute;
+  "/templates/$slug/": typeof TemplatesSlugIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
 }
 export interface FileRouteTypes {
@@ -90,9 +99,10 @@ export interface FileRouteTypes {
     | "/auth/"
     | "/decks/"
     | "/templates/"
+    | "/templates/$slug/"
     | "/api/auth/$";
   fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/auth/$path" | "/settings/$path" | "/auth" | "/decks" | "/templates" | "/api/auth/$";
+  to: "/" | "/auth/$path" | "/settings/$path" | "/auth" | "/decks" | "/templates" | "/templates/$slug" | "/api/auth/$";
   id:
     | "__root__"
     | "/"
@@ -101,6 +111,7 @@ export interface FileRouteTypes {
     | "/auth/"
     | "/decks/"
     | "/templates/"
+    | "/templates/$slug/"
     | "/api/auth/$";
   fileRoutesById: FileRoutesById;
 }
@@ -111,6 +122,7 @@ export interface RootRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute;
   DecksIndexRoute: typeof DecksIndexRoute;
   TemplatesIndexRoute: typeof TemplatesIndexRoute;
+  TemplatesSlugIndexRoute: typeof TemplatesSlugIndexRoute;
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
 }
 
@@ -128,6 +140,13 @@ declare module "@tanstack/react-router" {
       path: "/templates";
       fullPath: "/templates/";
       preLoaderRoute: typeof TemplatesIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/templates/$slug/": {
+      id: "/templates/$slug/";
+      path: "/templates/$slug";
+      fullPath: "/templates/$slug/";
+      preLoaderRoute: typeof TemplatesSlugIndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/decks/": {
@@ -175,6 +194,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   DecksIndexRoute: DecksIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
+  TemplatesSlugIndexRoute: TemplatesSlugIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 };
 export const routeTree = rootRouteImport

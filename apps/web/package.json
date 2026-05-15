@@ -8,6 +8,8 @@
     "dev": "vite dev"
   },
   "dependencies": {
+    "@better-auth-ui/core": "^1.6.8",
+    "@better-auth-ui/react": "^1.6.8",
     "@convex-dev/better-auth": "catalog:",
     "@convex-dev/react-query": "^0.1.0",
     "@handeck/backend": "workspace:*",

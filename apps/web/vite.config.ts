@@ -15,6 +15,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     tanstackStart(),
+    // We add `react` to fix an issue with Vercel bundle. We may be able to remove this in the future.
     nitro({ preset: "vercel", traceDeps: ["react"] }),
     viteReact(),
   ],

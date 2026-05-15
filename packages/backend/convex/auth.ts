@@ -1,22 +1,19 @@
 /**
  * Better Auth on Convex: keep `SITE_URL` / `trustedOrigins` in sync with the web app’s
- * public origin (`VITE_APP_ORIGIN` + `VITE_CONVEX_SITE_URL` in `@handeck/env/web`) and
- * Google OAuth redirect URIs on the app host (`{app}/api/auth/...`).
+ * public origin (`VITE_APP_ORIGIN` + `VITE_CONVEX_SITE_URL` in `@handeck/env/web`).
  */
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
+import { multiSession } from "better-auth/plugins";
 
 import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import authConfig from "./auth.config";
 import betterAuthSchema from "./betterAuth/schema";
-import { multiSession } from "better-auth/plugins";
 
 const siteUrl = process.env.SITE_URL!;
-const clientId = process.env.GOOGLE_CLIENT_ID!;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
 
 /** Browser origins + Convex HTTP site; optional extras via `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated). */
 function trustedOriginsForSite(site: string): string[] {
@@ -38,15 +35,8 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
     trustedOrigins: trustedOriginsForSite(siteUrl),
     database: authComponent.adapter(ctx),
     emailAndPassword: {
-      enabled: false,
+      enabled: true,
       requireEmailVerification: false,
-    },
-    socialProviders: {
-      google: {
-        enabled: true,
-        clientId,
-        clientSecret,
-      },
     },
     plugins: [
       convex({

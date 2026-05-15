@@ -9,6 +9,7 @@ import type { PropsWithChildren } from "react";
 
 import { authClient } from "@/lib/auth-client";
 import { useAuthBaseUrl } from "@/lib/auth-app-origin";
+import { authUiConfig } from "@/lib/auth-ui-config";
 
 function BetterAuthLink({
   href,
@@ -51,10 +52,7 @@ function AppProvidersInner({
       Link={BetterAuthLink}
       baseURL={authBaseUrl}
       redirectTo="/"
-      socialProviders={["google"]}
-      emailAndPassword={{
-        enabled: false,
-      }}
+      {...authUiConfig}
       plugins={[themePlugin({ useTheme })]}
     >
       {children}

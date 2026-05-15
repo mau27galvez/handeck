@@ -21,6 +21,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:web": "turbo -F web build",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @handeck/backend dev",
     "dev:setup": "turbo -F @handeck/backend dev:setup",

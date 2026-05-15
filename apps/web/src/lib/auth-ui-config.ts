@@ -1,5 +1,3 @@
-import type { SocialProvider } from "better-auth/social-providers";
-
 const authViewPaths = {
   signIn: "sign-in",
   signUp: "sign-up",
@@ -17,21 +15,21 @@ const settingsViewPaths = {
 export type AuthPath = (typeof authViewPaths)[keyof typeof authViewPaths];
 export type SettingsPath = (typeof settingsViewPaths)[keyof typeof settingsViewPaths];
 
-const emailAndPasswordEnabled = false;
+const emailAndPasswordEnabled = true;
+const forgotPasswordEnabled = false;
 const magicLinkEnabled = false;
 const passkeyEnabled = false;
-const socialProviders: SocialProvider[] = ["google"];
 const signUpEnabled = emailAndPasswordEnabled;
 
 export const authUiConfig = {
   emailAndPassword: {
     enabled: emailAndPasswordEnabled,
-    forgotPassword: false,
+    forgotPassword: forgotPasswordEnabled,
     requireEmailVerification: false,
   },
   magicLink: magicLinkEnabled,
   passkey: passkeyEnabled,
-  socialProviders,
+  socialProviders: [],
 };
 
 export const allowedAuthPaths = [
@@ -39,7 +37,7 @@ export const allowedAuthPaths = [
   authViewPaths.signOut,
   ...(signUpEnabled ? [authViewPaths.signUp] : []),
   ...(magicLinkEnabled ? [authViewPaths.magicLink] : []),
-  ...(emailAndPasswordEnabled ? [authViewPaths.forgotPassword, authViewPaths.resetPassword] : []),
+  ...(forgotPasswordEnabled ? [authViewPaths.forgotPassword, authViewPaths.resetPassword] : []),
 ] as const satisfies readonly AuthPath[];
 
 export function isAllowedAuthPath(path: string): path is AuthPath {

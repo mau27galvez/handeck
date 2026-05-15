@@ -19,7 +19,4 @@ export default defineConfig({
     nitro({ preset: "vercel", traceDeps: ["react"] }),
     viteReact(),
   ],
-  ssr: {
-    noExternal: ["@convex-dev/better-auth"],
-  },
 });

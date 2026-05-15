@@ -12,7 +12,12 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  plugins: [tailwindcss(), tanstackStart(), nitro({ preset: "vercel" }), viteReact()],
+  plugins: [
+    tailwindcss(),
+    tanstackStart(),
+    nitro({ preset: "vercel", traceDeps: ["react"] }),
+    viteReact(),
+  ],
   ssr: {
     noExternal: ["@convex-dev/better-auth"],
   },

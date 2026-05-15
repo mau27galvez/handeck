@@ -37,11 +37,11 @@
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.0.2",
     "nitro": "^3.0.260429-beta",
     "typescript": "catalog:",
-    "vite": "^8.0.8",
+    "vite": "^8.0.13",
     "web-vitals": "^5.2.0"
   }
 }

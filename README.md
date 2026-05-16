@@ -1,8 +1,6 @@
 # handeck
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Convex, and more.
-
-## Features
+## Tech stack
 
 - **TypeScript** - For type safety and improved developer experience
 - **TanStack Start** - SSR framework with TanStack Router
@@ -15,15 +13,15 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 
 ## Getting Started
 
-First, install the dependencies:
+### 1. Install dependencies
 
 ```bash
 bun install
 ```
 
-## Convex Setup
+### 2. Set up Convex
 
-This project uses Convex as a backend. You'll need to set up Convex before running the app:
+Run the Convex setup command from the repo root:
 
 ```bash
 bun run dev:setup
@@ -31,9 +29,9 @@ bun run dev:setup
 
 Follow the prompts to create a new Convex project and connect it to your application.
 
-Copy environment variables from `packages/backend/.env.local` to `apps/*/.env`.
+Create `apps/web/.env` from `apps/web/.env.example`, then copy the Convex client URL from `packages/backend/.env.local` into `VITE_CONVEX_URL`. Fill `VITE_CONVEX_SITE_URL` with the Convex `.convex.site` URL from your Convex dashboard.
 
-Then, run the development server:
+Start the whole project together:
 
 ```bash
 bun run dev
@@ -70,7 +68,8 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Git Hooks and Formatting
 
-- Format and lint fix: `bun run check`
+- Check types, formatting and lint: `bun run check`
+- Format files: `bun run format`
 
 ## Project Structure
 
@@ -82,12 +81,3 @@ handeck/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── backend/     # Convex backend functions and schema
 ```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:setup`: Setup and configure your Convex project
-- `bun run typecheck`: Check TypeScript types across all apps
-- `bun run check`: Run Oxlint and Oxfmt

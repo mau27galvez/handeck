@@ -4,15 +4,17 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@handeck/ui/components/input-group";
+import { api } from "@handeck/backend/convex/_generated/api";
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
 import { Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DictionaryEntryRow } from "./-dictionary-entry";
-import { filterDictionaryEntries, MOCK_DICTIONARY_ENTRIES } from "./-mock-entries";
 import { useDebounce } from "@/hooks/use-debounce";
 
 const DICTIONARY_SEARCH_DEBOUNCE_MS = 250;
+const DICTIONARY_SEARCH_LIMIT = 50;
 
 export const Route = createFileRoute("/dictionary/")({
   component: Dictionary,
@@ -73,12 +75,13 @@ function DictionaryHeader({
 function Dictionary() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, DICTIONARY_SEARCH_DEBOUNCE_MS);
-
-  const filtered = useMemo(
-    () => filterDictionaryEntries(MOCK_DICTIONARY_ENTRIES, debouncedSearch),
-    [debouncedSearch],
+  const searchQuery = debouncedSearch.trim();
+  const entries = useQuery(
+    api.dictionaryEntries.search,
+    searchQuery ? { query: searchQuery, limit: DICTIONARY_SEARCH_LIMIT } : "skip",
   );
-
+  const isSearching = searchQuery.length > 0 && entries === undefined;
+  const hasEntries = entries != null && entries.length > 0;
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
@@ -87,7 +90,7 @@ function Dictionary() {
         onClear={() => setSearch("")}
         onSearchChange={setSearch}
       />
-      {search.trim().length <= 0 ? (
+      {searchQuery.length <= 0 ? (
         <div className="mx-auto w-full max-w-3xl">
           <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
             Start typing to search the dictionary...
@@ -95,17 +98,21 @@ function Dictionary() {
         </div>
       ) : (
         <div className="mx-auto w-full max-w-3xl">
-          {filtered.length === 0 ? (
+          {isSearching ? (
+            <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
+              Searching dictionary...
+            </p>
+          ) : !hasEntries ? (
             <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
               No entries match your search.
             </p>
           ) : (
             <div className="rounded-lg border border-border bg-card px-3 sm:px-5">
-              {filtered.map((entry) => (
+              {entries.map((entry) => (
                 <DictionaryEntryRow
-                  key={entry.simplifiedHanzi}
+                  key={entry._id}
                   entry={entry}
-                  searchQuery={debouncedSearch}
+                  searchQuery={searchQuery}
                 />
               ))}
             </div>

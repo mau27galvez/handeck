@@ -1,6 +1,7 @@
+import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
 import type { ReactNode } from "react";
 
-import type { DictionaryEntryRow } from "./-mock-entries";
+export type DictionaryEntry = Doc<"dictionaryEntry">;
 
 function highlightMatches(text: string, rawQuery: string) {
   const query = rawQuery.trim();
@@ -45,7 +46,7 @@ export function DictionaryEntryRow({
   entry,
   searchQuery,
 }: {
-  entry: DictionaryEntryRow;
+  entry: DictionaryEntry;
   searchQuery: string;
 }) {
   return (

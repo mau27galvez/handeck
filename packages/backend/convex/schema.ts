@@ -54,7 +54,7 @@ export default defineSchema({
     diacriticPinyin: v.string(),
     normalizedPinyin: v.string(),
     meaning: v.string(),
-  }),
+  }).index("by_normalizedPinyin", ["normalizedPinyin"]),
 
   sentence: defineTable({
     simplifiedHanzi: v.string(),

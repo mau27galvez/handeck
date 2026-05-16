@@ -77,36 +77,32 @@ function Dictionary() {
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <DictionaryHeader
-        search={search}
-        onClear={() => setSearch("")}
-        onSearchChange={setSearch}
-      />
-      {
-        search.trim().length <= 0 ? (
-          <div className="mx-auto w-full max-w-3xl">
-            <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
-              Start typing to search the dictionary...
-            </p>
-          </div>
-        ) : <div className="mx-auto w-full max-w-3xl">
-        {filtered.length === 0 ? (
+      <DictionaryHeader search={search} onClear={() => setSearch("")} onSearchChange={setSearch} />
+      {search.trim().length <= 0 ? (
+        <div className="mx-auto w-full max-w-3xl">
           <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
-            No entries match your search.
+            Start typing to search the dictionary...
           </p>
-        ) : (
-          <div className="rounded-lg border border-border bg-card px-3 sm:px-5">
-            {filtered.map((entry) => (
-              <DictionaryEntryRow
-                key={entry.simplifiedHanzi}
-                entry={entry}
-                searchQuery={search}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      }
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-3xl">
+          {filtered.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
+              No entries match your search.
+            </p>
+          ) : (
+            <div className="rounded-lg border border-border bg-card px-3 sm:px-5">
+              {filtered.map((entry) => (
+                <DictionaryEntryRow
+                  key={entry.simplifiedHanzi}
+                  entry={entry}
+                  searchQuery={search}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

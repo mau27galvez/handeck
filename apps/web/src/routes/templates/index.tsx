@@ -49,24 +49,22 @@ function TemplatesPageHeader({
           Create and manage reusable setups for submission and card generation.
         </p>
       </div>
-        {
-          showButtons && (
-            <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
-              <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
-                Use a base template
-              </Button>
-              <Button
-                variant="outline"
-                className="text-base"
-                size="lg"
-                type="button"
-                onClick={onCreateScratch}
-              >
-                Create from scratch
-              </Button>
-            </div>
-          )
-        }
+      {showButtons && (
+        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
+          <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
+            Use a base template
+          </Button>
+          <Button
+            variant="outline"
+            className="text-base"
+            size="lg"
+            type="button"
+            onClick={onCreateScratch}
+          >
+            Create from scratch
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -114,7 +112,11 @@ function Templates() {
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <TemplatesPageHeader onUseBase={openFromBase} onCreateScratch={openScratch} showButtons={hasTemplates} />
+      <TemplatesPageHeader
+        onUseBase={openFromBase}
+        onCreateScratch={openScratch}
+        showButtons={hasTemplates}
+      />
       <CreateTemplateDialog
         open={dialog.kind === "open"}
         onOpenChange={(open) => {

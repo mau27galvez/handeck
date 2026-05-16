@@ -40,8 +40,5 @@ jobs:
             cp "$file" "${file%.example}"
           done
 
-      - name: Check Types
-        run: bun run typecheck
-
-      - name: Check Formatting and Lint
+      - name: Check types, formatting and lint
         run: bun run check

@@ -37,7 +37,7 @@
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "turbo typecheck",
     "format": "oxfmt",
-    "check": "bun run lint && bun run format --check"
+    "check": "bun run lint && bun run format --check && bun run typecheck"
   },
   "dependencies": {
     "dotenv": "catalog:",

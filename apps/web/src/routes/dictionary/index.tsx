@@ -10,6 +10,9 @@ import { useMemo, useState } from "react";
 
 import { DictionaryEntryRow } from "./-dictionary-entry";
 import { filterDictionaryEntries, MOCK_DICTIONARY_ENTRIES } from "./-mock-entries";
+import { useDebounce } from "@/hooks/use-debounce";
+
+const DICTIONARY_SEARCH_DEBOUNCE_MS = 250;
 
 export const Route = createFileRoute("/dictionary/")({
   component: Dictionary,
@@ -69,15 +72,21 @@ function DictionaryHeader({
 
 function Dictionary() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, DICTIONARY_SEARCH_DEBOUNCE_MS);
 
   const filtered = useMemo(
-    () => filterDictionaryEntries(MOCK_DICTIONARY_ENTRIES, search),
-    [search],
+    () => filterDictionaryEntries(MOCK_DICTIONARY_ENTRIES, debouncedSearch),
+    [debouncedSearch],
   );
+
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <DictionaryHeader search={search} onClear={() => setSearch("")} onSearchChange={setSearch} />
+      <DictionaryHeader
+        search={search}
+        onClear={() => setSearch("")}
+        onSearchChange={setSearch}
+      />
       {search.trim().length <= 0 ? (
         <div className="mx-auto w-full max-w-3xl">
           <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
@@ -96,7 +105,7 @@ function Dictionary() {
                 <DictionaryEntryRow
                   key={entry.simplifiedHanzi}
                   entry={entry}
-                  searchQuery={search}
+                  searchQuery={debouncedSearch}
                 />
               ))}
             </div>

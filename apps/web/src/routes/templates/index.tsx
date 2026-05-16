@@ -35,9 +35,11 @@ export const Route = createFileRoute("/templates/")({
 function TemplatesPageHeader({
   onUseBase,
   onCreateScratch,
+  showButtons,
 }: {
   onUseBase: () => void;
   onCreateScratch: () => void;
+  showButtons: boolean;
 }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
@@ -47,20 +49,22 @@ function TemplatesPageHeader({
           Create and manage reusable setups for submission and card generation.
         </p>
       </div>
-      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
-        <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
-          Use a base template
-        </Button>
-        <Button
-          variant="outline"
-          className="text-base"
-          size="lg"
-          type="button"
-          onClick={onCreateScratch}
-        >
-          Create from scratch
-        </Button>
-      </div>
+      {showButtons && (
+        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
+          <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
+            Use a base template
+          </Button>
+          <Button
+            variant="outline"
+            className="text-base"
+            size="lg"
+            type="button"
+            onClick={onCreateScratch}
+          >
+            Create from scratch
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -104,10 +108,15 @@ function Templates() {
   const [dialog, setDialog] = useState<CreateDialogState>({ kind: "closed" });
   const openFromBase = () => setDialog({ kind: "open", mode: "FromBase" });
   const openScratch = () => setDialog({ kind: "open", mode: "scratch" });
+  const hasTemplates = templates.length > 0;
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <TemplatesPageHeader onUseBase={openFromBase} onCreateScratch={openScratch} />
+      <TemplatesPageHeader
+        onUseBase={openFromBase}
+        onCreateScratch={openScratch}
+        showButtons={hasTemplates}
+      />
       <CreateTemplateDialog
         open={dialog.kind === "open"}
         onOpenChange={(open) => {
@@ -115,14 +124,14 @@ function Templates() {
         }}
         mode={dialog.kind === "open" ? dialog.mode : "scratch"}
       />
-      {templates.length === 0 ? (
-        <EmptyTemplatesCTA onUseBase={openFromBase} onCreateScratch={openScratch} />
-      ) : (
+      {hasTemplates ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
             <TemplateCard key={template._id} template={template} />
           ))}
         </div>
+      ) : (
+        <EmptyTemplatesCTA onUseBase={openFromBase} onCreateScratch={openScratch} />
       )}
     </div>
   );

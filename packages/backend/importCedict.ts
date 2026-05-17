@@ -105,7 +105,9 @@ function parseCedictLine(line: string): DictionaryEntry | null {
     return null;
   }
 
-  const match = line.match(/^(\S+)\s+(\S+)\s+\[(.+?)\]\s+\/(.+)\/$/);
+  // CC-CEDICT v2: Traditional Simplified [[pinyin]] /sense/sense/.../
+  // https://cc-cedict.org/wiki/syntax_v2
+  const match = line.match(/^(\S+)\s+(\S+)\s+\[\[(.*?)\]\]\s+\/(.+)\/$/);
   if (!match) {
     return null;
   }
@@ -122,19 +124,89 @@ function parseCedictLine(line: string): DictionaryEntry | null {
   };
 }
 
+/**
+ * Maps numbered CC-CEDICT v2 pinyin to diacritic or normalized form while preserving:
+ * - spaces and ", " only between v2 words (never between syllables inside a word);
+ * - hyphens between hyphenated pieces;
+ * - apostrophes between syllables (e.g. si4'er4yi1).
+ */
+function mapV2PinyinWordStructure(
+  pinyin: string,
+  mapSyllable: (numberedSyllable: string) => string,
+): string {
+  const trimmed = pinyin.trim().replace(/\s+/g, " ");
+  const parts = trimmed.split(/(\s+|,\s*)/);
+  return parts
+    .map((part) => {
+      if (/^\s+$/.test(part) || /^,\s*$/.test(part)) {
+        return part;
+      }
+      return mapV2PinyinWordToken(part, mapSyllable);
+    })
+    .join("");
+}
+
+function mapV2PinyinWordToken(token: string, mapSyllable: (s: string) => string): string {
+  if (token.includes("-")) {
+    return token
+      .split("-")
+      .filter(Boolean)
+      .map((piece) => mapBraceOrGluedPiece(piece, mapSyllable))
+      .join("-");
+  }
+  return mapBraceOrGluedPiece(token, mapSyllable);
+}
+
+function mapBraceOrGluedPiece(piece: string, mapSyllable: (s: string) => string): string {
+  if (piece.startsWith("{") && piece.endsWith("}")) {
+    const inner = piece.slice(1, -1);
+    if (/^\d+$/.test(inner)) {
+      return inner;
+    }
+    return transformGluedChunk(inner, mapSyllable);
+  }
+  return transformGluedChunk(piece, mapSyllable);
+}
+
+function transformGluedChunk(chunk: string, mapSyllable: (s: string) => string): string {
+  let out = "";
+  let index = 0;
+  while (index < chunk.length) {
+    if (chunk.charAt(index) === "'") {
+      out += "'";
+      index += 1;
+      continue;
+    }
+    const rest = chunk.slice(index);
+    const syllable = rest.match(/^([a-zA-ZüÜ:]+)([1-5])/);
+    if (syllable) {
+      out += mapSyllable(syllable[1]! + syllable[2]!);
+      index += syllable[0].length;
+      continue;
+    }
+    const latin = rest.match(/^([a-zA-Z0-9]+)/);
+    if (latin) {
+      out += latin[1]!;
+      index += latin[1]!.length;
+      continue;
+    }
+    out += chunk.charAt(index);
+    index += 1;
+  }
+  return out;
+}
+
 function toDiacriticPinyin(numberedPinyin: string): string {
-  return numberedPinyin
-    .split(/\s+/)
-    .map((syllable) => applyToneMark(syllable))
-    .join(" ");
+  return mapV2PinyinWordStructure(numberedPinyin, (syllable) => applyToneMark(syllable));
 }
 
 function normalizePinyin(numberedPinyin: string): string {
-  return numberedPinyin
-    .split(/\s+/)
-    .map((syllable) => syllable.replace(/[1-5]$/, "").replace(/u:/gi, "ü"))
-    .join(" ")
-    .toLowerCase();
+  return mapV2PinyinWordStructure(numberedPinyin, (syllable) => {
+    if (!/[a-zA-ZüÜ]/.test(syllable)) {
+      return syllable;
+    }
+    return syllable.replace(/[1-5]$/, "").replace(/u:/gi, "ü");
+  }).toLowerCase();
 }
 
 function applyToneMark(syllable: string): string {
@@ -145,6 +217,11 @@ function applyToneMark(syllable: string): string {
 
   const [, rawBase, rawTone] = match;
   if (!rawBase || !rawTone) {
+    return syllable.replace(/u:/gi, "ü");
+  }
+
+  // v2 literals like `{11}` expand to "11"; do not treat trailing digits as tone marks.
+  if (!/[a-zA-ZüÜ]/.test(rawBase)) {
     return syllable.replace(/u:/gi, "ü");
   }
 

@@ -120,8 +120,22 @@ function parseCedictLine(line: string): DictionaryEntry | null {
     numberedPinyin,
     diacriticPinyin: toDiacriticPinyin(numberedPinyin),
     normalizedPinyin: normalizePinyin(numberedPinyin),
-    meaning: rawMeaning?.split("/").filter(Boolean).join("; ") ?? "",
+    meaning: formatDefinitionPinyin(rawMeaning?.split("/").filter(Boolean).join("; ") ?? ""),
   };
+}
+
+function formatDefinitionPinyin(meaning: string): string {
+  return meaning.replace(/\[([^\][]+)\]/g, (match, bracketedPinyin: string) => {
+    if (!looksLikeNumberedPinyin(bracketedPinyin)) {
+      return match;
+    }
+
+    return `[${toDiacriticPinyin(bracketedPinyin)}]`;
+  });
+}
+
+function looksLikeNumberedPinyin(value: string): boolean {
+  return /[a-zA-ZüÜ:]+[1-5]/.test(value);
 }
 
 /**

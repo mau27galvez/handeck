@@ -9,6 +9,7 @@ import {
 import { Button } from "@handeck/ui/components/button";
 import { BookOpen, Pencil, AlignLeft, Hash } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { KuaiBadge } from "@/components/kuai-badge";
 import { Badge } from "@handeck/ui/components/badge";
 
 export type TemplateListItem = {
@@ -94,13 +95,5 @@ export default function TemplateCard({ template }: { template: TemplateListItem 
         </Button>
       </CardFooter>
     </Card>
-  );
-}
-
-function KuaiBadge({ cost }: { cost: number }) {
-  return (
-    <span className="inline-flex h-6 min-w-6 items-center gap-1 rounded-full bg-[#f5f0e8] px-2 py-0 text-xs font-medium text-[#7a5c2e] dark:bg-[#2a2318] dark:text-[#c8a96e]">
-      块 {cost}
-    </span>
   );
 }

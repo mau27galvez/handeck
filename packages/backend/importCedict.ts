@@ -121,6 +121,12 @@ function parseCedictLine(line: string): DictionaryEntry | null {
   }
 
   const [, , simplifiedHanzi, rawPinyin, rawMeaning] = match;
+  const senses = rawMeaning?.split("/").filter(Boolean) ?? [];
+  const keptSenses = senses.filter((sense) => !isOldVariantSense(sense));
+  if (keptSenses.length === 0) {
+    return null;
+  }
+
   const numberedPinyin = rawPinyin?.trim().replace(/\s+/g, " ") ?? "";
   const searchPinyinSyllables = getSearchPinyinSyllables(numberedPinyin);
 
@@ -132,8 +138,12 @@ function parseCedictLine(line: string): DictionaryEntry | null {
     numberedPinyinSearch: searchPinyinSyllables.map((syllable) => syllable.numbered).join(""),
     pinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.normalized),
     numberedPinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.numbered),
-    meaning: formatDefinitionPinyin(rawMeaning?.split("/").filter(Boolean).join("; ") ?? ""),
+    meaning: formatDefinitionPinyin(keptSenses.join("; ")),
   };
+}
+
+function isOldVariantSense(sense: string) {
+  return sense.trim().startsWith("old variant of ");
 }
 
 function formatDefinitionPinyin(meaning: string): string {

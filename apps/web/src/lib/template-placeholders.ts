@@ -16,3 +16,5 @@ export const PLACEHOLDER_WORDS: PlaceholderWord[] = [
 ];
 
 export const KUAI_COST_PLACEHOLDER = 0;
+
+export const TEMPLATE_WORDS_PANEL_ID = "template-words-panel";

@@ -1,12 +1,13 @@
 import { useDebounce } from "@/hooks/use-debounce";
-import { PLACEHOLDER_WORDS } from "@/lib/template-placeholders";
+import { PLACEHOLDER_WORDS, TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
 import { api } from "@handeck/backend/convex/_generated/api";
 import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import {
   AVAILABLE_SENTENCE_TOPICS,
   type TemplateConfigs,
+  getTemplateReadiness,
+  hasLegacyTopics,
   sanitizeTemplateConfigs,
-  validateTemplateForGeneration,
 } from "@handeck/backend/convex/schemas";
 import { Button } from "@handeck/ui/components/button";
 import { Checkbox } from "@handeck/ui/components/checkbox";
@@ -34,11 +35,19 @@ import {
   SelectValue,
 } from "@handeck/ui/components/select";
 import { useMutation } from "convex/react";
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import TemplateReadiness from "./-template-readiness";
 
 const SENTENCES_PER_WORD_OPTIONS = [1, 2, 3, 4, 5] as const;
 const CONFIG_SAVE_DEBOUNCE_MS = 300;
+
+function scrollToWordsPanel() {
+  document
+    .getElementById(TEMPLATE_WORDS_PANEL_ID)
+    ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
 
 function configsEqual(a: TemplateConfigs, b: TemplateConfigs): boolean {
   if (a.sentencesPerWord !== b.sentencesPerWord) return false;
@@ -62,8 +71,11 @@ export default function TemplateConfigEditor({
   const updateConfigs = useMutation(api.template.updateConfigs);
   const [draft, setDraft] = useState<TemplateConfigs>(() => sanitizeTemplateConfigs(serverConfigs));
   const [saving, setSaving] = useState(false);
+  const [emphasizeIncomplete, setEmphasizeIncomplete] = useState(false);
+  const [legacyBannerDismissed, setLegacyBannerDismissed] = useState(false);
   const lastSavedRef = useRef(sanitizeTemplateConfigs(serverConfigs));
   const debouncedDraft = useDebounce(draft, CONFIG_SAVE_DEBOUNCE_MS);
+  const showLegacyBanner = !legacyBannerDismissed && hasLegacyTopics(serverConfigs.topics);
 
   useEffect(() => {
     const sanitized = sanitizeTemplateConfigs(serverConfigs);
@@ -102,7 +114,7 @@ export default function TemplateConfigEditor({
     };
   }, [debouncedDraft, templateId, updateConfigs]);
 
-  const validation = validateTemplateForGeneration({
+  const readiness = getTemplateReadiness({
     wordsCount: PLACEHOLDER_WORDS.length,
     configs: draft,
   });
@@ -113,6 +125,21 @@ export default function TemplateConfigEditor({
       return { ...prev, topics };
     });
   }
+
+  function handleGenerateClick() {
+    if (!readiness.ready || saving) {
+      setEmphasizeIncomplete(true);
+      return;
+    }
+    onGenerate(draft);
+  }
+
+  const generateDisabled = !readiness.ready || saving;
+  const generateTitle = saving
+    ? "Saving configuration…"
+    : readiness.ready
+      ? undefined
+      : readiness.issues.join(" · ");
 
   return (
     <Card className="flex min-h-0 flex-col">
@@ -178,19 +205,28 @@ export default function TemplateConfigEditor({
           </FieldSet>
         </FieldGroup>
 
-        {!validation.valid && (
-          <div
-            role="status"
-            className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
-          >
-            <p className="text-sm font-medium text-destructive">Not ready to generate</p>
-            <ul className="mt-1 list-inside list-disc text-sm text-destructive/90">
-              {validation.issues.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
+        {showLegacyBanner && (
+          <div className="flex gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+            <p className="flex-1 text-xs leading-relaxed">
+              Some topics from your starter template are no longer available. Pick topics below.
+            </p>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="shrink-0 rounded-sm p-0.5 opacity-70 hover:opacity-100"
+              onClick={() => setLegacyBannerDismissed(true)}
+            >
+              <X className="size-3.5" />
+            </button>
           </div>
         )}
+
+        <TemplateReadiness
+          wordsCount={PLACEHOLDER_WORDS.length}
+          configs={draft}
+          emphasizeIncomplete={emphasizeIncomplete}
+          onWordsPanelClick={scrollToWordsPanel}
+        />
 
         {saving && (
           <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
@@ -199,9 +235,34 @@ export default function TemplateConfigEditor({
         )}
       </CardContent>
       <CardFooter className="mt-auto shrink-0 flex-col items-stretch gap-2 border-t sm:flex-row sm:justify-end">
-        <Button type="button" disabled={!validation.valid} onClick={() => onGenerate(draft)}>
-          Generate
-        </Button>
+        <div className="flex w-full flex-col items-stretch gap-1.5 sm:items-end">
+          <span className="relative inline-flex sm:justify-end">
+            {generateDisabled && (
+              <button
+                type="button"
+                aria-label={generateTitle ?? "Generate"}
+                title={generateTitle}
+                className="absolute inset-0 z-10 cursor-not-allowed rounded-md"
+                onClick={() => {
+                  if (!readiness.ready) setEmphasizeIncomplete(true);
+                }}
+              />
+            )}
+            <Button type="button" disabled={generateDisabled} onClick={handleGenerateClick}>
+              Generate
+            </Button>
+          </span>
+          {!readiness.ready && !saving && (
+            <FieldDescription className="text-center sm:text-right">
+              Complete the steps above to generate
+            </FieldDescription>
+          )}
+          {saving && (
+            <FieldDescription className="text-center sm:text-right">
+              Saving configuration…
+            </FieldDescription>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

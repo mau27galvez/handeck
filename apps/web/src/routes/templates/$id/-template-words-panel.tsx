@@ -1,3 +1,4 @@
+import { PLACEHOLDER_WORDS, TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
 import {
   Card,
   CardContent,
@@ -5,11 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@handeck/ui/components/card";
-import { PLACEHOLDER_WORDS } from "@/lib/template-placeholders";
 
 export default function TemplateWordsPanel() {
   return (
-    <Card className="flex min-h-0 flex-col">
+    <Card id={TEMPLATE_WORDS_PANEL_ID} className="flex min-h-0 scroll-mt-4 flex-col">
       <CardHeader className="shrink-0 border-b pb-4">
         <CardTitle>Words</CardTitle>
         <CardDescription>

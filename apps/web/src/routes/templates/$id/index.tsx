@@ -1,16 +1,19 @@
 import { isConvexArgumentValidationError } from "@/lib/convex-errors";
+import { PLACEHOLDER_WORDS } from "@/lib/template-placeholders";
 import { requireAuth } from "@/lib/route-auth";
 import { api } from "@handeck/backend/convex/_generated/api";
 import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import type { TemplateConfigs } from "@handeck/backend/convex/schemas";
+import { sanitizeTemplateConfigs } from "@handeck/backend/convex/schemas";
 import { Button } from "@handeck/ui/components/button";
 import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DeleteTemplateDialog from "./-delete-template-dialog";
 import TemplateConfigEditor from "./-template-config-editor";
+import TemplateDetailSummary from "./-template-detail-summary";
 import TemplateGenerateDialog from "./-template-generate-dialog";
 import TemplateWordsPanel from "./-template-words-panel";
 
@@ -40,6 +43,12 @@ function TemplateDetail() {
   const [generateOpen, setGenerateOpen] = useState(false);
   const [generateConfigs, setGenerateConfigs] = useState<TemplateConfigs | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const displayConfigs = useMemo(
+    () => (template ? sanitizeTemplateConfigs(template.configs) : null),
+    [template],
+  );
+  const wordsCount = PLACEHOLDER_WORDS.length;
 
   if (template === undefined) {
     return (
@@ -72,6 +81,9 @@ function TemplateDetail() {
         <p className="mt-2 text-sm text-muted-foreground">
           Configure topics and sentences per word, then generate cards when ready.
         </p>
+        {displayConfigs && (
+          <TemplateDetailSummary wordsCount={wordsCount} configs={displayConfigs} />
+        )}
       </header>
 
       <div className="grid min-h-[min(70vh,720px)] gap-4 lg:min-h-[min(65vh,640px)] lg:grid-cols-2 lg:gap-6">

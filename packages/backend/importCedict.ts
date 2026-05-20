@@ -13,7 +13,15 @@ type DictionaryEntry = {
   numberedPinyin: string;
   diacriticPinyin: string;
   normalizedPinyin: string;
+  numberedPinyinSearch: string;
+  pinyinSyllables: string[];
+  numberedPinyinSyllables: string[];
   meaning: string;
+};
+
+type SearchPinyinSyllable = {
+  normalized: string;
+  numbered: string;
 };
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
@@ -113,15 +121,29 @@ function parseCedictLine(line: string): DictionaryEntry | null {
   }
 
   const [, , simplifiedHanzi, rawPinyin, rawMeaning] = match;
+  const senses = rawMeaning?.split("/").filter(Boolean) ?? [];
+  const keptSenses = senses.filter((sense) => !isOldVariantSense(sense));
+  if (keptSenses.length === 0) {
+    return null;
+  }
+
   const numberedPinyin = rawPinyin?.trim().replace(/\s+/g, " ") ?? "";
+  const searchPinyinSyllables = getSearchPinyinSyllables(numberedPinyin);
 
   return {
     simplifiedHanzi: simplifiedHanzi ?? "",
     numberedPinyin,
     diacriticPinyin: toDiacriticPinyin(numberedPinyin),
-    normalizedPinyin: normalizePinyin(numberedPinyin),
-    meaning: formatDefinitionPinyin(rawMeaning?.split("/").filter(Boolean).join("; ") ?? ""),
+    normalizedPinyin: searchPinyinSyllables.map((syllable) => syllable.normalized).join(""),
+    numberedPinyinSearch: searchPinyinSyllables.map((syllable) => syllable.numbered).join(""),
+    pinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.normalized),
+    numberedPinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.numbered),
+    meaning: formatDefinitionPinyin(keptSenses.join("; ")),
   };
+}
+
+function isOldVariantSense(sense: string) {
+  return sense.trim().startsWith("old variant of ");
 }
 
 function formatDefinitionPinyin(meaning: string): string {
@@ -214,13 +236,27 @@ function toDiacriticPinyin(numberedPinyin: string): string {
   return mapV2PinyinWordStructure(numberedPinyin, (syllable) => applyToneMark(syllable));
 }
 
-function normalizePinyin(numberedPinyin: string): string {
-  return mapV2PinyinWordStructure(numberedPinyin, (syllable) => {
+function getSearchPinyinSyllables(numberedPinyin: string): SearchPinyinSyllable[] {
+  const syllables: SearchPinyinSyllable[] = [];
+  mapV2PinyinWordStructure(numberedPinyin, (syllable) => {
     if (!/[a-zA-ZüÜ]/.test(syllable)) {
       return syllable;
     }
-    return syllable.replace(/[1-5]$/, "").replace(/u:/gi, "ü");
-  }).toLowerCase();
+    syllables.push(normalizeSearchPinyinSyllable(syllable));
+    return syllable;
+  });
+  return syllables;
+}
+
+function normalizeSearchPinyinSyllable(syllable: string): SearchPinyinSyllable {
+  const match = syllable.match(/^(.*?)([1-5])$/);
+  const base = (match?.[1] ?? syllable).replace(/u:/gi, "v").replace(/ü/gi, "v").toLowerCase();
+  const tone = match?.[2] ?? "";
+
+  return {
+    normalized: base,
+    numbered: `${base}${tone}`,
+  };
 }
 
 function applyToneMark(syllable: string): string {

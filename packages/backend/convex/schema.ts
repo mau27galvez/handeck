@@ -53,8 +53,17 @@ export default defineSchema({
     numberedPinyin: v.string(),
     diacriticPinyin: v.string(),
     normalizedPinyin: v.string(),
+    numberedPinyinSearch: v.string(),
+    pinyinSyllables: v.array(v.string()),
+    numberedPinyinSyllables: v.array(v.string()),
     meaning: v.string(),
-  }).index("by_normalizedPinyin", ["normalizedPinyin"]),
+  })
+    .index("by_normalizedPinyin", ["normalizedPinyin"])
+    .index("by_numberedPinyinSearch", ["numberedPinyinSearch"])
+    .index("by_simplifiedHanzi", ["simplifiedHanzi"])
+    .searchIndex("search_meaning", {
+      searchField: "meaning",
+    }),
 
   sentence: defineTable({
     simplifiedHanzi: v.string(),

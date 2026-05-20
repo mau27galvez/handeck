@@ -1,7 +1,9 @@
 import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
 import type { ReactNode } from "react";
 
-export type DictionaryEntry = Doc<"dictionaryEntry">;
+export type DictionaryEntry = Doc<"dictionaryEntry"> & {
+  searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
+};
 
 function highlightMatches(text: string, rawQuery: string) {
   const query = rawQuery.trim();
@@ -49,6 +51,8 @@ export function DictionaryEntryRow({
   entry: DictionaryEntry;
   searchQuery: string;
 }) {
+  const shouldHighlightMeaning = entry.searchMatchType === "english";
+
   return (
     <article className="border-b border-border py-4 sm:py-5 last:border-b-0">
       <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-1">
@@ -58,7 +62,7 @@ export function DictionaryEntryRow({
         <span className="text-base text-muted-foreground sm:text-lg">{entry.diacriticPinyin}</span>
       </div>
       <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-foreground sm:text-base">
-        {highlightMatches(entry.meaning, searchQuery)}
+        {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
       </p>
     </article>
   );

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "convex dev",
     "dev:setup": "convex dev --configure --until-success",
-    "import:cedict": "bun run importCedict.ts"
+    "import:cedict": "bun run importCedict.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
+    "@types/bun": "^1.3.14",
     "@types/node": "^25.8.0",
     "typescript": "catalog:"
   }

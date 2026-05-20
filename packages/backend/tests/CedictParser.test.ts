@@ -16,9 +16,15 @@ describe("parseCedictLine", () => {
     });
   });
 
-  test("skips blank, comment, and malformed lines", () => {
+  test("skips blank lines", () => {
     expect(parseCedictLine("")).toBeNull();
+  });
+
+  test("skips comment lines", () => {
     expect(parseCedictLine("# CC-CEDICT")).toBeNull();
+  });
+
+  test("skips malformed lines", () => {
     expect(parseCedictLine("not a cedict line")).toBeNull();
   });
 

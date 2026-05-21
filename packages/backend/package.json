@@ -8,6 +8,7 @@
     "dev": "convex dev",
     "dev:setup": "convex dev --configure --until-success",
     "import:cedict": "bun run importCedict.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

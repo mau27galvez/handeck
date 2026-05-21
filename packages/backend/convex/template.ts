@@ -3,12 +3,7 @@ import { query, mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { authComponent } from "./auth";
-import {
-  templateConfigsSchema,
-  type TemplateConfigs,
-  DEFAULT_CONFIGS,
-  sanitizeTemplateConfigs,
-} from "./schemas";
+import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
 
 export const create = mutation({
@@ -124,30 +119,6 @@ async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"template">) {
 
   return template;
 }
-
-export const updateConfigs = mutation({
-  args: {
-    templateId: v.id("template"),
-    configs: v.object({
-      topics: v.array(v.string()),
-      sentencesPerWord: v.number(),
-    }),
-  },
-  handler: async (ctx, { templateId, configs }) => {
-    await getOwnedTemplate(ctx, templateId);
-
-    const sanitized = sanitizeTemplateConfigs(configs);
-    const parsed = templateConfigsSchema.safeParse(sanitized);
-    if (!parsed.success) {
-      throw new Error(`Invalid configs: ${parsed.error.message}`);
-    }
-
-    await ctx.db.patch(templateId, {
-      configs: parsed.data,
-      updatedAt: Date.now(),
-    });
-  },
-});
 
 export const remove = mutation({
   args: { templateId: v.id("template") },

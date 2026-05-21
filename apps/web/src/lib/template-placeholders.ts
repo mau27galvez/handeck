@@ -1,7 +1,3 @@
-import { AVAILABLE_SENTENCE_TOPICS } from "@handeck/backend/convex/schemas";
-
-export { AVAILABLE_SENTENCE_TOPICS };
-
 export type PlaceholderWord = {
   simplifiedHanzi: string;
   pinyin: string;

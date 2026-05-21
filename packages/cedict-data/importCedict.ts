@@ -7,7 +7,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { config } from "dotenv";
 
 import { parseCedictLine, type DictionaryEntry } from "./CedictParser";
-import { api } from "./convex/_generated/api.js";
+import { api } from "@handeck/backend/convex/_generated/api.js";
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 

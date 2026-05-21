@@ -15,9 +15,7 @@ const KUAI_COST_PLACEHOLDER = 0;
 export const Route = createFileRoute("/templates/")({
   beforeLoad: requireAuth,
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
-      convexQuery(api.template.listForCurrentUser, {}),
-    );
+    await context.queryClient.ensureQueryData(convexQuery(api.template.listForCurrentUser, {}));
   },
   component: Templates,
 });

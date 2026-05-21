@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseCedictLine } from "../CedictParser";
+import { parseCedictLine } from "../CedictParserV2";
 
 describe("parseCedictLine", () => {
   test("parses a normal CC-CEDICT line into dictionary entry fields", () => {

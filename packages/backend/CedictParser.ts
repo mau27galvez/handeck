@@ -43,7 +43,7 @@ export function parseCedictLine(line: string) {
     numberedPinyinSearch: searchPinyinSyllables.map((syllable) => syllable.numbered).join(""),
     pinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.normalized),
     numberedPinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.numbered),
-    meaning: formatDefinitionPinyin(keptSenses.join("; ")),
+    meaning: formatDefinitionPinyin(keepSimplifiedHanziInDefinition(keptSenses.join("; "))),
   };
 }
 
@@ -147,6 +147,60 @@ function unwrapBracedLiterals(value: string) {
   }
 
   return result;
+}
+
+// When it hits a |, it walks backward and forward to find the traditional
+// and simplified tokens (stopping at whitespace, brackets, slashes, etc.),
+// drops the traditional part, and keeps only the simplified one.
+function keepSimplifiedHanziInDefinition(text: string) {
+  let result = "";
+  let index = 0;
+
+  while (index < text.length) {
+    if (text.charAt(index) !== "|") {
+      result += text.charAt(index);
+      index += 1;
+      continue;
+    }
+
+    let tradStart = index;
+    while (tradStart > 0 && isCrossReferenceChar(text.charAt(tradStart - 1))) {
+      tradStart -= 1;
+    }
+
+    let simpEnd = index + 1;
+    while (simpEnd < text.length && isCrossReferenceChar(text.charAt(simpEnd))) {
+      simpEnd += 1;
+    }
+
+    const traditional = text.slice(tradStart, index);
+    const simplified = text.slice(index + 1, simpEnd);
+
+    if (traditional.length > 0 && simplified.length > 0) {
+      result = result.slice(0, result.length - traditional.length) + simplified;
+      index = simpEnd;
+      continue;
+    }
+
+    result += "|";
+    index += 1;
+  }
+
+  return result;
+}
+
+function isCrossReferenceChar(char: string) {
+  return (
+    char !== "|" &&
+    char !== "/" &&
+    char !== "[" &&
+    char !== "]" &&
+    char !== "(" &&
+    char !== ")" &&
+    char !== " " &&
+    char !== "\t" &&
+    char !== "\n"
+  );
 }
 
 function formatDefinitionPinyin(meaning: string) {

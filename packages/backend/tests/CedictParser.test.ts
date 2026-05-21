@@ -199,6 +199,30 @@ describe("parseCedictLine", () => {
     });
   });
 
+  test("keeps only simplified hanzi in traditional|simplified cross-references", () => {
+    expect(parseCedictLine("𩧢 𱅒 [[cheng3]] /variant of 騁|骋[cheng3]/")).toMatchObject({
+      meaning: "variant of 骋[chěng]",
+    });
+
+    expect(
+      parseCedictLine(
+        "B站 B站 [[B zhan4]] /(coll.) Bilibili, Chinese video-sharing website featuring scrolled user comments 彈幕|弹幕[dan4mu4] overlaid on the videos/",
+      ),
+    ).toMatchObject({
+      meaning:
+        "(coll.) Bilibili, Chinese video-sharing website featuring scrolled user comments 弹幕[dànmù] overlaid on the videos",
+    });
+
+    expect(
+      parseCedictLine(
+        "95後 95后 [[jiu3wu3hou4]] /people born between 1995-01-01 and 1999-12-31/Gen Z (abbr. for 95後|95后[jiu3wu3hou4] + 00後|00后[ling2ling2hou4])/",
+      ),
+    ).toMatchObject({
+      meaning:
+        "people born between 1995-01-01 and 1999-12-31; Gen Z (abbr. for 95后[jiǔwǔhòu] + 00后[línglínghòu])",
+    });
+  });
+
   test("converts bracketed numbered pinyin in definitions only when it looks like pinyin", () => {
     expect(
       parseCedictLine(
@@ -219,5 +243,3 @@ describe("parseCedictLine", () => {
     });
   });
 });
-
-// TODO: remove traditional hanzi from meaning

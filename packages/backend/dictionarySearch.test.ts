@@ -41,6 +41,7 @@ describe("parseDictionarySearchQuery", () => {
         { kind: "pinyin", value: { normalizedPinyin: "hao" } },
       ],
     });
+
     expect(parseDictionarySearchQuery("ni好")).toMatchObject({
       kind: "mixed",
       tokens: [

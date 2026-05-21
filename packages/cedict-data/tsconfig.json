@@ -1,7 +1,7 @@
 {
   "extends": "@handeck/config/tsconfig.base.json",
   "compilerOptions": {
-    "types": ["bun", "node"],
+    "types": ["bun"],
     "noEmit": true
   },
   "include": ["*.ts", "tests/**/*.ts"],

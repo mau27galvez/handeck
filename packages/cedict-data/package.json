@@ -1,0 +1,22 @@
+{
+  "name": "@handeck/cedict-data",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "seed": "bun run seed.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@handeck/backend": "workspace:*",
+    "convex": "catalog:",
+    "dotenv": "catalog:"
+  },
+  "devDependencies": {
+    "@handeck/config": "workspace:*",
+    "@types/bun": "^1.3.14",
+    "typescript": "catalog:"
+  }
+}

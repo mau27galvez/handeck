@@ -203,29 +203,33 @@ function applyToneMark(syllable: string): string {
 }
 
 function getToneVowelIndex(syllable: string): number {
-  const lower = syllable.toLowerCase();
-  const aIndex = lower.indexOf("a");
-  if (aIndex !== -1) {
-    return aIndex;
+  const lower = syllable.replace(/u:/gi, "ü").toLowerCase();
+
+  const iuIndex = lower.indexOf("iu");
+  if (iuIndex !== -1) {
+    return iuIndex + 1;
   }
 
-  const eIndex = lower.indexOf("e");
-  if (eIndex !== -1) {
-    return eIndex;
+  const uiIndex = lower.indexOf("ui");
+  if (uiIndex !== -1) {
+    return uiIndex + 1;
   }
 
-  const ouIndex = lower.indexOf("ou");
-  if (ouIndex !== -1) {
-    return ouIndex;
-  }
+  const vowelPriority = "aoeiuü";
+  let bestIndex = -1;
+  let bestRank = vowelPriority.length;
 
-  for (let index = lower.length - 1; index >= 0; index -= 1) {
-    if ("iouü".includes(lower.charAt(index))) {
-      return index;
+  for (let index = 0; index < lower.length; index += 1) {
+    const rank = vowelPriority.indexOf(lower.charAt(index));
+    if (rank === -1 || rank >= bestRank) {
+      continue;
     }
+
+    bestRank = rank;
+    bestIndex = index;
   }
 
-  return -1;
+  return bestIndex;
 }
 
 function markTone(vowel: string, tone: number) {

@@ -122,6 +122,83 @@ describe("parseCedictLine", () => {
     });
   });
 
+  describe("tone mark placement", () => {
+    // Marks go on vowels using priority a > o > e > i > u > ü.
+    // When i and u appear together, the mark goes on the latter vowel instead.
+
+    function diacriticPinyinFor(numberedPinyin: string): string | undefined {
+      return parseCedictLine(`测 测 [[${numberedPinyin}]] /tone placement regression/`)
+        ?.diacriticPinyin;
+    }
+
+    // Numbered pinyin spells -iou as iu, -uei as ui, and -uen as un (see -iou/-uei/-uen rows).
+    test.each([
+      ["-a", "ma1", "mā"],
+      ["-ai", "mai1", "māi"],
+      ["-an", "ban1", "bān"],
+      ["-ang", "bang1", "bāng"],
+      ["-ao", "zao1", "zāo"],
+      ["-e", "he1", "hē"],
+      ["-ei", "fei1", "fēi"],
+      ["-en", "hen1", "hēn"],
+      ["-eng", "heng1", "hēng"],
+      ["-er", "er2", "ér"],
+      ["-i", "bi3", "bǐ"],
+      ["-ia", "jia1", "jiā"],
+      ["-ian", "jian1", "jiān"],
+      ["-iang", "jiang1", "jiāng"],
+      ["-iao", "xiao1", "xiāo"],
+      ["-ie", "xie2", "xié"],
+      ["-in", "bin1", "bīn"],
+      ["-ing", "bing1", "bīng"],
+      ["-iong", "xiong1", "xiōng"],
+      ["-iou", "liu3", "liǔ"],
+      ["-o", "bo2", "bó"],
+      ["-ong", "hong1", "hōng"],
+      ["-ou", "zou1", "zōu"],
+      ["-u", "bu4", "bù"],
+      ["-ua", "hua1", "huā"],
+      ["-uai", "kuai4", "kuài"],
+      ["-uan", "guan1", "guān"],
+      ["-uang", "huang2", "huáng"],
+      ["-uei", "gui3", "guǐ"],
+      ["-uen", "wen2", "wén"],
+      ["-ueng", "weng1", "wēng"],
+      ["-uo", "huo3", "huǒ"],
+      ["-ü", "lü3", "lǚ"],
+      ["-üan", "quan2", "quán"],
+      ["-üe", "lüe4", "lüè"],
+      ["-ün", "jun1", "jūn"],
+    ])("final %s (%s → %s)", (_final, numberedPinyin, expectedDiacritic) => {
+      expect(diacriticPinyinFor(numberedPinyin)).toBe(expectedDiacritic);
+    });
+
+    describe("neutral tone (5)", () => {
+      test("leaves the syllable without a tone mark", () => {
+        expect(diacriticPinyinFor("ma5")).toBe("ma");
+        expect(diacriticPinyinFor("ne5")).toBe("ne");
+        expect(diacriticPinyinFor("yi5")).toBe("yi");
+      });
+    });
+
+    describe("uppercase source letters", () => {
+      test("places the mark on the prioritized vowel while preserving case", () => {
+        expect(diacriticPinyinFor("LU4")).toBe("LÙ");
+        expect(diacriticPinyinFor("ZHOU1")).toBe("ZHŌU");
+        expect(diacriticPinyinFor("LÜ3")).toBe("LǙ");
+      });
+    });
+
+    describe("syllables without a tone-bearing vowel", () => {
+      test("drops the tone digit without adding a mark", () => {
+        expect(diacriticPinyinFor("m2")).toBe("m"); // 呣
+        expect(diacriticPinyinFor("hm5")).toBe("hm"); // 噷
+        expect(diacriticPinyinFor("hng5")).toBe("hng"); // 哼
+        expect(diacriticPinyinFor("xx5")).toBe("xx"); // 々
+      });
+    });
+  });
+
   test("converts bracketed numbered pinyin in definitions only when it looks like pinyin", () => {
     expect(
       parseCedictLine(

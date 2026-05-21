@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseCedictLine } from "../CedictParserV2";
+import { parseCedictLine } from "../CedictParser";
 
 describe("parseCedictLine", () => {
   test("parses a normal CC-CEDICT line into dictionary entry fields", () => {
@@ -219,3 +219,5 @@ describe("parseCedictLine", () => {
     });
   });
 });
+
+// TODO: remove traditional hanzi from meaning

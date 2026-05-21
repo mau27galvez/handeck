@@ -9,35 +9,34 @@ export type DictionaryEntry = {
   meaning: string;
 };
 
+type Tone = 1 | 2 | 3 | 4 | 5;
+
 type SearchPinyinSyllable = {
   normalized: string;
   numbered: string;
 };
 
-export function parseCedictLine(line: string): DictionaryEntry | null {
+export function parseCedictLine(line: string) {
   if (!line || line.startsWith("#")) {
     return null;
   }
 
-  // CC-CEDICT v2: Traditional Simplified [[pinyin]] /sense/sense/.../
-  // https://cc-cedict.org/wiki/syntax_v2
-  const match = line.match(/^(\S+)\s+(\S+)\s+\[\[(.*?)\]\]\s+\/(.+)\/$/);
-  if (!match) {
+  const fields = parseCedictFields(line);
+  if (!fields) {
     return null;
   }
 
-  const [, , simplifiedHanzi, rawPinyin, rawMeaning] = match;
-  const senses = rawMeaning?.split("/").filter(Boolean) ?? [];
-  const keptSenses = senses.filter((sense) => !isOldVariantSense(sense));
+  const { simplifiedHanzi, rawPinyin, rawMeaning } = fields;
+  const keptSenses = parseSenses(rawMeaning).filter((sense) => !isOldVariantSense(sense));
   if (keptSenses.length === 0) {
     return null;
   }
 
-  const numberedPinyin = unwrapBracedLiterals(rawPinyin?.trim().replace(/\s+/g, " ") ?? "");
-  const searchPinyinSyllables = getSearchPinyinSyllables(numberedPinyin);
+  const numberedPinyin = unwrapBracedLiterals(normalizeWhitespace(rawPinyin));
+  const searchPinyinSyllables = collectSearchPinyinSyllables(numberedPinyin);
 
   return {
-    simplifiedHanzi: unwrapBracedLiterals(simplifiedHanzi ?? ""),
+    simplifiedHanzi: unwrapBracedLiterals(simplifiedHanzi),
     numberedPinyin,
     diacriticPinyin: toDiacriticPinyin(numberedPinyin),
     normalizedPinyin: searchPinyinSyllables.map((syllable) => syllable.normalized).join(""),
@@ -48,145 +47,355 @@ export function parseCedictLine(line: string): DictionaryEntry | null {
   };
 }
 
+function parseCedictFields(line: string) {
+  const pinyinStart = line.indexOf("[[");
+  const pinyinEnd = line.indexOf("]]", pinyinStart + 2);
+  if (pinyinStart === -1 || pinyinEnd === -1) {
+    return null;
+  }
+
+  const head = line.slice(0, pinyinStart).trim();
+  const rawPinyin = line.slice(pinyinStart + 2, pinyinEnd);
+  const tail = line.slice(pinyinEnd + 2).trim();
+  if (!tail.startsWith("/") || !tail.endsWith("/")) {
+    return null;
+  }
+
+  const headParts = splitOnWhitespace(head);
+  if (headParts.length < 2) {
+    return null;
+  }
+
+  return {
+    simplifiedHanzi: headParts[1]!,
+    rawPinyin,
+    rawMeaning: tail.slice(1, -1),
+  };
+}
+
+function splitOnWhitespace(text: string) {
+  const parts: string[] = [];
+  let current = "";
+
+  for (const char of text) {
+    if (char === " " || char === "\t") {
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current) {
+    parts.push(current);
+  }
+
+  return parts;
+}
+
+function parseSenses(rawMeaning: string) {
+  return rawMeaning.split("/").filter(Boolean);
+}
+
 function isOldVariantSense(sense: string) {
   return sense.trim().startsWith("old variant of ");
 }
 
-function unwrapBracedLiterals(value: string): string {
-  return value.replace(/\{([^}]+)\}/g, "$1");
-}
+function normalizeWhitespace(text: string) {
+  let result = "";
+  let inWhitespace = false;
 
-function formatDefinitionPinyin(meaning: string): string {
-  return meaning.replace(/\[([^\][]+)\]/g, (match, bracketedPinyin: string) => {
-    if (!looksLikeNumberedPinyin(bracketedPinyin)) {
-      return match;
+  for (const char of text.trim()) {
+    if (char === " " || char === "\t" || char === "\n") {
+      if (!inWhitespace && result.length > 0) {
+        result += " ";
+        inWhitespace = true;
+      }
+
+      continue;
     }
 
-    return `[${toDiacriticPinyin(bracketedPinyin)}]`;
-  });
+    result += char;
+    inWhitespace = false;
+  }
+
+  return result;
+}
+
+function unwrapBracedLiterals(value: string) {
+  let result = "";
+  let index = 0;
+
+  while (index < value.length) {
+    if (value.charAt(index) === "{") {
+      const close = value.indexOf("}", index + 1);
+      if (close === -1) {
+        result += value.slice(index);
+        break;
+      }
+
+      result += value.slice(index + 1, close);
+      index = close + 1;
+      continue;
+    }
+
+    result += value.charAt(index);
+    index += 1;
+  }
+
+  return result;
+}
+
+function formatDefinitionPinyin(meaning: string) {
+  let result = "";
+  let index = 0;
+
+  while (index < meaning.length) {
+    const open = meaning.indexOf("[", index);
+    if (open === -1) {
+      result += meaning.slice(index);
+      break;
+    }
+
+    result += meaning.slice(index, open);
+    const close = meaning.indexOf("]", open + 1);
+    if (close === -1) {
+      result += meaning.slice(open);
+      break;
+    }
+
+    const bracketed = meaning.slice(open + 1, close);
+    if (looksLikeNumberedPinyin(bracketed)) {
+      result += `[${toDiacriticPinyin(bracketed)}]`;
+    } else {
+      result += `[${bracketed}]`;
+    }
+
+    index = close + 1;
+  }
+
+  return result;
 }
 
 function looksLikeNumberedPinyin(value: string) {
-  return /[a-zü:]/.test(value) && /[a-zA-ZüÜ:]+[1-5]/.test(value);
+  if (!hasPinyinLetters(value)) {
+    return false;
+  }
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (readNumberedSyllable(value, index)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
-/**
- * Maps numbered CC-CEDICT v2 pinyin to diacritic or normalized form while preserving:
- * - spaces and ", " only between v2 words (never between syllables inside a word);
- * - hyphens between hyphenated pieces;
- * - apostrophes between syllables (e.g. si4'er4yi1).
- */
-function mapV2PinyinWordStructure(
-  pinyin: string,
-  mapSyllable: (numberedSyllable: string) => string,
-): string {
-  const trimmed = pinyin.trim().replace(/\s+/g, " ");
-  const parts = trimmed.split(/(\s+|,\s*)/);
-  return parts
+function toDiacriticPinyin(numberedPinyin: string) {
+  return mapPinyin(numberedPinyin, applyToneMark);
+}
+
+function collectSearchPinyinSyllables(numberedPinyin: string) {
+  const syllables: SearchPinyinSyllable[] = [];
+
+  mapPinyin(numberedPinyin, (syllable) => {
+    if (!hasPinyinLetters(syllable)) {
+      return syllable;
+    }
+
+    syllables.push(normalizeSearchPinyinSyllable(syllable));
+    return syllable;
+  });
+
+  return syllables;
+}
+
+function mapPinyin(pinyin: string, mapSyllable: (numberedSyllable: string) => string) {
+  return splitPinyinParts(pinyin)
     .map((part) => {
-      if (/^\s+$/.test(part) || /^,\s*$/.test(part)) {
+      if (isPinyinSeparator(part)) {
         return part;
       }
-      return mapV2PinyinWordToken(part, mapSyllable);
+
+      return mapPinyinWord(part, mapSyllable);
     })
     .join("");
 }
 
-function mapV2PinyinWordToken(token: string, mapSyllable: (s: string) => string): string {
-  if (token.includes("-")) {
-    return token
-      .split("-")
-      .filter(Boolean)
-      .map((piece) => mapBraceOrGluedPiece(piece, mapSyllable))
-      .join("-");
+function splitPinyinParts(pinyin: string) {
+  const parts: string[] = [];
+  let current = "";
+
+  for (let index = 0; index < pinyin.length; index += 1) {
+    const char = pinyin.charAt(index);
+
+    if (char === " ") {
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      parts.push(" ");
+      continue;
+    }
+
+    if (char === ",") {
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      parts.push(", ");
+      if (pinyin.charAt(index + 1) === " ") {
+        index += 1;
+      }
+      continue;
+    }
+
+    current += char;
   }
-  return mapBraceOrGluedPiece(token, mapSyllable);
+
+  if (current) {
+    parts.push(current);
+  }
+
+  return parts;
 }
 
-function mapBraceOrGluedPiece(piece: string, mapSyllable: (s: string) => string): string {
+function isPinyinSeparator(part: string) {
+  return part === " " || part === ", ";
+}
+
+function mapPinyinWord(word: string, mapSyllable: (numberedSyllable: string) => string) {
+  if (!word.includes("-")) {
+    return mapPinyinPiece(word, mapSyllable);
+  }
+
+  return word
+    .split("-")
+    .filter(Boolean)
+    .map((piece) => mapPinyinPiece(piece, mapSyllable))
+    .join("-");
+}
+
+function mapPinyinPiece(piece: string, mapSyllable: (numberedSyllable: string) => string) {
   if (piece.startsWith("{") && piece.endsWith("}")) {
     const inner = piece.slice(1, -1);
-    if (/^\d+$/.test(inner)) {
+    if (isNumericLiteral(inner)) {
       return inner;
     }
-    return transformGluedChunk(inner, mapSyllable);
+
+    return mapGluedSyllables(inner, mapSyllable);
   }
-  return transformGluedChunk(piece, mapSyllable);
+
+  return mapGluedSyllables(piece, mapSyllable);
 }
 
-function transformGluedChunk(chunk: string, mapSyllable: (s: string) => string): string {
-  let out = "";
+function mapGluedSyllables(chunk: string, mapSyllable: (numberedSyllable: string) => string) {
+  let output = "";
   let index = 0;
+
   while (index < chunk.length) {
     if (chunk.charAt(index) === "'") {
-      out += "'";
+      output += "'";
       index += 1;
       continue;
     }
-    const rest = chunk.slice(index);
-    const syllable = rest.match(/^([a-zA-ZüÜ:]+)([1-5])/);
-    if (syllable) {
-      out += mapSyllable(syllable[1]! + syllable[2]!);
-      index += syllable[0].length;
+
+    const numberedSyllable = readNumberedSyllable(chunk, index);
+    if (numberedSyllable) {
+      output += mapSyllable(numberedSyllable.text);
+      index += numberedSyllable.length;
       continue;
     }
-    const latin = rest.match(/^([a-zA-Z0-9]+)/);
-    if (latin) {
-      out += latin[1]!;
-      index += latin[1]!.length;
+
+    const latinRun = readLatinRun(chunk, index);
+    if (latinRun) {
+      output += latinRun.text;
+      index += latinRun.length;
       continue;
     }
-    out += chunk.charAt(index);
+
+    output += chunk.charAt(index);
     index += 1;
   }
-  return out;
+
+  return output;
 }
 
-function toDiacriticPinyin(numberedPinyin: string): string {
-  return mapV2PinyinWordStructure(numberedPinyin, (syllable) => applyToneMark(syllable));
-}
+function readNumberedSyllable(text: string, start: number) {
+  let end = start;
 
-function getSearchPinyinSyllables(numberedPinyin: string): SearchPinyinSyllable[] {
-  const syllables: SearchPinyinSyllable[] = [];
-  mapV2PinyinWordStructure(numberedPinyin, (syllable) => {
-    if (!/[a-zA-ZüÜ]/.test(syllable)) {
-      return syllable;
-    }
-    syllables.push(normalizeSearchPinyinSyllable(syllable));
-    return syllable;
-  });
-  return syllables;
-}
+  while (end < text.length && isPinyinLetter(text.charAt(end))) {
+    end += 1;
+  }
 
-function normalizeSearchPinyinSyllable(syllable: string): SearchPinyinSyllable {
-  const match = syllable.match(/^(.*?)([1-5])$/);
-  const base = (match?.[1] ?? syllable).replace(/u:/gi, "v").replace(/ü/gi, "v").toLowerCase();
-  const tone = match?.[2] ?? "";
+  if (end === start) {
+    return null;
+  }
+
+  const toneChar = text.charAt(end);
+  if (!isToneDigit(toneChar)) {
+    return null;
+  }
 
   return {
-    normalized: base,
-    numbered: `${base}${tone}`,
+    text: text.slice(start, end + 1),
+    length: end - start + 1,
   };
 }
 
-function applyToneMark(syllable: string): string {
-  const match = syllable.match(/^(.*?)([1-5])$/);
-  if (!match) {
-    return syllable.replace(/u:/gi, "ü");
+function readLatinRun(text: string, start: number) {
+  let end = start;
+
+  while (end < text.length && isLatinAlphanumeric(text.charAt(end))) {
+    end += 1;
   }
 
-  const [, rawBase, rawTone] = match;
-  if (!rawBase || !rawTone) {
-    return syllable.replace(/u:/gi, "ü");
+  if (end === start) {
+    return null;
   }
 
-  // v2 literals like `{11}` expand to "11"; do not treat trailing digits as tone marks.
-  if (!/[a-zA-ZüÜ]/.test(rawBase)) {
-    return syllable.replace(/u:/gi, "ü");
+  return {
+    text: text.slice(start, end),
+    length: end - start,
+  };
+}
+
+function splitNumberedSyllable(syllable: string) {
+  if (syllable.length === 0) {
+    return { letters: syllable, tone: null };
   }
 
-  const tone = Number.parseInt(rawTone, 10);
-  const base = rawBase.replace(/u:/gi, "ü");
+  const toneChar = syllable.charAt(syllable.length - 1);
+  if (!isToneDigit(toneChar)) {
+    return { letters: syllable, tone: null };
+  }
+
+  return {
+    letters: syllable.slice(0, -1),
+    tone: Number(toneChar) as Tone,
+  };
+}
+
+function normalizeSearchPinyinSyllable(syllable: string) {
+  const { letters, tone } = splitNumberedSyllable(syllable);
+  const base = normalizeUmlautForSearch(letters);
+
+  return {
+    normalized: base,
+    numbered: tone ? `${base}${tone}` : base,
+  };
+}
+
+function applyToneMark(syllable: string) {
+  const { letters, tone } = splitNumberedSyllable(syllable);
+  const base = normalizeUmlautForDisplay(letters);
+
+  if (!tone || !hasPinyinLetters(base)) {
+    return base;
+  }
 
   if (tone === 5) {
     return base;
@@ -202,8 +411,59 @@ function applyToneMark(syllable: string): string {
   );
 }
 
-function getToneVowelIndex(syllable: string): number {
-  const lower = syllable.replace(/u:/gi, "ü").toLowerCase();
+function normalizeUmlautForSearch(letters: string) {
+  return letters
+    .replaceAll("u:", "v")
+    .replaceAll("U:", "v")
+    .replaceAll("ü", "v")
+    .replaceAll("Ü", "v")
+    .toLowerCase();
+}
+
+function normalizeUmlautForDisplay(letters: string) {
+  return letters.replaceAll("u:", "ü").replaceAll("U:", "Ü");
+}
+
+function isPinyinLetter(char: string) {
+  // Matches pinyin letters (a-z), umlauts (ü/Ü), and the u: separator
+  return /[a-zA-ZüÜ:]/.test(char);
+}
+
+function isLatinAlphanumeric(char: string) {
+  // Matches ASCII letters (a-z) and digits (0-9)
+  return /[a-zA-Z0-9]/.test(char);
+}
+
+function isToneDigit(char: string) {
+  return char === "1" || char === "2" || char === "3" || char === "4" || char === "5";
+}
+
+function isNumericLiteral(text: string) {
+  if (text.length === 0) {
+    return false;
+  }
+
+  for (const char of text) {
+    if (char < "0" || char > "9") {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function hasPinyinLetters(text: string) {
+  for (const char of text) {
+    if (isPinyinLetter(char)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getToneVowelIndex(syllable: string) {
+  const lower = normalizeUmlautForDisplay(syllable).toLowerCase();
 
   const iuIndex = lower.indexOf("iu");
   if (iuIndex !== -1) {
@@ -232,7 +492,7 @@ function getToneVowelIndex(syllable: string): number {
   return bestIndex;
 }
 
-function markTone(vowel: string, tone: number) {
+function markTone(vowel: string, tone: Tone) {
   const toneMarks: Record<string, string[]> = {
     a: ["a", "ā", "á", "ǎ", "à"],
     e: ["e", "ē", "é", "ě", "è"],

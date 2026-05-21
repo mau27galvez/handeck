@@ -1,8 +1,10 @@
 import { Button } from "@handeck/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@handeck/backend/convex/_generated/api";
+import type { FunctionReturnType } from "convex/server";
 import CreateTemplateDialog, { type CreateMode } from "./-create-template-dialog";
 import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
@@ -13,24 +15,23 @@ const KUAI_COST_PLACEHOLDER = 0;
 export const Route = createFileRoute("/templates/")({
   beforeLoad: requireAuth,
   loader: async ({ context }) => {
-    const templates = await context.queryClient.ensureQueryData(
-      convexQuery(api.template.listForCurrentUser, {}),
-    );
-
-    // Map Convex templates to UI shape with hardcoded kuai cost
-    const templateListItems: TemplateListItem[] = templates.map((template) => ({
-      _id: template._id as string,
-      name: template.name,
-      words: template.words ?? [],
-      configs: template.configs,
-      creditCost: KUAI_COST_PLACEHOLDER,
-      baseTemplate: template.baseTemplate,
-    }));
-
-    return { templates: templateListItems };
+    await context.queryClient.ensureQueryData(convexQuery(api.template.listForCurrentUser, {}));
   },
   component: Templates,
 });
+
+function toTemplateListItems(
+  templates: FunctionReturnType<typeof api.template.listForCurrentUser>,
+): TemplateListItem[] {
+  return templates.map((template) => ({
+    _id: template._id as string,
+    name: template.name,
+    words: template.words ?? [],
+    configs: template.configs,
+    creditCost: KUAI_COST_PLACEHOLDER,
+    baseTemplate: template.baseTemplate,
+  }));
+}
 
 function TemplatesPageHeader({
   onUseBase,
@@ -104,7 +105,8 @@ function EmptyTemplatesCTA({
 }
 
 function Templates() {
-  const { templates } = Route.useLoaderData();
+  const { data } = useSuspenseQuery(convexQuery(api.template.listForCurrentUser, {}));
+  const templates = toTemplateListItems(data);
   const [dialog, setDialog] = useState<CreateDialogState>({ kind: "closed" });
   const openFromBase = () => setDialog({ kind: "open", mode: "FromBase" });
   const openScratch = () => setDialog({ kind: "open", mode: "scratch" });

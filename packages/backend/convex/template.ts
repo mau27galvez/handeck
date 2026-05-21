@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
@@ -100,5 +102,28 @@ export const listForCurrentUser = query({
         ? baseTemplateMap.get(template.baseTemplateId)
         : undefined,
     }));
+  },
+});
+
+async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"template">) {
+  const authUser = await authComponent.safeGetAuthUser(ctx);
+  if (!authUser) throw new Error("Not authenticated");
+
+  const profileId = await getProfileIdForAuthUser(ctx, authUser);
+  if (!profileId) throw new Error("Not authenticated");
+
+  const template = await ctx.db.get(templateId);
+  if (!template || template.userId !== profileId) {
+    throw new Error("Template not found");
+  }
+
+  return template;
+}
+
+export const remove = mutation({
+  args: { templateId: v.id("template") },
+  handler: async (ctx, { templateId }) => {
+    await getOwnedTemplate(ctx, templateId);
+    await ctx.db.delete(templateId);
   },
 });

@@ -10,10 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@handeck/ui/components/dialog";
+import { convexQuery } from "@convex-dev/react-query";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
 type DeleteTemplateDialogProps = {
   open: boolean;
@@ -29,6 +31,7 @@ export default function DeleteTemplateDialog({
   templateName,
 }: DeleteTemplateDialogProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const removeTemplate = useMutation(api.template.remove);
   const [pending, setPending] = useState(false);
 
@@ -36,9 +39,10 @@ export default function DeleteTemplateDialog({
     setPending(true);
     try {
       await removeTemplate({ templateId });
-      toast.success("Template deleted");
       onOpenChange(false);
-      await navigate({ to: "/templates" });
+      toast.success("Template deleted");
+      await navigate({ to: "/templates", replace: true });
+      void queryClient.invalidateQueries(convexQuery(api.template.listForCurrentUser, {}));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to delete template";
       toast.error(message);

@@ -4,10 +4,10 @@ import { api } from "@handeck/backend/convex/_generated/api";
 import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import { Button } from "@handeck/ui/components/button";
 import { convexQuery } from "@convex-dev/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DeleteTemplateDialog from "./-delete-template-dialog";
 import TemplateEmptyPanel from "./-template-empty-panel";
 import TemplateWordsPanel from "./-template-words-panel";
@@ -33,9 +33,16 @@ export const Route = createFileRoute("/templates/$id/")({
 });
 
 function TemplateDetail() {
+  const navigate = useNavigate();
   const { templateId } = Route.useLoaderData();
   const template = useQuery(api.template.getById, { templateId });
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  useEffect(() => {
+    if (template === null) {
+      void navigate({ to: "/templates", replace: true });
+    }
+  }, [template, navigate]);
 
   if (template === undefined) {
     return (
@@ -46,7 +53,7 @@ function TemplateDetail() {
   }
 
   if (template === null) {
-    throw notFound();
+    return null;
   }
 
   return (

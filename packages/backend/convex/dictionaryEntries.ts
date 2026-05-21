@@ -68,7 +68,7 @@ async function searchLatin(
   pinyin: PinyinSearch | null,
   englishQuery: string,
   limit: number,
-): Promise<DictionarySearchResult[]> {
+) {
   const results: DictionarySearchResult[] = [];
 
   if (pinyin) {

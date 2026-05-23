@@ -18,6 +18,7 @@ import type * as privateData from "../privateData.js";
 import type * as profile from "../profile.js";
 import type * as schemas from "../schemas.js";
 import type * as template from "../template.js";
+import type * as word from "../word.js";
 
 import type {
   ApiFromModules,
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   profile: typeof profile;
   schemas: typeof schemas;
   template: typeof template;
+  word: typeof word;
 }>;
 
 /**

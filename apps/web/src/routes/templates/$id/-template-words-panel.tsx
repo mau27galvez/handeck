@@ -1,4 +1,6 @@
-import { PLACEHOLDER_WORDS, TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
+import { TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
+import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
+import { Button } from "@handeck/ui/components/button";
 import {
   Card,
   CardContent,
@@ -6,29 +8,67 @@ import {
   CardHeader,
   CardTitle,
 } from "@handeck/ui/components/card";
+import { Plus } from "lucide-react";
 
-export default function TemplateWordsPanel() {
+type TemplateWord = Doc<"word">;
+
+type TemplateWordsPanelProps = {
+  words: TemplateWord[] | null | undefined;
+  onAddWords: () => void;
+};
+
+export default function TemplateWordsPanel({ words, onAddWords }: TemplateWordsPanelProps) {
+  const isLoading = words === undefined;
+  const wordList = words ?? [];
+  const isEmpty = !isLoading && wordList.length === 0;
+
   return (
     <Card id={TEMPLATE_WORDS_PANEL_ID} className="flex min-h-0 scroll-mt-4 flex-col">
       <CardHeader className="shrink-0 border-b pb-4">
-        <CardTitle>Words</CardTitle>
-        <CardDescription>
-          Words included in this template. Real word selection is coming soon.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle>Words</CardTitle>
+            <CardDescription>Words included in this template.</CardDescription>
+          </div>
+          <Button type="button" size="sm" className="shrink-0 gap-1.5" onClick={onAddWords}>
+            <Plus className="size-4" />
+            Add words
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-4">
-        <ul className="divide-y rounded-md border">
-          {PLACEHOLDER_WORDS.map((word) => (
-            <li key={word.simplifiedHanzi} className="flex flex-col gap-0.5 px-3 py-2.5">
-              <span className="text-lg font-medium leading-tight">{word.simplifiedHanzi}</span>
-              <span className="text-sm text-muted-foreground">{word.pinyin}</span>
-              <span className="text-sm">{word.translation}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground">
-          Showing {PLACEHOLDER_WORDS.length} placeholder words for now.
-        </p>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading words…</p>
+        ) : isEmpty ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
+            <p className="text-sm text-muted-foreground">No words in this template yet.</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={onAddWords}
+            >
+              <Plus className="size-4" />
+              Add from dictionary
+            </Button>
+          </div>
+        ) : (
+          <>
+            <ul className="divide-y rounded-md border">
+              {wordList.map((word) => (
+                <li key={word._id} className="flex flex-col gap-0.5 px-3 py-2.5">
+                  <span className="text-lg font-medium leading-tight">{word.simplifiedHanzi}</span>
+                  <span className="text-sm text-muted-foreground">{word.pinyin}</span>
+                  <span className="text-sm">{word.tanslation}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              {wordList.length} {wordList.length === 1 ? "word" : "words"}
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   );

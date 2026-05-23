@@ -1,3 +1,4 @@
+import { wordIdentityKey } from "@/lib/dictionary-search";
 import { isConvexArgumentValidationError } from "@/lib/convex-errors";
 import { requireAuth } from "@/lib/route-auth";
 import { api } from "@handeck/backend/convex/_generated/api";
@@ -7,7 +8,8 @@ import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import AddWordsFromDictionaryDialog from "./-add-words-from-dictionary-dialog";
 import DeleteTemplateDialog from "./-delete-template-dialog";
 import TemplateEmptyPanel from "./-template-empty-panel";
 import TemplateWordsPanel from "./-template-words-panel";
@@ -36,7 +38,16 @@ function TemplateDetail() {
   const navigate = useNavigate();
   const { templateId } = Route.useLoaderData();
   const template = useQuery(api.template.getById, { templateId });
+  const words = useQuery(api.template.getWords, { templateId });
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addWordsOpen, setAddWordsOpen] = useState(false);
+
+  const existingWordKeys = useMemo(() => {
+    if (!words) return new Set<string>();
+    return new Set(
+      words.map((word) => wordIdentityKey(word.simplifiedHanzi, word.normalizedPinyin)),
+    );
+  }, [words]);
 
   useEffect(() => {
     if (template === null) {
@@ -79,7 +90,7 @@ function TemplateDetail() {
 
       <div className="grid min-h-[min(70vh,720px)] gap-4 lg:min-h-[min(65vh,640px)] lg:grid-cols-2 lg:gap-6">
         <TemplateEmptyPanel />
-        <TemplateWordsPanel />
+        <TemplateWordsPanel words={words} onAddWords={() => setAddWordsOpen(true)} />
       </div>
 
       <DeleteTemplateDialog
@@ -87,6 +98,12 @@ function TemplateDetail() {
         onOpenChange={setDeleteOpen}
         templateId={templateId}
         templateName={template.name}
+      />
+      <AddWordsFromDictionaryDialog
+        open={addWordsOpen}
+        onOpenChange={setAddWordsOpen}
+        templateId={templateId}
+        existingWordKeys={existingWordKeys}
       />
     </div>
   );

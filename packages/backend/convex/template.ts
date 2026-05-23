@@ -1,10 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
+import { findOrCreateFromDictionaryEntry } from "./word";
 
 export const create = mutation({
   args: {
@@ -125,5 +126,65 @@ export const remove = mutation({
   handler: async (ctx, { templateId }) => {
     await getOwnedTemplate(ctx, templateId);
     await ctx.db.delete(templateId);
+  },
+});
+
+async function getOwnedTemplateForQuery(ctx: QueryCtx, templateId: Id<"template">) {
+  const authUser = await authComponent.safeGetAuthUser(ctx);
+  if (!authUser) return null;
+
+  const profileId = await getProfileIdForAuthUser(ctx, authUser);
+  if (!profileId) return null;
+
+  const template = await ctx.db.get(templateId);
+  if (!template || template.userId !== profileId) return null;
+
+  return template;
+}
+
+export const getWords = query({
+  args: { templateId: v.id("template") },
+  handler: async (ctx, { templateId }) => {
+    const template = await getOwnedTemplateForQuery(ctx, templateId);
+    if (!template) return null;
+
+    const wordIds = template.words ?? [];
+    const words = await Promise.all(wordIds.map((wordId) => ctx.db.get(wordId)));
+
+    return words.filter((word): word is NonNullable<typeof word> => word != null);
+  },
+});
+
+export const addWordsFromDictionary = mutation({
+  args: {
+    templateId: v.id("template"),
+    dictionaryEntryIds: v.array(v.id("dictionaryEntry")),
+  },
+  handler: async (ctx, { templateId, dictionaryEntryIds }) => {
+    const template = await getOwnedTemplate(ctx, templateId);
+    const existingWordIds = new Set(template.words ?? []);
+    const nextWordIds = [...(template.words ?? [])];
+    let added = 0;
+    let skipped = 0;
+
+    for (const dictionaryEntryId of dictionaryEntryIds) {
+      const wordId = await findOrCreateFromDictionaryEntry(ctx, dictionaryEntryId);
+      if (existingWordIds.has(wordId)) {
+        skipped += 1;
+        continue;
+      }
+      existingWordIds.add(wordId);
+      nextWordIds.push(wordId);
+      added += 1;
+    }
+
+    if (added > 0) {
+      await ctx.db.patch(templateId, {
+        words: nextWordIds,
+        updatedAt: Date.now(),
+      });
+    }
+
+    return { added, skipped };
   },
 });

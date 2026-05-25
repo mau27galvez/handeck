@@ -68,9 +68,7 @@ export function DictionaryEntryRow({
             </span>
           </div>
           <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-foreground sm:text-base">
-            {shouldHighlightMeaning
-              ? highlightMatches(entry.meaning, searchQuery)
-              : entry.meaning}
+            {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
           </p>
         </div>
         <AddToTemplatePopover dictionaryEntryId={entry._id} hanzi={entry.simplifiedHanzi} />

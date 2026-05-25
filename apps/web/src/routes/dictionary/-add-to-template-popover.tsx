@@ -48,11 +48,7 @@ export function AddToTemplatePopover({ dictionaryEntryId, hanzi }: AddToTemplate
     setOpen(nextOpen);
   }
 
-  async function handleToggle(
-    templateId: Id<"template">,
-    templateName: string,
-    included: boolean,
-  ) {
+  async function handleToggle(templateId: Id<"template">, templateName: string, included: boolean) {
     setPendingTemplateId(templateId);
     try {
       await setWordFromDictionaryEntry({
@@ -60,12 +56,9 @@ export function AddToTemplatePopover({ dictionaryEntryId, hanzi }: AddToTemplate
         dictionaryEntryId,
         included: !included,
       });
-      toast.success(
-        included ? `Removed from "${templateName}"` : `Added to "${templateName}"`,
-      );
+      toast.success(included ? `Removed from "${templateName}"` : `Added to "${templateName}"`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update template";
+      const message = error instanceof Error ? error.message : "Failed to update template";
       toast.error(message);
     } finally {
       setPendingTemplateId(null);
@@ -126,11 +119,7 @@ export function AddToTemplatePopover({ dictionaryEntryId, hanzi }: AddToTemplate
                         "disabled:pointer-events-none disabled:opacity-60",
                       )}
                       onClick={() =>
-                        void handleToggle(
-                          template.templateId,
-                          template.name,
-                          template.included,
-                        )
+                        void handleToggle(template.templateId, template.name, template.included)
                       }
                     >
                       <span

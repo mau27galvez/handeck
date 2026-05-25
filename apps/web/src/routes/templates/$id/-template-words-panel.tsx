@@ -87,12 +87,11 @@ export default function TemplateWordsPanel({
           <>
             <ul className="divide-y rounded-md border">
               {wordList.map((word) => (
-                <li
-                  key={word._id}
-                  className="flex items-start justify-between gap-2 px-3 py-2.5"
-                >
+                <li key={word._id} className="flex items-start justify-between gap-2 px-3 py-2.5">
                   <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                    <span className="text-lg font-medium leading-tight">{word.simplifiedHanzi}</span>
+                    <span className="text-lg font-medium leading-tight">
+                      {word.simplifiedHanzi}
+                    </span>
                     <span className="text-sm text-muted-foreground">{word.pinyin}</span>
                     <span className="text-sm">{word.tanslation}</span>
                   </div>

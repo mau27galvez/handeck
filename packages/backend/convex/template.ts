@@ -188,3 +188,26 @@ export const addWordsFromDictionary = mutation({
     return { added, skipped };
   },
 });
+
+export const removeWords = mutation({
+  args: {
+    templateId: v.id("template"),
+    wordIds: v.array(v.id("word")),
+  },
+  handler: async (ctx, { templateId, wordIds }) => {
+    const template = await getOwnedTemplate(ctx, templateId);
+    const toRemove = new Set(wordIds);
+    const current = template.words ?? [];
+    const next = current.filter((id) => !toRemove.has(id));
+    const removed = current.length - next.length;
+
+    if (removed > 0) {
+      await ctx.db.patch(templateId, {
+        words: next,
+        updatedAt: Date.now(),
+      });
+    }
+
+    return { removed };
+  },
+});

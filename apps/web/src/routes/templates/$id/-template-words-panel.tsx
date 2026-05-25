@@ -1,5 +1,6 @@
 import { TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
-import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
+import { api } from "@handeck/backend/convex/_generated/api";
+import type { Doc, Id } from "@handeck/backend/convex/_generated/dataModel";
 import { Button } from "@handeck/ui/components/button";
 import {
   Card,
@@ -8,19 +9,48 @@ import {
   CardHeader,
   CardTitle,
 } from "@handeck/ui/components/card";
-import { Plus } from "lucide-react";
+import { useMutation } from "convex/react";
+import { Plus, X } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type TemplateWord = Doc<"word">;
 
 type TemplateWordsPanelProps = {
+  templateId: Id<"template">;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
 };
 
-export default function TemplateWordsPanel({ words, onAddWords }: TemplateWordsPanelProps) {
+export default function TemplateWordsPanel({
+  templateId,
+  words,
+  onAddWords,
+}: TemplateWordsPanelProps) {
+  const removeWords = useMutation(api.template.removeWords);
+  const [removingWordId, setRemovingWordId] = useState<Id<"word"> | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
   const isEmpty = !isLoading && wordList.length === 0;
+
+  async function handleRemoveWord(word: TemplateWord) {
+    setRemovingWordId(word._id);
+    try {
+      const result = await removeWords({
+        templateId,
+        wordIds: [word._id],
+      });
+
+      if (result.removed > 0) {
+        toast.success(`Removed ${word.simplifiedHanzi} from template`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to remove word";
+      toast.error(message);
+    } finally {
+      setRemovingWordId(null);
+    }
+  }
 
   return (
     <Card id={TEMPLATE_WORDS_PANEL_ID} className="flex min-h-0 scroll-mt-4 flex-col">
@@ -57,10 +87,26 @@ export default function TemplateWordsPanel({ words, onAddWords }: TemplateWordsP
           <>
             <ul className="divide-y rounded-md border">
               {wordList.map((word) => (
-                <li key={word._id} className="flex flex-col gap-0.5 px-3 py-2.5">
-                  <span className="text-lg font-medium leading-tight">{word.simplifiedHanzi}</span>
-                  <span className="text-sm text-muted-foreground">{word.pinyin}</span>
-                  <span className="text-sm">{word.tanslation}</span>
+                <li
+                  key={word._id}
+                  className="flex items-start justify-between gap-2 px-3 py-2.5"
+                >
+                  <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span className="text-lg font-medium leading-tight">{word.simplifiedHanzi}</span>
+                    <span className="text-sm text-muted-foreground">{word.pinyin}</span>
+                    <span className="text-sm">{word.tanslation}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={removingWordId != null}
+                    aria-busy={removingWordId === word._id}
+                    aria-label={`Remove ${word.simplifiedHanzi} from template`}
+                    onClick={() => void handleRemoveWord(word)}
+                  >
+                    <X className="size-4" />
+                  </Button>
                 </li>
               ))}
             </ul>

@@ -90,7 +90,11 @@ function TemplateDetail() {
 
       <div className="grid min-h-[min(70vh,720px)] gap-4 lg:min-h-[min(65vh,640px)] lg:grid-cols-2 lg:gap-6">
         <TemplateEmptyPanel />
-        <TemplateWordsPanel words={words} onAddWords={() => setAddWordsOpen(true)} />
+        <TemplateWordsPanel
+          templateId={templateId}
+          words={words}
+          onAddWords={() => setAddWordsOpen(true)}
+        />
       </div>
 
       <DeleteTemplateDialog

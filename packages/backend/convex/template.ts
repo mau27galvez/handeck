@@ -1,10 +1,13 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
+
+const DELETE_TEMPLATE_WORDS_BATCH_SIZE = 200;
 
 export const create = mutation({
   args: {
@@ -135,23 +138,36 @@ async function getWordCountForTemplate(ctx: QueryCtx | MutationCtx, templateId: 
   return templateWords.length;
 }
 
-async function removeAllWordsFromTemplate(ctx: MutationCtx, templateId: Id<"templates">) {
-  const templateWords = await ctx.db
+async function deleteTemplateAndTemplateWordsBatch(ctx: MutationCtx, templateId: Id<"templates">) {
+  const batch = await ctx.db
     .query("templateWords")
     .withIndex("by_template", (q) => q.eq("templateId", templateId))
-    .collect();
+    .take(DELETE_TEMPLATE_WORDS_BATCH_SIZE);
 
-  for (const templateWord of templateWords) {
+  for (const templateWord of batch) {
     await ctx.db.delete(templateWord._id);
   }
+
+  if (batch.length === DELETE_TEMPLATE_WORDS_BATCH_SIZE) {
+    await ctx.scheduler.runAfter(0, internal.template.continueDeleteTemplate, { templateId });
+    return;
+  }
+
+  await ctx.db.delete(templateId);
 }
+
+export const continueDeleteTemplate = internalMutation({
+  args: { templateId: v.id("templates") },
+  handler: async (ctx, { templateId }) => {
+    await deleteTemplateAndTemplateWordsBatch(ctx, templateId);
+  },
+});
 
 export const remove = mutation({
   args: { templateId: v.id("templates") },
   handler: async (ctx, { templateId }) => {
     await getOwnedTemplate(ctx, templateId);
-    await removeAllWordsFromTemplate(ctx, templateId);
-    await ctx.db.delete(templateId);
+    await deleteTemplateAndTemplateWordsBatch(ctx, templateId);
   },
 });
 

@@ -20,21 +20,21 @@ import { toast } from "sonner";
 import { Route as RootRoute } from "@/routes/__root";
 
 type AddToTemplatePopoverProps = {
-  dictionaryEntryId: Id<"dictionaryEntry">;
+  wordId: Id<"word">;
   hanzi: string;
 };
 
-export function AddToTemplatePopover({ dictionaryEntryId, hanzi }: AddToTemplatePopoverProps) {
+export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useRouteContext({ from: RootRoute.id });
   const [open, setOpen] = useState(false);
   const [pendingTemplateId, setPendingTemplateId] = useState<Id<"template"> | null>(null);
 
   const membership = useQuery(
-    api.template.listMembershipForDictionaryEntry,
-    open && isAuthenticated ? { dictionaryEntryId } : "skip",
+    api.template.listMembershipForWord,
+    open && isAuthenticated ? { wordId } : "skip",
   );
-  const setWordFromDictionaryEntry = useMutation(api.template.setWordFromDictionaryEntry);
+  const setWordInTemplate = useMutation(api.template.setWordInTemplate);
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen && !isAuthenticated) {
@@ -51,9 +51,9 @@ export function AddToTemplatePopover({ dictionaryEntryId, hanzi }: AddToTemplate
   async function handleToggle(templateId: Id<"template">, templateName: string, included: boolean) {
     setPendingTemplateId(templateId);
     try {
-      await setWordFromDictionaryEntry({
+      await setWordInTemplate({
         templateId,
-        dictionaryEntryId,
+        wordId,
         included: !included,
       });
       toast.success(included ? `Removed from "${templateName}"` : `Added to "${templateName}"`);

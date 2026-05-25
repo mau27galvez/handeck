@@ -77,7 +77,7 @@ function Dictionary() {
   const debouncedSearch = useDebounce(search, DICTIONARY_SEARCH_DEBOUNCE_MS);
   const searchQuery = debouncedSearch.trim();
   const entries = useQuery(
-    api.dictionaryEntries.search,
+    api.word.search,
     searchQuery ? { query: searchQuery, limit: DICTIONARY_SEARCH_LIMIT } : "skip",
   );
   const isSearching = searchQuery.length > 0 && entries === undefined;

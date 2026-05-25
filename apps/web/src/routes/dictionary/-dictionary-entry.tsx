@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { AddToTemplatePopover } from "./-add-to-template-popover";
 
-export type DictionaryEntry = Doc<"dictionaryEntry"> & {
+export type DictionaryEntry = Doc<"word"> & {
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
 };
 
@@ -71,7 +71,7 @@ export function DictionaryEntryRow({
             {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
           </p>
         </div>
-        <AddToTemplatePopover dictionaryEntryId={entry._id} hanzi={entry.simplifiedHanzi} />
+        <AddToTemplatePopover wordId={entry._id} hanzi={entry.simplifiedHanzi} />
       </div>
     </article>
   );

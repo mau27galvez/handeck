@@ -12,7 +12,7 @@ export function RootShell({ children }: PropsWithChildren) {
   return (
     <div className={showHeader ? "grid h-svh grid-rows-[auto_1fr]" : "grid h-svh grid-rows-[1fr]"}>
       {showHeader ? <Header /> : null}
-      {children}
+      <div className="min-h-0">{children}</div>
     </div>
   );
 }

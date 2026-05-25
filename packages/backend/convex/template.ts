@@ -215,15 +215,17 @@ export const toggleWordInTemplate = mutation({
     const word = await ctx.db.get(wordId);
     if (!word) throw new Error("Word not found");
 
-    const existing = await ctx.db
+    const existingRows = await ctx.db
       .query("templateWords")
       .withIndex("by_template_word", (q) => q.eq("templateId", templateId).eq("wordId", wordId))
-      .unique();
+      .collect();
 
     const now = Date.now();
 
-    if (existing) {
-      await ctx.db.delete(existing._id);
+    if (existingRows.length > 0) {
+      for (const row of existingRows) {
+        await ctx.db.delete(row._id);
+      }
       await ctx.db.patch(templateId, { updatedAt: now });
       return;
     }

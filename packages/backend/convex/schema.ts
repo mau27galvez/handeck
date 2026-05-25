@@ -46,7 +46,7 @@ export default defineSchema({
     audioUrl: v.union(v.string(), v.null()), // temporarily nullable
     createdAt: v.number(),
     updatedAt: v.number(),
-  }),
+  }).index("by_simplifiedHanzi_normalizedPinyin", ["simplifiedHanzi", "normalizedPinyin"]),
 
   dictionaryEntry: defineTable({
     simplifiedHanzi: v.string(),

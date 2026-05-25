@@ -8,9 +8,7 @@ export async function findWordForDictionaryEntry(
   return await ctx.db
     .query("word")
     .withIndex("by_simplifiedHanzi_normalizedPinyin", (q) =>
-      q
-        .eq("simplifiedHanzi", entry.simplifiedHanzi)
-        .eq("normalizedPinyin", entry.normalizedPinyin),
+      q.eq("simplifiedHanzi", entry.simplifiedHanzi).eq("normalizedPinyin", entry.normalizedPinyin),
     )
     .first();
 }

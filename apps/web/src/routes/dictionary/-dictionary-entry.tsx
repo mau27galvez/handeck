@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { AddToTemplatePopover } from "./-add-to-template-popover";
 
-export type DictionaryEntry = Doc<"word"> & {
+export type DictionaryEntry = Doc<"words"> & {
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
 };
 

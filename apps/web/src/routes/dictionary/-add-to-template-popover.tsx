@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { Route as RootRoute } from "@/routes/__root";
 
 type AddToTemplatePopoverProps = {
-  wordId: Id<"word">;
+  wordId: Id<"words">;
   hanzi: string;
 };
 
@@ -28,13 +28,13 @@ export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProp
   const navigate = useNavigate();
   const { isAuthenticated } = useRouteContext({ from: RootRoute.id });
   const [open, setOpen] = useState(false);
-  const [pendingTemplateId, setPendingTemplateId] = useState<Id<"template"> | null>(null);
+  const [pendingTemplateId, setPendingTemplateId] = useState<Id<"templates"> | null>(null);
 
   const membership = useQuery(
     api.template.listMembershipForWord,
     open && isAuthenticated ? { wordId } : "skip",
   );
-  const setWordInTemplate = useMutation(api.template.setWordInTemplate);
+  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen && !isAuthenticated) {
@@ -48,13 +48,16 @@ export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProp
     setOpen(nextOpen);
   }
 
-  async function handleToggle(templateId: Id<"template">, templateName: string, included: boolean) {
+  async function handleToggle(
+    templateId: Id<"templates">,
+    templateName: string,
+    included: boolean,
+  ) {
     setPendingTemplateId(templateId);
     try {
-      await setWordInTemplate({
+      await toggleWordInTemplate({
         templateId,
         wordId,
-        included: !included,
       });
       toast.success(included ? `Removed from "${templateName}"` : `Added to "${templateName}"`);
     } catch (error) {

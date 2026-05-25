@@ -49,7 +49,7 @@ function SelectableDictionaryEntryRow({
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
       className={cn(
-        "flex gap-3 border-b border-border px-1 last:border-b-0 sm:px-2",
+        "flex items-center gap-3 border-b border-border px-4 last:border-b-0",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-muted/40",
         selected && !disabled && "bg-muted/30",
       )}
@@ -64,7 +64,10 @@ function SelectableDictionaryEntryRow({
         }
       }}
     >
-      <div className="flex shrink-0 items-start pt-5 sm:pt-6">
+      <div className="min-w-0 flex-1">
+        <DictionaryEntryRow entry={entry} searchQuery={searchQuery} />
+      </div>
+      <div className="flex shrink-0 items-center">
         <Checkbox
           checked={disabled || selected}
           disabled={disabled}
@@ -74,9 +77,6 @@ function SelectableDictionaryEntryRow({
             if (!disabled) onToggle();
           }}
         />
-      </div>
-      <div className="min-w-0 flex-1">
-        <DictionaryEntryRow entry={entry} searchQuery={searchQuery} />
       </div>
     </div>
   );
@@ -144,7 +144,7 @@ export default function AddWordsFromDictionaryDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[min(85vh,900px)] w-full max-w-[min(960px,calc(100%-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(960px,calc(100%-2rem))]"
+        className="flex max-h-[min(85vh,900px)] w-full max-w-[min(960px,calc(100%-2rem))] flex-col gap-0 overflow-hidden p-0 max-lg:h-[min(90vh,900px)] sm:max-w-[min(960px,calc(100%-2rem))]"
         showCloseButton={!pending}
       >
         <DialogHeader className="shrink-0 border-b px-6 py-5 text-left">

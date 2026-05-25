@@ -28,7 +28,7 @@ const shouldClear = flags.has("--clear");
 const dryRun = flags.has("--dry-run");
 const convexUrl = process.env.CONVEX_URL ?? process.env.VITE_CONVEX_URL;
 const importToken = process.env.CEDICT_IMPORT_TOKEN;
-const dictionaryEntriesApi = api.dictionaryEntries;
+const wordApi = api.word;
 
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 500) {
   throw new Error("--batch-size must be an integer between 1 and 500.");
@@ -103,7 +103,7 @@ async function insertBatch(entries: DictionaryEntry[]): Promise<number> {
     return entries.length;
   }
 
-  const result = await client!.mutation(dictionaryEntriesApi.insertBatch, {
+  const result = await client!.mutation(wordApi.insertBatch, {
     importToken: importToken!,
     entries,
   });
@@ -114,7 +114,7 @@ async function clearDictionaryEntries() {
   let deleted = 0;
 
   for (;;) {
-    const result = await client!.mutation(dictionaryEntriesApi.clearBatch, {
+    const result = await client!.mutation(wordApi.clearBatch, {
       importToken: importToken!,
       limit: 200,
     });

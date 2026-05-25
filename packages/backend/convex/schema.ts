@@ -37,6 +37,8 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 
+  // Join table: at most one row per (templateId, wordId). Mutations use
+  // by_template_word with .unique(); duplicates indicate a bug and should be repaired.
   templateWords: defineTable({
     templateId: v.id("templates"),
     wordId: v.id("words"),

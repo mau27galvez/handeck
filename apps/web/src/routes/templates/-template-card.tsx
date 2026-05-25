@@ -15,7 +15,7 @@ import { Badge } from "@handeck/ui/components/badge";
 export type TemplateListItem = {
   _id: string;
   name: string;
-  words: string[];
+  wordCount: number;
   configs: {
     topics: string[];
     sentencesPerWord: number;
@@ -25,7 +25,7 @@ export type TemplateListItem = {
 };
 
 export default function TemplateCard({ template }: { template: TemplateListItem }) {
-  const { _id, name, words, configs, creditCost, baseTemplate } = template;
+  const { _id, name, wordCount, configs, creditCost, baseTemplate } = template;
   const { topics, sentencesPerWord } = configs;
 
   return (
@@ -52,7 +52,7 @@ export default function TemplateCard({ template }: { template: TemplateListItem 
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             <Hash className="size-3" />
-            {words.length} {words.length === 1 ? "word" : "words"}
+            {wordCount} {wordCount === 1 ? "word" : "words"}
           </span>
           {sentencesPerWord > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">

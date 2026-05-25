@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
-import type { MutationCtx } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
@@ -9,7 +9,7 @@ import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
 export const create = mutation({
   args: {
     name: v.string(),
-    baseTemplateId: v.optional(v.id("baseTemplate")),
+    baseTemplateId: v.optional(v.id("baseTemplates")),
   },
   handler: async (ctx, { name, baseTemplateId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
@@ -31,7 +31,7 @@ export const create = mutation({
 
     const profileId = await ensureProfileForAuthUser(ctx, authUser);
     const now = Date.now();
-    const templateId = await ctx.db.insert("template", {
+    const templateId = await ctx.db.insert("templates", {
       userId: profileId,
       name: trimmed,
       configs: {
@@ -47,7 +47,7 @@ export const create = mutation({
 });
 
 export const getById = query({
-  args: { templateId: v.id("template") },
+  args: { templateId: v.id("templates") },
   handler: async (ctx, { templateId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
     if (!authUser) return null;
@@ -72,7 +72,7 @@ export const listForCurrentUser = query({
     if (!profileId) return [];
 
     const templates = await ctx.db
-      .query("template")
+      .query("templates")
       .withIndex("by_user", (q) => q.eq("userId", profileId))
       .collect();
 
@@ -96,8 +96,14 @@ export const listForCurrentUser = query({
       }
     }
 
+    const wordCountByTemplateId = new Map<string, number>();
+    for (const template of templates) {
+      wordCountByTemplateId.set(template._id, await getWordCountForTemplate(ctx, template._id));
+    }
+
     return templates.map((template) => ({
       ...template,
+      wordCount: wordCountByTemplateId.get(template._id) ?? 0,
       baseTemplate: template.baseTemplateId
         ? baseTemplateMap.get(template.baseTemplateId)
         : undefined,
@@ -105,7 +111,7 @@ export const listForCurrentUser = query({
   },
 });
 
-async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"template">) {
+async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"templates">) {
   const authUser = await authComponent.safeGetAuthUser(ctx);
   if (!authUser) throw new Error("Not authenticated");
 
@@ -120,16 +126,37 @@ async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"template">) {
   return template;
 }
 
+async function getWordCountForTemplate(ctx: QueryCtx | MutationCtx, templateId: Id<"templates">) {
+  const templateWords = await ctx.db
+    .query("templateWords")
+    .withIndex("by_template", (q) => q.eq("templateId", templateId))
+    .collect();
+
+  return templateWords.length;
+}
+
+async function removeAllWordsFromTemplate(ctx: MutationCtx, templateId: Id<"templates">) {
+  const templateWords = await ctx.db
+    .query("templateWords")
+    .withIndex("by_template", (q) => q.eq("templateId", templateId))
+    .collect();
+
+  for (const templateWord of templateWords) {
+    await ctx.db.delete(templateWord._id);
+  }
+}
+
 export const remove = mutation({
-  args: { templateId: v.id("template") },
+  args: { templateId: v.id("templates") },
   handler: async (ctx, { templateId }) => {
     await getOwnedTemplate(ctx, templateId);
+    await removeAllWordsFromTemplate(ctx, templateId);
     await ctx.db.delete(templateId);
   },
 });
 
 export const listMembershipForWord = query({
-  args: { wordId: v.id("word") },
+  args: { wordId: v.id("words") },
   handler: async (ctx, { wordId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
     if (!authUser) return null;
@@ -141,49 +168,55 @@ export const listMembershipForWord = query({
     if (!word) return [];
 
     const templates = await ctx.db
-      .query("template")
+      .query("templates")
       .withIndex("by_user", (q) => q.eq("userId", profileId))
       .collect();
 
     templates.sort((a, b) => b.createdAt - a.createdAt);
 
+    const membershipRows = await ctx.db
+      .query("templateWords")
+      .withIndex("by_word", (q) => q.eq("wordId", wordId))
+      .collect();
+
+    const includedTemplateIds = new Set(membershipRows.map((row) => row.templateId));
+
     return templates.map((template) => ({
       templateId: template._id,
       name: template.name,
-      included: (template.words ?? []).includes(wordId),
+      included: includedTemplateIds.has(template._id),
     }));
   },
 });
 
-export const setWordInTemplate = mutation({
+export const toggleWordInTemplate = mutation({
   args: {
-    templateId: v.id("template"),
-    wordId: v.id("word"),
-    included: v.boolean(),
+    templateId: v.id("templates"),
+    wordId: v.id("words"),
   },
-  handler: async (ctx, { templateId, wordId, included }) => {
-    const template = await getOwnedTemplate(ctx, templateId);
+  handler: async (ctx, { templateId, wordId }) => {
+    await getOwnedTemplate(ctx, templateId);
     const word = await ctx.db.get(wordId);
     if (!word) throw new Error("Word not found");
 
+    const existing = await ctx.db
+      .query("templateWords")
+      .withIndex("by_template_word", (q) => q.eq("templateId", templateId).eq("wordId", wordId))
+      .unique();
+
     const now = Date.now();
-    const words = template.words ?? [];
 
-    if (included) {
-      if (words.includes(wordId)) return;
-
-      await ctx.db.patch(templateId, {
-        words: [...words, wordId],
-        updatedAt: now,
-      });
+    if (existing) {
+      await ctx.db.delete(existing._id);
+      await ctx.db.patch(templateId, { updatedAt: now });
       return;
     }
 
-    if (!words.includes(wordId)) return;
-
-    await ctx.db.patch(templateId, {
-      words: words.filter((id) => id !== wordId),
-      updatedAt: now,
+    await ctx.db.insert("templateWords", {
+      templateId,
+      wordId,
+      createdAt: now,
     });
+    await ctx.db.patch(templateId, { updatedAt: now });
   },
 });

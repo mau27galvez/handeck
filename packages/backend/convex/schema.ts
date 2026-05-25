@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  baseTemplate: defineTable({
+  baseTemplates: defineTable({
     name: v.string(),
     configs: v.object({
       topics: v.array(v.string()),
@@ -19,11 +19,10 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_betterAuthUserId", ["betterAuthUserId"]),
 
-  template: defineTable({
+  templates: defineTable({
     userId: v.id("profiles"),
     name: v.string(),
-    baseTemplateId: v.optional(v.id("baseTemplate")),
-    words: v.optional(v.array(v.id("word"))), // optional until words are seeded
+    baseTemplateId: v.optional(v.id("baseTemplates")),
     cardTemplate: v.optional(
       v.object({
         layout: v.string(), // html
@@ -38,7 +37,16 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 
-  word: defineTable({
+  templateWords: defineTable({
+    templateId: v.id("templates"),
+    wordId: v.id("words"),
+    createdAt: v.number(),
+  })
+    .index("by_template", ["templateId"])
+    .index("by_word", ["wordId"])
+    .index("by_template_word", ["templateId", "wordId"]),
+
+  words: defineTable({
     simplifiedHanzi: v.string(),
     numberedPinyin: v.string(),
     diacriticPinyin: v.string(),
@@ -59,7 +67,7 @@ export default defineSchema({
       searchField: "meaning",
     }),
 
-  sentence: defineTable({
+  sentences: defineTable({
     simplifiedHanzi: v.string(),
     translation: v.string(),
     audioUrl: v.union(v.string(), v.null()), // temporarily nullable
@@ -67,17 +75,17 @@ export default defineSchema({
     updatedAt: v.number(),
   }), // not directly related to words
 
-  note: defineTable({
-    wordId: v.id("word"),
-    sentenceId: v.id("sentence"),
+  notes: defineTable({
+    wordId: v.id("words"),
+    sentenceId: v.id("sentences"),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
 
-  deck: defineTable({
+  decks: defineTable({
     userId: v.id("profiles"),
-    templateId: v.id("template"),
-    noteIds: v.array(v.id("note")),
+    templateId: v.id("templates"),
+    noteIds: v.array(v.id("notes")),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),

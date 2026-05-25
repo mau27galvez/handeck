@@ -20,7 +20,7 @@ const MAX_IMPORT_BATCH_SIZE = 500;
 const MAX_SEARCH_RESULTS = 50;
 const MAX_MIXED_SEARCH_CANDIDATES = 250;
 
-type Word = Doc<"word">;
+type Word = Doc<"words">;
 type WordSearchResult = Word & {
   searchMatchType: "english" | "mixed" | "pinyin" | "simplified";
 };
@@ -56,7 +56,7 @@ async function searchSimplified(ctx: QueryCtx, simplifiedPrefix: string, limit: 
 
 async function querySimplifiedPrefix(ctx: QueryCtx, simplifiedPrefix: string, limit: number) {
   return await ctx.db
-    .query("word")
+    .query("words")
     .withIndex("by_simplifiedHanzi", (q) =>
       q.gte("simplifiedHanzi", simplifiedPrefix).lt("simplifiedHanzi", `${simplifiedPrefix}\uffff`),
     )
@@ -81,7 +81,7 @@ async function searchLatin(
 
   if (results.length < limit) {
     const englishResults = await ctx.db
-      .query("word")
+      .query("words")
       .withSearchIndex("search_meaning", (q) => q.search("meaning", englishQuery))
       .take(limit);
     appendUnique(results, withSearchMatch(englishResults, "english"), limit);
@@ -93,7 +93,7 @@ async function searchLatin(
 async function queryPinyinPrefix(ctx: QueryCtx, pinyin: PinyinSearch, limit: number) {
   if (pinyin.hasToneNumbers) {
     return await ctx.db
-      .query("word")
+      .query("words")
       .withIndex("by_numberedPinyinSearch", (q) =>
         q
           .gte("numberedPinyinSearch", pinyin.numberedPinyinSearch)
@@ -103,7 +103,7 @@ async function queryPinyinPrefix(ctx: QueryCtx, pinyin: PinyinSearch, limit: num
   }
 
   return await ctx.db
-    .query("word")
+    .query("words")
     .withIndex("by_normalizedPinyin", (q) =>
       q
         .gte("normalizedPinyin", pinyin.normalizedPinyin)
@@ -215,7 +215,7 @@ export const insertBatch = mutation({
 
     const now = Date.now();
     for (const entry of args.entries) {
-      await ctx.db.insert("word", {
+      await ctx.db.insert("words", {
         ...entry,
         audioUrl: null,
         createdAt: now,
@@ -236,7 +236,7 @@ export const clearBatch = mutation({
     validateImportToken(args.importToken);
 
     const limit = Math.min(Math.max(Math.trunc(args.limit ?? 200), 1), MAX_IMPORT_BATCH_SIZE);
-    const existingEntries = await ctx.db.query("word").take(limit);
+    const existingEntries = await ctx.db.query("words").take(limit);
 
     for (const entry of existingEntries) {
       await ctx.db.delete(entry._id);

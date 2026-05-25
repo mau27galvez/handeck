@@ -4,7 +4,6 @@
 
 **Handeck** is a Chinese language learning app built as a Bun monorepo (Turborepo). It helps users look up words in a CC-CEDICT dictionary, build study templates, and generate flashcard decks from vocabulary and example sentences.
 
-
 | Area            | Location               | Stack                                                |
 | --------------- | ---------------------- | ---------------------------------------------------- |
 | Web app         | `apps/web`             | React, TanStack Start, TanStack Router, Tailwind CSS |
@@ -12,7 +11,6 @@
 | Backend         | `packages/backend`     | Convex (queries, mutations, schema)                  |
 | Dictionary data | `packages/cedict-data` | CC-CEDICT seeding and parsing                        |
 | Auth            | —                      | Better Auth (via `@convex-dev/better-auth`)          |
-
 
 When working on Convex code, also read `packages/backend/AGENTS.md` and follow `packages/backend/convex/_generated/ai/guidelines.md`.
 

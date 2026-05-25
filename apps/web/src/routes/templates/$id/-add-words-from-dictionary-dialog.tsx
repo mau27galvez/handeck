@@ -88,7 +88,7 @@ export default function AddWordsFromDictionaryDialog({
   templateId,
   existingWordKeys,
 }: AddWordsFromDictionaryDialogProps) {
-  const { search, setSearch, clearSearch, searchQuery, entries, isSearching, hasEntries } =
+  const { search, setSearch, clearSearch, searchQuery, entries, isSearching } =
     useDictionarySearch();
   const addWordsFromDictionary = useMutation(api.template.addWordsFromDictionary);
   const [selectedIds, setSelectedIds] = useState<Set<Id<"dictionaryEntry">>>(new Set());
@@ -172,11 +172,7 @@ export default function AddWordsFromDictionaryDialog({
             <p className="py-12 text-center text-sm text-muted-foreground sm:text-base">
               Searching dictionary...
             </p>
-          ) : !hasEntries ? (
-            <p className="py-12 text-center text-sm text-muted-foreground sm:text-base">
-              No entries match your search.
-            </p>
-          ) : (
+          ) : entries && entries.length > 0 ? (
             <div className="rounded-lg border border-border bg-card">
               {entries.map((entry) => {
                 const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
@@ -195,6 +191,10 @@ export default function AddWordsFromDictionaryDialog({
                 );
               })}
             </div>
+          ) : (
+            <p className="py-12 text-center text-sm text-muted-foreground sm:text-base">
+              No entries match your search.
+            </p>
           )}
         </div>
 

@@ -5,7 +5,6 @@ import type { MutationCtx } from "./_generated/server";
 import { authComponent } from "./auth";
 import { templateConfigsSchema, type TemplateConfigs, DEFAULT_CONFIGS } from "./schemas";
 import { ensureProfileForAuthUser, getProfileIdForAuthUser } from "./profile";
-import { findWordForDictionaryEntry, getOrCreateWordFromDictionaryEntry } from "./word";
 
 export const create = mutation({
   args: {
@@ -129,20 +128,17 @@ export const remove = mutation({
   },
 });
 
-export const listMembershipForDictionaryEntry = query({
-  args: { dictionaryEntryId: v.id("dictionaryEntry") },
-  handler: async (ctx, { dictionaryEntryId }) => {
+export const listMembershipForWord = query({
+  args: { wordId: v.id("word") },
+  handler: async (ctx, { wordId }) => {
     const authUser = await authComponent.safeGetAuthUser(ctx);
     if (!authUser) return null;
 
     const profileId = await getProfileIdForAuthUser(ctx, authUser);
     if (!profileId) return null;
 
-    const entry = await ctx.db.get(dictionaryEntryId);
-    if (!entry) return [];
-
-    const word = await findWordForDictionaryEntry(ctx, entry);
-    const wordId = word?._id;
+    const word = await ctx.db.get(wordId);
+    if (!word) return [];
 
     const templates = await ctx.db
       .query("template")
@@ -154,24 +150,26 @@ export const listMembershipForDictionaryEntry = query({
     return templates.map((template) => ({
       templateId: template._id,
       name: template.name,
-      included: wordId != null && (template.words ?? []).includes(wordId),
+      included: (template.words ?? []).includes(wordId),
     }));
   },
 });
 
-export const setWordFromDictionaryEntry = mutation({
+export const setWordInTemplate = mutation({
   args: {
     templateId: v.id("template"),
-    dictionaryEntryId: v.id("dictionaryEntry"),
+    wordId: v.id("word"),
     included: v.boolean(),
   },
-  handler: async (ctx, { templateId, dictionaryEntryId, included }) => {
+  handler: async (ctx, { templateId, wordId, included }) => {
     const template = await getOwnedTemplate(ctx, templateId);
+    const word = await ctx.db.get(wordId);
+    if (!word) throw new Error("Word not found");
+
     const now = Date.now();
+    const words = template.words ?? [];
 
     if (included) {
-      const wordId = await getOrCreateWordFromDictionaryEntry(ctx, dictionaryEntryId);
-      const words = template.words ?? [];
       if (words.includes(wordId)) return;
 
       await ctx.db.patch(templateId, {
@@ -181,17 +179,10 @@ export const setWordFromDictionaryEntry = mutation({
       return;
     }
 
-    const entry = await ctx.db.get(dictionaryEntryId);
-    if (!entry) throw new Error("Dictionary entry not found");
-
-    const word = await findWordForDictionaryEntry(ctx, entry);
-    if (!word) return;
-
-    const words = template.words ?? [];
-    if (!words.includes(word._id)) return;
+    if (!words.includes(wordId)) return;
 
     await ctx.db.patch(templateId, {
-      words: words.filter((id) => id !== word._id),
+      words: words.filter((id) => id !== wordId),
       updatedAt: now,
     });
   },

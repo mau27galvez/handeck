@@ -40,16 +40,6 @@ export default defineSchema({
 
   word: defineTable({
     simplifiedHanzi: v.string(),
-    pinyin: v.string(),
-    normalizedPinyin: v.string(),
-    tanslation: v.string(),
-    audioUrl: v.union(v.string(), v.null()), // temporarily nullable
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index("by_simplifiedHanzi_normalizedPinyin", ["simplifiedHanzi", "normalizedPinyin"]),
-
-  dictionaryEntry: defineTable({
-    simplifiedHanzi: v.string(),
     numberedPinyin: v.string(),
     diacriticPinyin: v.string(),
     normalizedPinyin: v.string(),
@@ -57,10 +47,14 @@ export default defineSchema({
     pinyinSyllables: v.array(v.string()),
     numberedPinyinSyllables: v.array(v.string()),
     meaning: v.string(),
+    audioUrl: v.union(v.string(), v.null()), // temporarily nullable
+    createdAt: v.number(),
+    updatedAt: v.number(),
   })
     .index("by_normalizedPinyin", ["normalizedPinyin"])
     .index("by_numberedPinyinSearch", ["numberedPinyinSearch"])
     .index("by_simplifiedHanzi", ["simplifiedHanzi"])
+    .index("by_simplifiedHanzi_normalizedPinyin", ["simplifiedHanzi", "normalizedPinyin"])
     .searchIndex("search_meaning", {
       searchField: "meaning",
     }),

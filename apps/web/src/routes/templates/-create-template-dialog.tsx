@@ -43,7 +43,7 @@ export default function CreateTemplateDialog({
   const isFromBase = mode === "FromBase";
   const [pending, setPending] = useState(false);
 
-  const [selectedBaseId, setSelectedBaseId] = useState<Id<"baseTemplate"> | undefined>(undefined);
+  const [selectedBaseId, setSelectedBaseId] = useState<Id<"baseTemplates"> | undefined>(undefined);
   const bases = useQuery(api.baseTemplate.list);
   const createTemplate = useMutation(api.template.create);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -140,7 +140,7 @@ export default function CreateTemplateDialog({
                   <Select
                     value={selectedBaseId ?? undefined}
                     onValueChange={(value) => {
-                      if (value) setSelectedBaseId(value as Id<"baseTemplate">);
+                      if (value) setSelectedBaseId(value as Id<"baseTemplates">);
                     }}
                     items={bases!.map((b) => ({
                       value: b._id,

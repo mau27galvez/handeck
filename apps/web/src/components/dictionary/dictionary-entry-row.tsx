@@ -1,7 +1,9 @@
 import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
 import type { ReactNode } from "react";
 
-export type DictionaryEntry = Doc<"dictionaryEntry"> & {
+import { AddToTemplatePopover } from "@/routes/dictionary/-add-to-template-popover";
+
+export type DictionaryEntry = Doc<"words"> & {
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
 };
 
@@ -47,23 +49,34 @@ function highlightMatches(text: string, rawQuery: string) {
 export function DictionaryEntryRow({
   entry,
   searchQuery,
+  showAddToTemplate = true,
 }: {
   entry: DictionaryEntry;
   searchQuery: string;
+  showAddToTemplate?: boolean;
 }) {
   const shouldHighlightMeaning = entry.searchMatchType === "english";
 
   return (
-    <article className="border-b border-border py-1 sm:py-2 last:border-b-0">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <span className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
-          {entry.simplifiedHanzi}
-        </span>
-        <span className="text-base text-muted-foreground sm:text-lg">{entry.diacriticPinyin}</span>
+    <article className="border-b border-border py-4 sm:py-5 last:border-b-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-1">
+            <span className="font-serif text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
+              {entry.simplifiedHanzi}
+            </span>
+            <span className="text-base text-muted-foreground sm:text-lg">
+              {entry.diacriticPinyin}
+            </span>
+          </div>
+          <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-foreground sm:text-base">
+            {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
+          </p>
+        </div>
+        {showAddToTemplate ? (
+          <AddToTemplatePopover wordId={entry._id} hanzi={entry.simplifiedHanzi} />
+        ) : null}
       </div>
-      <p className="mt-1 line-clamp-4 text-sm leading-relaxed text-foreground sm:text-base">
-        {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
-      </p>
     </article>
   );
 }

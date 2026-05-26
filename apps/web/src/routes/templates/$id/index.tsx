@@ -21,7 +21,7 @@ export const Route = createFileRoute("/templates/$id/")({
     try {
       template = await context.queryClient.ensureQueryData(
         convexQuery(api.template.getById, {
-          templateId: params.id as Id<"template">,
+          templateId: params.id as Id<"templates">,
         }),
       );
     } catch (error) {
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/templates/$id/")({
       throw error;
     }
     if (template == null) throw notFound();
-    return { templateId: params.id as Id<"template"> };
+    return { templateId: params.id as Id<"templates"> };
   },
   component: TemplateDetail,
 });

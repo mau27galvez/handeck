@@ -15,10 +15,10 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-type TemplateWord = Doc<"word">;
+type TemplateWord = Doc<"words">;
 
 type TemplateWordsPanelProps = {
-  templateId: Id<"template">;
+  templateId: Id<"templates">;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
 };
@@ -28,8 +28,8 @@ export default function TemplateWordsPanel({
   words,
   onAddWords,
 }: TemplateWordsPanelProps) {
-  const removeWords = useMutation(api.template.removeWords);
-  const [removingWordId, setRemovingWordId] = useState<Id<"word"> | null>(null);
+  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
+  const [removingWordId, setRemovingWordId] = useState<Id<"words"> | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
   const isEmpty = !isLoading && wordList.length === 0;
@@ -37,14 +37,11 @@ export default function TemplateWordsPanel({
   async function handleRemoveWord(word: TemplateWord) {
     setRemovingWordId(word._id);
     try {
-      const result = await removeWords({
+      await toggleWordInTemplate({
         templateId,
-        wordIds: [word._id],
+        wordId: word._id,
       });
-
-      if (result.removed > 0) {
-        toast.success(`Removed ${word.simplifiedHanzi} from template`);
-      }
+      toast.success(`Removed ${word.simplifiedHanzi} from template`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to remove word";
       toast.error(message);
@@ -97,9 +94,9 @@ export default function TemplateWordsPanel({
                       <span className="text-lg font-medium leading-tight">
                         {word.simplifiedHanzi}
                       </span>
-                      <span className="text-sm text-muted-foreground">{word.pinyin}</span>
+                      <span className="text-sm text-muted-foreground">{word.diacriticPinyin}</span>
                     </div>
-                    <span className="text-sm">{word.tanslation}</span>
+                    <span className="text-sm">{word.meaning}</span>
                   </div>
                   <Button
                     type="button"

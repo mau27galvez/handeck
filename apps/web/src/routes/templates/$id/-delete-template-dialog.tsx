@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 type DeleteTemplateDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  templateId: Id<"template">;
+  templateId: Id<"templates">;
   templateName: string;
 };
 

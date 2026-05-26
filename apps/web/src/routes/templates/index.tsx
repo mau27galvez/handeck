@@ -26,7 +26,7 @@ function toTemplateListItems(
   return templates.map((template) => ({
     _id: template._id as string,
     name: template.name,
-    words: template.words ?? [],
+    wordCount: template.wordCount,
     configs: template.configs,
     creditCost: KUAI_COST_PLACEHOLDER,
     baseTemplate: template.baseTemplate,

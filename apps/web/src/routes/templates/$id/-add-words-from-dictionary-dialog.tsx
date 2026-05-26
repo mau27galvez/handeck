@@ -26,7 +26,7 @@ import { toast } from "sonner";
 type AddWordsFromDictionaryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  templateId: Id<"template">;
+  templateId: Id<"templates">;
   existingWordKeys: Set<string>;
 };
 
@@ -65,7 +65,7 @@ function SelectableDictionaryEntryRow({
       }}
     >
       <div className="min-w-0 flex-1">
-        <DictionaryEntryRow entry={entry} searchQuery={searchQuery} />
+        <DictionaryEntryRow entry={entry} searchQuery={searchQuery} showAddToTemplate={false} />
       </div>
       <div className="flex shrink-0 items-center">
         <Checkbox
@@ -90,8 +90,8 @@ export default function AddWordsFromDictionaryDialog({
 }: AddWordsFromDictionaryDialogProps) {
   const { search, setSearch, clearSearch, searchQuery, entries, isSearching } =
     useDictionarySearch();
-  const addWordsFromDictionary = useMutation(api.template.addWordsFromDictionary);
-  const [selectedIds, setSelectedIds] = useState<Set<Id<"dictionaryEntry">>>(new Set());
+  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
+  const [selectedIds, setSelectedIds] = useState<Set<Id<"words">>>(new Set());
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -101,13 +101,13 @@ export default function AddWordsFromDictionaryDialog({
     }
   }, [open, setSearch]);
 
-  function toggleSelection(entryId: Id<"dictionaryEntry">) {
+  function toggleSelection(wordId: Id<"words">) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(entryId)) {
-        next.delete(entryId);
+      if (next.has(wordId)) {
+        next.delete(wordId);
       } else {
-        next.add(entryId);
+        next.add(wordId);
       }
       return next;
     });
@@ -118,13 +118,25 @@ export default function AddWordsFromDictionaryDialog({
 
     setPending(true);
     try {
-      const result = await addWordsFromDictionary({
-        templateId,
-        dictionaryEntryIds: [...selectedIds],
-      });
+      let added = 0;
+      let skipped = 0;
 
-      const addedLabel = result.added === 1 ? "1 word" : `${result.added} words`;
-      if (result.added > 0) {
+      for (const wordId of selectedIds) {
+        const entry = entries?.find((e) => e._id === wordId);
+        if (!entry) continue;
+
+        const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
+        if (existingWordKeys.has(identityKey)) {
+          skipped += 1;
+          continue;
+        }
+
+        await toggleWordInTemplate({ templateId, wordId });
+        added += 1;
+      }
+
+      const addedLabel = added === 1 ? "1 word" : `${added} words`;
+      if (added > 0) {
         toast.success(`Added ${addedLabel} to template`);
       } else {
         toast.info("Selected words are already in this template");

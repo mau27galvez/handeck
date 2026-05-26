@@ -1,7 +1,7 @@
 import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
 import type { ReactNode } from "react";
 
-import { AddToTemplatePopover } from "./-add-to-template-popover";
+import { AddToTemplatePopover } from "@/routes/dictionary/-add-to-template-popover";
 
 export type DictionaryEntry = Doc<"words"> & {
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
@@ -49,9 +49,11 @@ function highlightMatches(text: string, rawQuery: string) {
 export function DictionaryEntryRow({
   entry,
   searchQuery,
+  showAddToTemplate = true,
 }: {
   entry: DictionaryEntry;
   searchQuery: string;
+  showAddToTemplate?: boolean;
 }) {
   const shouldHighlightMeaning = entry.searchMatchType === "english";
 
@@ -71,7 +73,9 @@ export function DictionaryEntryRow({
             {shouldHighlightMeaning ? highlightMatches(entry.meaning, searchQuery) : entry.meaning}
           </p>
         </div>
-        <AddToTemplatePopover wordId={entry._id} hanzi={entry.simplifiedHanzi} />
+        {showAddToTemplate ? (
+          <AddToTemplatePopover wordId={entry._id} hanzi={entry.simplifiedHanzi} />
+        ) : null}
       </div>
     </article>
   );

@@ -129,6 +129,19 @@ async function getOwnedTemplate(ctx: MutationCtx, templateId: Id<"templates">) {
   return template;
 }
 
+async function getOwnedTemplateForQuery(ctx: QueryCtx, templateId: Id<"templates">) {
+  const authUser = await authComponent.safeGetAuthUser(ctx);
+  if (!authUser) return null;
+
+  const profileId = await getProfileIdForAuthUser(ctx, authUser);
+  if (!profileId) return null;
+
+  const template = await ctx.db.get(templateId);
+  if (!template || template.userId !== profileId) return null;
+
+  return template;
+}
+
 async function getWordCountForTemplate(ctx: QueryCtx | MutationCtx, templateId: Id<"templates">) {
   const templateWords = await ctx.db
     .query("templateWords")
@@ -168,6 +181,23 @@ export const remove = mutation({
   handler: async (ctx, { templateId }) => {
     await getOwnedTemplate(ctx, templateId);
     await deleteTemplateAndTemplateWordsBatch(ctx, templateId);
+  },
+});
+
+export const getWords = query({
+  args: { templateId: v.id("templates") },
+  handler: async (ctx, { templateId }) => {
+    const template = await getOwnedTemplateForQuery(ctx, templateId);
+    if (!template) return null;
+
+    const templateWords = await ctx.db
+      .query("templateWords")
+      .withIndex("by_template", (q) => q.eq("templateId", templateId))
+      .collect();
+
+    const words = await Promise.all(templateWords.map((row) => ctx.db.get(row.wordId)));
+
+    return words.filter((word): word is NonNullable<typeof word> => word != null);
   },
 });
 

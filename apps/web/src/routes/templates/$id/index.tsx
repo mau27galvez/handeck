@@ -13,6 +13,7 @@ import AddWordsFromDictionaryDialog from "./-add-words-from-dictionary-dialog";
 import DeleteTemplateDialog from "./-delete-template-dialog";
 import TemplateEmptyPanel from "./-template-empty-panel";
 import TemplateWordsPanel from "./-template-words-panel";
+import GenerateDeckDialog from "./-generate-deck-dialog";
 
 export const Route = createFileRoute("/templates/$id/")({
   beforeLoad: requireAuth,
@@ -41,6 +42,7 @@ function TemplateDetail() {
   const words = useQuery(api.template.getWords, { templateId });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addWordsOpen, setAddWordsOpen] = useState(false);
+  const [generateDeckDialogOpen, setGenerateDeckDialogOpen] = useState(false);
 
   const existingWordKeys = useMemo(() => {
     if (!words) return new Set<string>();
@@ -91,6 +93,7 @@ function TemplateDetail() {
       <div className="grid min-h-0 flex-1 *:min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-4 lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)] lg:gap-6">
         <TemplateEmptyPanel />
         <TemplateWordsPanel
+          onGenerateDeckButtonClick={() => setGenerateDeckDialogOpen(true)}
           templateId={templateId}
           words={words}
           onAddWords={() => setAddWordsOpen(true)}
@@ -108,6 +111,11 @@ function TemplateDetail() {
         onOpenChange={setAddWordsOpen}
         templateId={templateId}
         existingWordKeys={existingWordKeys}
+      />
+      <GenerateDeckDialog
+        open={generateDeckDialogOpen}
+        onOpenChange={setGenerateDeckDialogOpen}
+        templateId={templateId}
       />
     </div>
   );

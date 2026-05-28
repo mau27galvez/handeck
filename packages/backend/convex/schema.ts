@@ -88,7 +88,17 @@ export default defineSchema({
     userId: v.id("profiles"),
     templateId: v.id("templates"),
     noteIds: v.array(v.id("notes")),
+    tsvStorageId: v.id("_storage"),
+    tsvVersion: v.string(),
+    configSnapshot: v.object({
+      topics: v.array(v.string()),
+      sentencesPerWord: v.number(),
+    }),
+    useCache: v.boolean(),
+    mode: v.union(v.literal("fresh"), v.literal("fromBase")),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }),
+  })
+    .index("by_user", ["userId"])
+    .index("by_template", ["templateId"]),
 });

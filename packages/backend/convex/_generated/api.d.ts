@@ -10,6 +10,12 @@
 
 import type * as auth from "../auth.js";
 import type * as baseTemplate from "../baseTemplate.js";
+import type * as deck from "../deck.js";
+import type * as deckActions from "../deckActions.js";
+import type * as deckGeneration from "../deckGeneration.js";
+import type * as deckGenerationTypes from "../deckGenerationTypes.js";
+import type * as deckLib from "../deckLib.js";
+import type * as deckTsv from "../deckTsv.js";
 import type * as dictionarySearch from "../dictionarySearch.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
@@ -28,6 +34,12 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   baseTemplate: typeof baseTemplate;
+  deck: typeof deck;
+  deckActions: typeof deckActions;
+  deckGeneration: typeof deckGeneration;
+  deckGenerationTypes: typeof deckGenerationTypes;
+  deckLib: typeof deckLib;
+  deckTsv: typeof deckTsv;
   dictionarySearch: typeof dictionarySearch;
   healthCheck: typeof healthCheck;
   http: typeof http;

@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@handeck/ui/components/card";
 import { useMutation } from "convex/react";
-import { Plus, X } from "lucide-react";
+import { Plus, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,18 +21,21 @@ type TemplateWordsPanelProps = {
   templateId: Id<"templates">;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
+  onGenerateDeckButtonClick: () => void;
 };
 
 export default function TemplateWordsPanel({
   templateId,
   words,
   onAddWords,
+  onGenerateDeckButtonClick,
 }: TemplateWordsPanelProps) {
   const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
   const [removingWordId, setRemovingWordId] = useState<Id<"words"> | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
   const isEmpty = !isLoading && wordList.length === 0;
+  const canGenerate = wordList.length > 0;
 
   async function handleRemoveWord(word: TemplateWord) {
     setRemovingWordId(word._id);
@@ -115,10 +118,21 @@ export default function TemplateWordsPanel({
           </>
         )}
       </CardContent>
-      <CardFooter className="shrink-0">
+      <CardFooter className="shrink-0 flex justify-between">
         <p className="text-xs text-muted-foreground">
           {wordList.length} {wordList.length === 1 ? "word" : "words"}
         </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          className="gap-1.5"
+          disabled={!canGenerate}
+          onClick={onGenerateDeckButtonClick}
+        >
+          Generate
+          <Sparkles className="size-3" />
+        </Button>
       </CardFooter>
     </Card>
   );

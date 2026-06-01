@@ -65,8 +65,8 @@ export class Package {
     idGen: Iterator<number>,
     validationContext: ValidationContext = { validation: "warn" },
   ) {
-    db.exec(APKG_SCHEMA);
-    db.exec(APKG_COL);
+    db.run(APKG_SCHEMA);
+    db.run(APKG_COL);
 
     const selectDecks = db.query("SELECT decks FROM col");
     const updateDecks = db.query("UPDATE col SET decks = ?");

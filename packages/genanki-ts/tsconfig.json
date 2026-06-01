@@ -1,0 +1,12 @@
+{
+  "extends": "@handeck/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "noEmit": true,
+    "paths": {
+      "@handeck/genanki-ts": ["./src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules"]
+}

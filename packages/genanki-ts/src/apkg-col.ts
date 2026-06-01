@@ -1,3 +1,6 @@
+// Seeds the single `col` row required by Anki schema 11. Copied from genanki.
+// Placeholder timestamps, the "Default" deck, and empty `models`/`tags` are only
+// bootstrap values: `Deck.writeToDb()` merges real decks and models over them.
 export const APKG_COL = String.raw`
 INSERT INTO col VALUES(
     null,

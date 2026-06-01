@@ -90,12 +90,6 @@ export default defineSchema({
     noteIds: v.array(v.id("notes")),
     tsvStorageId: v.id("_storage"),
     tsvVersion: v.string(),
-    configSnapshot: v.object({
-      topics: v.array(v.string()),
-      sentencesPerWord: v.number(),
-    }),
-    useCache: v.boolean(),
-    mode: v.union(v.literal("fresh"), v.literal("fromBase")),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

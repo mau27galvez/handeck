@@ -5,11 +5,6 @@ export type GenerationBundle = {
   templateId: Id<"templates">;
   noteIds: Id<"notes">[];
   tsvContent: string;
-  useCache: boolean;
-  configSnapshot: {
-    topics: string[];
-    sentencesPerWord: number;
-  };
 };
 
 export type FinalizeDeckResult = {

@@ -4,30 +4,17 @@ import type { Id } from "./_generated/dataModel";
 import { buildDeckTsvContent, DECK_TSV_VERSION, type DeckTsvRow } from "./deckTsv";
 import { getOwnedTemplate, loadTemplateWordsForGeneration } from "./deckLib";
 
-const deckModeValidator = v.union(v.literal("fresh"), v.literal("fromBase"));
-
 export const createGenerationBundle = internalMutation({
   args: {
     templateId: v.id("templates"),
-    useCache: v.boolean(),
-    mode: deckModeValidator,
   },
   returns: v.object({
     profileId: v.id("profiles"),
     templateId: v.id("templates"),
     noteIds: v.array(v.id("notes")),
     tsvContent: v.string(),
-    useCache: v.boolean(),
-    configSnapshot: v.object({
-      topics: v.array(v.string()),
-      sentencesPerWord: v.number(),
-    }),
   }),
-  handler: async (ctx, { templateId, useCache, mode }) => {
-    if (mode === "fromBase") {
-      throw new Error("Generating from an existing deck is not supported yet");
-    }
-
+  handler: async (ctx, { templateId }) => {
     const { template, profileId } = await getOwnedTemplate(ctx, templateId);
     const words = await loadTemplateWordsForGeneration(ctx, templateId);
 
@@ -72,11 +59,6 @@ export const createGenerationBundle = internalMutation({
       templateId,
       noteIds,
       tsvContent: buildDeckTsvContent(tsvRows),
-      useCache,
-      configSnapshot: {
-        topics: template.configs.topics,
-        sentencesPerWord: template.configs.sentencesPerWord,
-      },
     };
   },
 });
@@ -87,11 +69,6 @@ export const finalizeDeck = internalMutation({
     templateId: v.id("templates"),
     noteIds: v.array(v.id("notes")),
     tsvStorageId: v.id("_storage"),
-    useCache: v.boolean(),
-    configSnapshot: v.object({
-      topics: v.array(v.string()),
-      sentencesPerWord: v.number(),
-    }),
   },
   returns: v.object({
     deckId: v.id("decks"),
@@ -105,9 +82,6 @@ export const finalizeDeck = internalMutation({
       noteIds: args.noteIds,
       tsvStorageId: args.tsvStorageId,
       tsvVersion: DECK_TSV_VERSION,
-      configSnapshot: args.configSnapshot,
-      useCache: args.useCache,
-      mode: "fresh",
       createdAt: now,
       updatedAt: now,
     });

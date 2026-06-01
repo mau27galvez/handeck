@@ -42,11 +42,7 @@ export default function GenerateDeckDialog({
 
     setPending(true);
     try {
-      const result = await createDeck({
-        templateId,
-        useCache,
-        mode: "fresh",
-      });
+      const result = await createDeck({ templateId });
       onOpenChange(false);
       toast.success(`Generated deck with ${result.noteCount} notes`);
     } catch (error) {
@@ -107,13 +103,6 @@ export default function GenerateDeckDialog({
                   <p className="text-xs text-muted-foreground">Coming soon — no effect today.</p>
                 </div>
               </div>
-
-              {preview.matchingDeckId != null && (
-                <p className="text-xs text-muted-foreground">
-                  A deck with the same settings already exists ({preview.matchingDeckNoteCount}{" "}
-                  {preview.matchingDeckNoteCount === 1 ? "note" : "notes"}).
-                </p>
-              )}
             </>
           )}
         </div>

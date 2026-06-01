@@ -3,13 +3,9 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { CreateDeckResult, FinalizeDeckResult, GenerationBundle } from "./deckGenerationTypes";
 
-const deckModeValidator = v.union(v.literal("fresh"), v.literal("fromBase"));
-
 export const create = action({
   args: {
     templateId: v.id("templates"),
-    useCache: v.boolean(),
-    mode: deckModeValidator,
   },
   returns: v.object({
     deckId: v.id("decks"),
@@ -31,8 +27,6 @@ export const create = action({
         templateId: bundle.templateId,
         noteIds: bundle.noteIds,
         tsvStorageId,
-        useCache: bundle.useCache,
-        configSnapshot: bundle.configSnapshot,
       },
     );
 

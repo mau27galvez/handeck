@@ -153,7 +153,7 @@ Each model name ends with **(genanki)** — for example, `"Basic (genanki)"` ins
 
 ### `BASIC_MODEL`
 
-**Fields:** `Front`, `Back`  
+**Fields:** `Front`, `Back`
 **Cards:** 1 — shows `Front` on the question side and `Back` on the answer side.
 
 The simplest model. One note becomes one card: you see the front, flip, and see the back.
@@ -171,7 +171,7 @@ deck.addNote(
 
 ### `BASIC_AND_REVERSED_CARD_MODEL`
 
-**Fields:** `Front`, `Back`  
+**Fields:** `Front`, `Back`
 **Cards:** 2 — always. Card 1 is Front → Back; card 2 is Back → Front.
 
 Every note produces both directions. Studying `"你好"` → `"hello"` also schedules `"hello"` → `"你好"`.
@@ -189,7 +189,7 @@ deck.addNote(
 
 ### `BASIC_OPTIONAL_REVERSED_CARD_MODEL`
 
-**Fields:** `Front`, `Back`, `Add Reverse`  
+**Fields:** `Front`, `Back`, `Add Reverse`
 **Cards:** 1 by default; 2 when `Add Reverse` is non-empty.
 
 Same forward card as `BASIC_MODEL`. A second reverse card is created only when the third field has any text (for example `"y"`). Leave it as `""` for a single card.
@@ -216,7 +216,7 @@ deck.addNote(
 
 ### `BASIC_TYPE_IN_THE_ANSWER_MODEL`
 
-**Fields:** `Front`, `Back`  
+**Fields:** `Front`, `Back`
 **Cards:** 1 — the front side includes a text box; the learner types what goes in `Back` before revealing the answer.
 
 Anki checks the typed text against `Back` (with some tolerance for spacing and casing). The back side shows what was typed alongside the correct answer.
@@ -234,7 +234,7 @@ deck.addNote(
 
 ### `CLOZE_MODEL`
 
-**Fields:** `Text`, `Back Extra` (both required — use `""` for `Back Extra` when unused)  
+**Fields:** `Text`, `Back Extra` (both required — use `""` for `Back Extra` when unused)
 **Cards:** one card per cloze marker in `Text`.
 
 Cloze cards hide part of a sentence. Mark blanks with `{{c1::hidden text}}`, `{{c2::another blank}}`, and so on. Each number (`c1`, `c2`, …) becomes its own card with that span hidden. Optional extra content on the answer side goes in `Back Extra`.

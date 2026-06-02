@@ -18,6 +18,7 @@ import type * as profile from "../profile.js";
 import type * as schemas from "../schemas.js";
 import type * as template from "../template.js";
 import type * as word from "../word.js";
+import type * as workflows from "../workflows.js";
 
 import type {
   ApiFromModules,
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   schemas: typeof schemas;
   template: typeof template;
   word: typeof word;
+  workflows: typeof workflows;
 }>;
 
 /**
@@ -66,4 +68,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   betterAuth: import("@convex-dev/better-auth/_generated/component.js").ComponentApi<"betterAuth">;
+  workflow: import("@convex-dev/workflow/_generated/component.js").ComponentApi<"workflow">;
 };

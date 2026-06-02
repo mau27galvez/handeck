@@ -12,8 +12,11 @@
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
+    "@convex-dev/workflow": "^0.4.3",
+    "@convex-dev/workpool": "^0.4.4",
     "better-auth": "catalog:",
     "convex": "catalog:",
+    "convex-helpers": "^0.1.99",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },

@@ -157,9 +157,12 @@ export const writeNotes = internalMutation({
     const now = Date.now();
     let noteCount = 0;
 
-    for await (const templateWord of ctx.db
+    const templateWords = await ctx.db
       .query("templateWords")
-      .withIndex("by_template", (q) => q.eq("templateId", deck.templateId))) {
+      .withIndex("by_template", (q) => q.eq("templateId", deck.templateId))
+      .collect();
+
+    for (const templateWord of templateWords) {
       const word = await ctx.db.get(templateWord.wordId);
       if (!word) throw new Error("Template contains a missing word");
 
@@ -187,10 +190,13 @@ export const getDeckData = internalQuery({
     const deck = await ctx.db.get(deckId);
     if (!deck) throw new Error("Deck not found");
 
-    const notes = [];
-    for await (const note of ctx.db
+    const deckNotes = await ctx.db
       .query("notes")
-      .withIndex("by_deckId", (q) => q.eq("deckId", deckId))) {
+      .withIndex("by_deckId", (q) => q.eq("deckId", deckId))
+      .collect();
+
+    const notes = [];
+    for (const note of deckNotes) {
       const word = await ctx.db.get(note.wordId);
       if (!word) throw new Error("Note references a missing word");
 

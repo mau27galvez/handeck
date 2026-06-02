@@ -113,7 +113,7 @@ export function guidFor(...values: unknown[]) {
   return reversed.reverse().join("");
 }
 
-export function warnOrThrow(message: string, validation = "warn") {
+export function warnOrThrow(message: string, validation: "warn" | "error" = "warn") {
   if (validation === "error") {
     throw new Error(message);
   }

@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AddWordsFromDictionaryDialog from "./-add-words-from-dictionary-dialog";
 import DeleteTemplateDialog from "./-delete-template-dialog";
+import GenerateDeckDialog from "./-generate-deck-dialog";
 import TemplateEmptyPanel from "./-template-empty-panel";
 import TemplateWordsPanel from "./-template-words-panel";
 
@@ -41,6 +42,7 @@ function TemplateDetail() {
   const words = useQuery(api.template.getWords, { templateId });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addWordsOpen, setAddWordsOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   const existingWordKeys = useMemo(() => {
     if (!words) return new Set<string>();
@@ -94,6 +96,7 @@ function TemplateDetail() {
           templateId={templateId}
           words={words}
           onAddWords={() => setAddWordsOpen(true)}
+          onGenerate={() => setGenerateOpen(true)}
         />
       </div>
 
@@ -108,6 +111,12 @@ function TemplateDetail() {
         onOpenChange={setAddWordsOpen}
         templateId={templateId}
         existingWordKeys={existingWordKeys}
+      />
+      <GenerateDeckDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        templateId={templateId}
+        wordCount={words?.length ?? 0}
       />
     </div>
   );

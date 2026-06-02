@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as baseTemplate from "../baseTemplate.js";
+import type * as deckGeneration from "../deckGeneration.js";
 import type * as dictionarySearch from "../dictionarySearch.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   baseTemplate: typeof baseTemplate;
+  deckGeneration: typeof deckGeneration;
   dictionarySearch: typeof dictionarySearch;
   healthCheck: typeof healthCheck;
   http: typeof http;

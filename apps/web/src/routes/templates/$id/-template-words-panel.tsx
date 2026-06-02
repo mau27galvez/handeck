@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@handeck/ui/components/card";
 import { useMutation } from "convex/react";
-import { Plus, X } from "lucide-react";
+import { Plus, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,12 +21,14 @@ type TemplateWordsPanelProps = {
   templateId: Id<"templates">;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
+  onGenerate: () => void;
 };
 
 export default function TemplateWordsPanel({
   templateId,
   words,
   onAddWords,
+  onGenerate,
 }: TemplateWordsPanelProps) {
   const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
   const [removingWordId, setRemovingWordId] = useState<Id<"words"> | null>(null);
@@ -115,10 +117,20 @@ export default function TemplateWordsPanel({
           </>
         )}
       </CardContent>
-      <CardFooter className="shrink-0">
+      <CardFooter className="shrink-0 items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
           {wordList.length} {wordList.length === 1 ? "word" : "words"}
         </p>
+        <Button
+          type="button"
+          size="sm"
+          className="gap-1.5"
+          disabled={isLoading || isEmpty}
+          onClick={onGenerate}
+        >
+          <Sparkles className="size-4" />
+          Generate
+        </Button>
       </CardFooter>
     </Card>
   );

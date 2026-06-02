@@ -78,16 +78,17 @@ export default defineSchema({
   }), // not directly related to words
 
   notes: defineTable({
+    deckId: v.id("decks"),
     wordId: v.id("words"),
-    sentenceId: v.id("sentences"),
+    sentenceId: v.union(v.id("sentences"), v.null()), // temporarily nullable
     createdAt: v.number(),
     updatedAt: v.number(),
-  }),
+  }).index("by_deckId", ["deckId"]),
 
   decks: defineTable({
     userId: v.id("profiles"),
     templateId: v.id("templates"),
-    noteIds: v.array(v.id("notes")),
+    tsvFileId: v.optional(v.id("_storage")),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),

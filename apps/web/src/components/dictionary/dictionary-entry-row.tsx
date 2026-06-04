@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { AddToTemplatePopover } from "@/routes/dictionary/-add-to-template-popover";
 
+// TODO: import type from the backend
 export type DictionaryEntry = {
   id: string;
   simplifiedHanzi: string;

@@ -8,11 +8,10 @@
 | --------------- | ---------------------- | ---------------------------------------------------- |
 | Web app         | `apps/web`             | React, TanStack Start, TanStack Router, Tailwind CSS |
 | Shared UI       | `packages/ui`          | shadcn/ui components and design tokens               |
-| Backend         | `packages/backend`     | Convex (queries, mutations, schema)                  |
+| API             | `packages/api`         | oRPC procedures for app and external integrations    |
+| Database        | `packages/db`          | Drizzle ORM + PostgreSQL schema/client               |
 | Dictionary data | `packages/cedict-data` | CC-CEDICT seeding and parsing                        |
-| Auth            | —                      | Better Auth (via `@convex-dev/better-auth`)          |
-
-When working on Convex code, also read `packages/backend/AGENTS.md` and follow `packages/backend/convex/_generated/ai/guidelines.md`.
+| Auth            | `packages/auth`        | Better Auth with Drizzle adapter                     |
 
 ## Package manager: Bun, not npm
 
@@ -32,7 +31,7 @@ Prefer **type inference**. Do not add explicit function return types unless they
 - Inference is wrong or too wide and cannot be fixed another way
 - A recursive or otherwise complex type that inference cannot resolve
 
-Let TypeScript infer return types for components, helpers, Convex handlers, and internal functions.
+Let TypeScript infer return types for components, helpers, oRPC handlers, and internal functions.
 
 ## Format code after every change
 

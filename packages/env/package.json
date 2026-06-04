@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./server": "./src/server.ts",
     "./web": "./src/web.ts"
   },
   "dependencies": {
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   }
 }

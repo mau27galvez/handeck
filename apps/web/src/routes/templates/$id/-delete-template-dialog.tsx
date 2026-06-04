@@ -1,5 +1,3 @@
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import { Button } from "@handeck/ui/components/button";
 import {
   Dialog,
@@ -10,8 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@handeck/ui/components/dialog";
-import { convexQuery } from "@convex-dev/react-query";
-import { useMutation } from "convex/react";
+import { orpc } from "@/utils/orpc";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -20,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 type DeleteTemplateDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  templateId: Id<"templates">;
+  templateId: string;
   templateName: string;
 };
 
@@ -32,17 +30,17 @@ export default function DeleteTemplateDialog({
 }: DeleteTemplateDialogProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const removeTemplate = useMutation(api.template.remove);
+  const removeTemplate = useMutation(orpc.template.remove.mutationOptions());
   const [pending, setPending] = useState(false);
 
   async function handleDelete() {
     setPending(true);
     try {
-      await removeTemplate({ templateId });
+      await removeTemplate.mutateAsync({ templateId });
       onOpenChange(false);
       toast.success("Template deleted");
       await navigate({ to: "/templates", replace: true });
-      void queryClient.invalidateQueries(convexQuery(api.template.listForCurrentUser, {}));
+      void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to delete template";
       toast.error(message);

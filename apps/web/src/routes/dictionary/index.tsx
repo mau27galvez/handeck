@@ -57,7 +57,7 @@ function Dictionary() {
           ) : (
             <div className="rounded-lg border border-border bg-card px-3 sm:px-5">
               {entries.map((entry) => (
-                <DictionaryEntryRow key={entry._id} entry={entry} searchQuery={searchQuery} />
+                <DictionaryEntryRow key={entry.id} entry={entry} searchQuery={searchQuery} />
               ))}
             </div>
           )}

@@ -1,9 +1,20 @@
-import type { Doc } from "@handeck/backend/convex/_generated/dataModel";
 import type { ReactNode } from "react";
 
 import { AddToTemplatePopover } from "@/routes/dictionary/-add-to-template-popover";
 
-export type DictionaryEntry = Doc<"words"> & {
+export type DictionaryEntry = {
+  id: string;
+  simplifiedHanzi: string;
+  numberedPinyin: string;
+  diacriticPinyin: string;
+  normalizedPinyin: string;
+  numberedPinyinSearch: string;
+  pinyinSyllables: string[];
+  numberedPinyinSyllables: string[];
+  meaning: string;
+  audioUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
 };
 
@@ -74,7 +85,7 @@ export function DictionaryEntryRow({
           </p>
         </div>
         {showAddToTemplate ? (
-          <AddToTemplatePopover wordId={entry._id} hanzi={entry.simplifiedHanzi} />
+          <AddToTemplatePopover wordId={entry.id} hanzi={entry.simplifiedHanzi} />
         ) : null}
       </div>
     </article>

@@ -6,8 +6,9 @@
 - **TanStack Start** - SSR framework with TanStack Router
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Convex** - Reactive backend-as-a-service platform
-- **Authentication** - Better-Auth
+- **PostgreSQL + Drizzle** - Database schema and client in `packages/db`
+- **oRPC** - API procedures for app calls and external integrations
+- **Authentication** - Better Auth
 - **Oxlint** - Oxlint + Oxfmt (linting & formatting)
 - **Turborepo** - Optimized monorepo build system
 
@@ -19,17 +20,15 @@
 bun install
 ```
 
-### 2. Set up Convex
+### 2. Set up environment
 
-Run the Convex setup command from the repo root:
+Create `apps/web/.env` from `apps/web/.env.example`, then fill in the Postgres URL and Better Auth settings.
+
+Push the Drizzle schema to your database:
 
 ```bash
-bun run dev:setup
+bun run db:push
 ```
-
-Follow the prompts to create a new Convex project and connect it to your application.
-
-Create `apps/web/.env` from `apps/web/.env.example`, then copy the Convex client URL from `packages/backend/.env.local` into `VITE_CONVEX_URL`. Fill `VITE_CONVEX_SITE_URL` with the Convex `.convex.site` URL from your Convex dashboard.
 
 Start the whole project together:
 
@@ -38,7 +37,6 @@ bun run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-Your app will connect to the Convex cloud backend automatically.
 
 ## UI Customization
 
@@ -78,6 +76,8 @@ handeck/
 ├── apps/
 │   ├── web/         # Frontend application (React + TanStack Start)
 ├── packages/
+│   ├── api/         # oRPC procedures
+│   ├── auth/        # Better Auth configuration
+│   ├── db/          # Drizzle PostgreSQL schema and client
 │   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── backend/     # Convex backend functions and schema
 ```

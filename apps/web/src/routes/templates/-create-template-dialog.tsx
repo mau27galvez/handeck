@@ -1,5 +1,3 @@
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import { Button } from "@handeck/ui/components/button";
 import {
   Dialog,
@@ -19,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@handeck/ui/components/select";
-import { useMutation, useQuery } from "convex/react";
+import { orpc } from "@/utils/orpc";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
@@ -43,13 +42,14 @@ export default function CreateTemplateDialog({
   const isFromBase = mode === "FromBase";
   const [pending, setPending] = useState(false);
 
-  const [selectedBaseId, setSelectedBaseId] = useState<Id<"baseTemplates"> | undefined>(undefined);
-  const bases = useQuery(api.baseTemplate.list);
-  const createTemplate = useMutation(api.template.create);
+  const [selectedBaseId, setSelectedBaseId] = useState<string | undefined>(undefined);
+  const queryClient = useQueryClient();
+  const bases = useQuery(orpc.baseTemplate.list.queryOptions());
+  const createTemplate = useMutation(orpc.template.create.mutationOptions());
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const basesReady = bases !== undefined;
-  const hasBases = (bases?.length ?? 0) > 0;
+  const basesReady = bases.data !== undefined;
+  const hasBases = (bases.data?.length ?? 0) > 0;
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -78,10 +78,11 @@ export default function CreateTemplateDialog({
     if (!canSubmit) return;
     setPending(true);
     try {
-      const templateId = await createTemplate({
+      const templateId = await createTemplate.mutateAsync({
         name: name.trim(),
         ...(isFromBase && selectedBaseId != null ? { baseTemplateId: selectedBaseId } : {}),
       });
+      void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       toast.success("Template created");
       if (templateId) {
         await navigate({
@@ -140,10 +141,10 @@ export default function CreateTemplateDialog({
                   <Select
                     value={selectedBaseId ?? undefined}
                     onValueChange={(value) => {
-                      if (value) setSelectedBaseId(value as Id<"baseTemplates">);
+                      if (value) setSelectedBaseId(value);
                     }}
-                    items={bases!.map((b) => ({
-                      value: b._id,
+                    items={bases.data!.map((b) => ({
+                      value: b.id,
                       label: b.name,
                     }))}
                   >
@@ -151,8 +152,8 @@ export default function CreateTemplateDialog({
                       <SelectValue placeholder="Choose a base" />
                     </SelectTrigger>
                     <SelectContent>
-                      {bases!.map((b) => (
-                        <SelectItem key={b._id} value={b._id}>
+                      {bases.data!.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
                           {b.name}
                         </SelectItem>
                       ))}

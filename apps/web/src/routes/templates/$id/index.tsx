@@ -1,12 +1,8 @@
 import { wordIdentityKey } from "@/lib/dictionary-search";
-import { isConvexArgumentValidationError } from "@/lib/convex-errors";
 import { requireAuth } from "@/lib/route-auth";
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Id } from "@handeck/backend/convex/_generated/dataModel";
 import { Button } from "@handeck/ui/components/button";
-import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import AddWordsFromDictionaryDialog from "./-add-words-from-dictionary-dialog";
@@ -20,25 +16,30 @@ export const Route = createFileRoute("/templates/$id/")({
     let template;
     try {
       template = await context.queryClient.ensureQueryData(
-        convexQuery(api.template.getById, {
-          templateId: params.id as Id<"templates">,
+        context.orpc.template.getById.queryOptions({
+          input: {
+            templateId: params.id,
+          },
         }),
       );
     } catch (error) {
-      if (isConvexArgumentValidationError(error)) throw notFound();
+      if (error instanceof Error) throw notFound();
       throw error;
     }
     if (template == null) throw notFound();
-    return { templateId: params.id as Id<"templates"> };
+    return { templateId: params.id };
   },
   component: TemplateDetail,
 });
 
 function TemplateDetail() {
   const navigate = useNavigate();
+  const { orpc } = Route.useRouteContext();
   const { templateId } = Route.useLoaderData();
-  const template = useQuery(api.template.getById, { templateId });
-  const words = useQuery(api.template.getWords, { templateId });
+  const { data: template } = useQuery(
+    orpc.template.getById.queryOptions({ input: { templateId } }),
+  );
+  const { data: words } = useQuery(orpc.template.getWords.queryOptions({ input: { templateId } }));
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addWordsOpen, setAddWordsOpen] = useState(false);
 

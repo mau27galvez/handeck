@@ -12,7 +12,9 @@
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "CORS_ORIGIN",
-        "VERCEL_URL"
+        "VERCEL_URL",
+        "VERCEL_BRANCH_URL",
+        "VERCEL_PROJECT_PRODUCTION_URL"
       ]
     },
     "lint": {

@@ -7,28 +7,59 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url().optional(),
-    CORS_ORIGIN: z.url().optional(),
+    CORS_ORIGIN: z.string().min(1).optional(),
     CEDICT_IMPORT_TOKEN: z.string().min(1).optional(),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     VERCEL_URL: z.string().min(1).optional(),
+    VERCEL_BRANCH_URL: z.string().min(1).optional(),
+    VERCEL_PROJECT_PRODUCTION_URL: z.string().min(1).optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 });
 
 export function getAppOrigin() {
-  const explicitOrigin = env.BETTER_AUTH_URL ?? env.CORS_ORIGIN;
+  const explicitOrigin = normalizeOrigin(env.BETTER_AUTH_URL) ?? parseOrigins(env.CORS_ORIGIN)[0];
   if (explicitOrigin) {
     return explicitOrigin;
   }
 
-  if (env.VERCEL_URL) {
-    return `https://${env.VERCEL_URL}`;
+  const vercelOrigin = vercelOrigins()[0];
+  if (vercelOrigin) {
+    return vercelOrigin;
   }
 
   return "http://localhost:3001";
 }
 
 export function getTrustedOrigins() {
-  return [...new Set([getAppOrigin(), env.CORS_ORIGIN].filter((origin) => origin != null))];
+  return [...new Set([getAppOrigin(), ...parseOrigins(env.CORS_ORIGIN), ...vercelOrigins()])];
+}
+
+function vercelOrigins() {
+  return [env.VERCEL_URL, env.VERCEL_BRANCH_URL, env.VERCEL_PROJECT_PRODUCTION_URL]
+    .map(normalizeOrigin)
+    .filter((origin): origin is string => origin != null);
+}
+
+function parseOrigins(origins: string | undefined) {
+  return (
+    origins
+      ?.split(",")
+      .map((origin) => normalizeOrigin(origin.trim()))
+      .filter((origin): origin is string => origin != null) ?? []
+  );
+}
+
+function normalizeOrigin(origin: string | undefined) {
+  if (!origin) return undefined;
+  const withProtocol =
+    origin.startsWith("http://") || origin.startsWith("https://") ? origin : `https://${origin}`;
+
+  try {
+    const url = new URL(withProtocol);
+    return url.origin;
+  } catch {
+    return undefined;
+  }
 }

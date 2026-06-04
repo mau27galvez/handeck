@@ -24,9 +24,9 @@
   },
   "dependencies": {
     "@handeck/env": "workspace:*",
-    "@neondatabase/serverless": "^1.0.2",
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
+    "postgres": "^3.4.9",
     "zod": "catalog:"
   },
   "devDependencies": {

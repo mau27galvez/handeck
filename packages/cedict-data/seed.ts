@@ -23,7 +23,7 @@ const cedictPath = resolve(
   args.find((arg) => !arg.startsWith("--")) ?? resolve(packageRoot, "cedict_ts.u8"),
 );
 
-const batchSize = Number.parseInt(getFlagValue("--batch-size") ?? "250", 10);
+const batchSize = Number.parseInt(getFlagValue("--batch-size") ?? "500", 10);
 const limit = getFlagValue("--limit");
 const maxEntries = limit ? Number.parseInt(limit, 10) : undefined;
 const shouldClear = flags.has("--clear");
@@ -118,7 +118,7 @@ async function clearDictionaryEntries() {
   for (;;) {
     const result = await client!.word.clearBatch({
       importToken: importToken!,
-      limit: 200,
+      limit: 500,
     });
     deleted += result.deleted;
 

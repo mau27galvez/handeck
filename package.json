@@ -24,6 +24,8 @@
       "@orpc/openapi": "^1.14.4",
       "@orpc/server": "^1.14.4",
       "@orpc/zod": "^1.14.4",
+      "drizzle-orm": "^0.45.1",
+      "uuid": "^14.0.0",
       "better-auth": "1.6.13",
       "@types/node": "^24.13.0",
       "@types/react-dom": "^19.2.3",

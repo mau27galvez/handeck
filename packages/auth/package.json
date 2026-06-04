@@ -17,7 +17,7 @@
     "@handeck/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
-    "uuid": "^14.0.0",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

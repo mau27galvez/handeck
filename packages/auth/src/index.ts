@@ -1,11 +1,10 @@
-import { randomUUID } from "node:crypto";
-
 import { createDb } from "@handeck/db";
 import * as schema from "@handeck/db/schema/auth";
 import { env } from "@handeck/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { v4 } from "uuid";
 
 export function createAuth() {
   const db = createDb();
@@ -25,7 +24,7 @@ export function createAuth() {
     plugins: [tanstackStartCookies()],
     advanced: {
       database: {
-        generateId: () => randomUUID(),
+        generateId: () => v4(),
       },
     },
   });

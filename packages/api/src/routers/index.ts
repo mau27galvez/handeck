@@ -1,10 +1,9 @@
-import { randomUUID } from "node:crypto";
-
 import { db } from "@handeck/db";
 import { baseTemplates, templateWords, templates, words } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
 import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
+import { v4 } from "uuid";
 import { z } from "zod";
 
 import { protectedProcedure, publicProcedure } from "../index";
@@ -107,7 +106,7 @@ export const appRouter = {
         const now = new Date();
         await db.insert(words).values(
           input.entries.map((entry) => ({
-            id: randomUUID(),
+            id: v4(),
             ...entry,
             audioUrl: null,
             createdAt: now,
@@ -171,7 +170,7 @@ export const appRouter = {
         const [template] = await db
           .insert(templates)
           .values({
-            id: randomUUID(),
+            id: v4(),
             userId: context.session.user.id,
             name: trimmed,
             baseTemplateId: input.baseTemplateId,

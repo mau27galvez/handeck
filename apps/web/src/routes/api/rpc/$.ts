@@ -1,4 +1,5 @@
 import { createContext } from "@handeck/api/context";
+import { RPC_API_REFERENCE_PATH, RPC_PATH } from "@handeck/api/rpc-paths";
 import { appRouter } from "@handeck/api/routers/index";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
@@ -30,13 +31,13 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 
 async function handle({ request }: { request: Request }) {
   const rpcResult = await rpcHandler.handle(request, {
-    prefix: "/api/rpc",
+    prefix: RPC_PATH,
     context: await createContext({ req: request }),
   });
   if (rpcResult.response) return rpcResult.response;
 
   const apiResult = await apiHandler.handle(request, {
-    prefix: "/api/rpc/api-reference",
+    prefix: RPC_API_REFERENCE_PATH,
     context: await createContext({ req: request }),
   });
   if (apiResult.response) return apiResult.response;

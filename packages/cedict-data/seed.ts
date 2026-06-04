@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
+import { RPC_PATH } from "@handeck/api/rpc-paths";
 import type { AppRouterClient } from "@handeck/api/routers/index";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
@@ -136,7 +137,7 @@ function getFlagValue(name: string): string | undefined {
 
 function createClient(origin: string): AppRouterClient {
   const link = new RPCLink({
-    url: `${origin.replace(/\/$/, "")}/api/rpc`,
+    url: `${origin.replace(/\/$/, "")}${RPC_PATH}`,
   });
 
   return createORPCClient(link);

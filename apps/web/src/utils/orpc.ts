@@ -1,4 +1,5 @@
 import { createContext } from "@handeck/api/context";
+import { RPC_PATH } from "@handeck/api/rpc-paths";
 import { appRouter } from "@handeck/api/routers/index";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
@@ -38,7 +39,7 @@ const getORPCClient = createIsomorphicFn()
   )
   .client((): RouterClient<typeof appRouter> => {
     const link = new RPCLink({
-      url: `${window.location.origin}/api/rpc`,
+      url: `${window.location.origin}${RPC_PATH}`,
       fetch(url, options) {
         return fetch(url, {
           ...options,

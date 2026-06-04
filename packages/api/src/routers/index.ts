@@ -1,13 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { db } from "@handeck/db";
-import {
-  baseTemplates,
-  templateWords,
-  templates,
-  words,
-  type TemplateConfigs,
-} from "@handeck/db/schema";
+import { baseTemplates, templateWords, templates, words } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
 import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
@@ -16,7 +10,6 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
-import { DEFAULT_CONFIGS, templateConfigsSchema } from "../schemas";
 
 const MAX_IMPORT_BATCH_SIZE = 500;
 const MAX_SEARCH_RESULTS = 50;
@@ -165,7 +158,6 @@ export const appRouter = {
         const trimmed = input.name.trim();
         if (!trimmed) throw new Error("Name is required");
 
-        let configs: TemplateConfigs = DEFAULT_CONFIGS;
         if (input.baseTemplateId != null) {
           const [base] = await db
             .select()
@@ -173,12 +165,6 @@ export const appRouter = {
             .where(eq(baseTemplates.id, input.baseTemplateId))
             .limit(1);
           if (!base) throw new Error("Base template not found");
-
-          const parsed = templateConfigsSchema.safeParse(base.configs);
-          if (!parsed.success) {
-            throw new Error(`Invalid configs in base template: ${parsed.error.message}`);
-          }
-          configs = parsed.data;
         }
 
         const now = new Date();
@@ -189,8 +175,6 @@ export const appRouter = {
             userId: context.session.user.id,
             name: trimmed,
             baseTemplateId: input.baseTemplateId,
-            cardTemplate: null,
-            configs,
             createdAt: now,
             updatedAt: now,
           })
@@ -218,7 +202,6 @@ export const appRouter = {
         .select({
           id: templates.id,
           name: templates.name,
-          configs: templates.configs,
           baseTemplateId: templates.baseTemplateId,
           baseTemplate: baseTemplates.name,
           updatedAt: templates.updatedAt,

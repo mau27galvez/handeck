@@ -2,7 +2,6 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
-  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -13,20 +12,14 @@ import {
 
 import { user } from "./auth";
 
-export type TemplateConfigs = {
-  topics: string[];
-  sentencesPerWord: number;
-};
-
-export type CardTemplate = {
-  layout: string;
-  styles: string;
+const timestamps = {
+  createdAt: timestamp({ withTimezone: true }).notNull(),
+  updatedAt: timestamp({ withTimezone: true }),
 };
 
 export const baseTemplates = pgTable("base_templates", {
   id: uuid().primaryKey(),
   name: text().notNull(),
-  configs: jsonb().$type<TemplateConfigs>().notNull(),
 });
 
 export const templates = pgTable(
@@ -38,10 +31,7 @@ export const templates = pgTable(
       .references(() => user.id),
     name: text().notNull(),
     baseTemplateId: uuid().references(() => baseTemplates.id),
-    cardTemplate: jsonb().$type<CardTemplate>(),
-    configs: jsonb().$type<TemplateConfigs>().notNull(),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
-    updatedAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [index("templates_user_id_idx").on(table.userId)],
 );
@@ -59,8 +49,7 @@ export const words = pgTable(
     numberedPinyinSyllables: text().array().notNull(),
     meaning: text().notNull(),
     audioUrl: text(),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
-    updatedAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [
     index("words_normalized_pinyin_idx").on(table.normalizedPinyin),
@@ -82,7 +71,7 @@ export const templateWords = pgTable(
     wordId: uuid()
       .notNull()
       .references(() => words.id),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [
     primaryKey({ columns: [table.templateId, table.wordId] }),
@@ -95,8 +84,7 @@ export const sentences = pgTable("sentences", {
   simplifiedHanzi: text().notNull(),
   translation: text().notNull(),
   audioUrl: text(),
-  createdAt: timestamp({ withTimezone: true }).notNull(),
-  updatedAt: timestamp({ withTimezone: true }).notNull(),
+  ...timestamps,
 });
 
 export const notes = pgTable(
@@ -109,8 +97,7 @@ export const notes = pgTable(
     sentenceId: uuid()
       .notNull()
       .references(() => sentences.id),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
-    updatedAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [
     index("notes_word_id_idx").on(table.wordId),
@@ -129,8 +116,7 @@ export const decks = pgTable(
     templateId: uuid()
       .notNull()
       .references(() => templates.id),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
-    updatedAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [
     index("decks_user_id_idx").on(table.userId),
@@ -148,7 +134,7 @@ export const deckNotes = pgTable(
       .notNull()
       .references(() => notes.id),
     position: integer().notNull(),
-    createdAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
   },
   (table) => [
     primaryKey({ columns: [table.deckId, table.noteId] }),

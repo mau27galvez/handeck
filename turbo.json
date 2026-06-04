@@ -11,7 +11,8 @@
         "DATABASE_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
-        "CORS_ORIGIN"
+        "CORS_ORIGIN",
+        "VERCEL_URL"
       ]
     },
     "lint": {

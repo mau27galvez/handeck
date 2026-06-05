@@ -15,7 +15,7 @@ export type DictionaryEntry = {
   meaning: string;
   audioUrl: string | null;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null;
   searchMatchType?: "english" | "mixed" | "pinyin" | "simplified";
 };
 

@@ -7,26 +7,20 @@ import {
   CardFooter,
 } from "@handeck/ui/components/card";
 import { Button } from "@handeck/ui/components/button";
-import { BookOpen, Pencil, AlignLeft, Hash } from "lucide-react";
+import { BookOpen, Pencil, Hash } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { KuaiBadge } from "@/components/kuai-badge";
-import { Badge } from "@handeck/ui/components/badge";
 
 export type TemplateListItem = {
   _id: string;
   name: string;
   wordCount: number;
-  configs: {
-    topics: string[];
-    sentencesPerWord: number;
-  };
   creditCost?: number;
   baseTemplate?: string;
 };
 
 export default function TemplateCard({ template }: { template: TemplateListItem }) {
-  const { _id, name, wordCount, configs, creditCost, baseTemplate } = template;
-  const { topics, sentencesPerWord } = configs;
+  const { _id, name, wordCount, creditCost, baseTemplate } = template;
 
   return (
     <Card size="sm" className="flex flex-col">
@@ -54,36 +48,8 @@ export default function TemplateCard({ template }: { template: TemplateListItem 
             <Hash className="size-3" />
             {wordCount} {wordCount === 1 ? "word" : "words"}
           </span>
-          {sentencesPerWord > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              <AlignLeft className="size-3" />
-              {sentencesPerWord} sentence
-              {sentencesPerWord === 1 ? "" : "s"} / word
-            </span>
-          ) : (
-            <>
-              {/* Valid templates should never have 0 sentences per word; this branch is for invalid or legacy data only. */}
-              <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                <AlignLeft className="size-3" />
-                Sentences per word not set
-              </span>
-            </>
-          )}
           {creditCost !== undefined && <KuaiBadge cost={creditCost} />}
         </div>
-        {topics.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {topics.map((topic) => (
-              <Badge key={topic} variant="secondary" className="rounded-sm text-xs">
-                {topic}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            No topics yet. Add topics when you edit this template.
-          </p>
-        )}
       </CardContent>
 
       <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t px-3 py-2">

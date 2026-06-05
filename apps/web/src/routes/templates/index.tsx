@@ -23,7 +23,6 @@ type TemplateListItemSource = {
   id: string;
   name: string;
   wordCount: number;
-  configs: TemplateListItem["configs"];
   baseTemplate?: string;
 };
 
@@ -32,7 +31,6 @@ function toTemplateListItems(templates: TemplateListItemSource[]): TemplateListI
     _id: template.id,
     name: template.name,
     wordCount: template.wordCount,
-    configs: template.configs,
     creditCost: KUAI_COST_PLACEHOLDER,
     baseTemplate: template.baseTemplate,
   }));
@@ -88,8 +86,7 @@ function EmptyTemplatesCTA({
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
       <p className="text-lg font-semibold text-foreground sm:text-xl">No templates yet</p>
       <p className="max-w-md text-sm text-muted-foreground">
-        Start from a base template or an empty template, then configure topics and card layout when
-        you edit.
+        Start from a base template or an empty template, then add words when you edit.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button className="text-base" size="lg" type="button" onClick={onUseBase}>

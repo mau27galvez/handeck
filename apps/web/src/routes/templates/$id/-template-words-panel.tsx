@@ -1,6 +1,6 @@
 import { TEMPLATE_WORDS_PANEL_ID } from "@/lib/template-placeholders";
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Doc, Id } from "@handeck/backend/convex/_generated/dataModel";
+import type { DictionaryEntry } from "@/components/dictionary/dictionary-entry-row";
+import { orpc } from "@/utils/orpc";
 import { Button } from "@handeck/ui/components/button";
 import {
   Card,
@@ -10,15 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@handeck/ui/components/card";
-import { useMutation } from "convex/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-type TemplateWord = Doc<"words">;
+type TemplateWord = DictionaryEntry;
 
 type TemplateWordsPanelProps = {
-  templateId: Id<"templates">;
+  templateId: string;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
 };
@@ -28,19 +28,24 @@ export default function TemplateWordsPanel({
   words,
   onAddWords,
 }: TemplateWordsPanelProps) {
-  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
-  const [removingWordId, setRemovingWordId] = useState<Id<"words"> | null>(null);
+  const queryClient = useQueryClient();
+  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
+  const [removingWordId, setRemovingWordId] = useState<string | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
   const isEmpty = !isLoading && wordList.length === 0;
 
   async function handleRemoveWord(word: TemplateWord) {
-    setRemovingWordId(word._id);
+    setRemovingWordId(word.id);
     try {
-      await toggleWordInTemplate({
+      await toggleWordInTemplate.mutateAsync({
         templateId,
-        wordId: word._id,
+        wordId: word.id,
       });
+      void queryClient.invalidateQueries(
+        orpc.template.getWords.queryOptions({ input: { templateId } }),
+      );
+      void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       toast.success(`Removed ${word.simplifiedHanzi} from template`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to remove word";
@@ -88,7 +93,7 @@ export default function TemplateWordsPanel({
           <>
             <ul className="min-h-0 flex-1 overflow-y-auto divide-y rounded-md border">
               {wordList.map((word) => (
-                <li key={word._id} className="flex items-start justify-between gap-2 px-3 py-2">
+                <li key={word.id} className="flex items-start justify-between gap-2 px-3 py-2">
                   <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-medium leading-tight">
@@ -103,7 +108,7 @@ export default function TemplateWordsPanel({
                     variant="ghost"
                     size="icon-sm"
                     disabled={removingWordId != null}
-                    aria-busy={removingWordId === word._id}
+                    aria-busy={removingWordId === word.id}
                     aria-label={`Remove ${word.simplifiedHanzi} from template`}
                     onClick={() => void handleRemoveWord(word)}
                   >

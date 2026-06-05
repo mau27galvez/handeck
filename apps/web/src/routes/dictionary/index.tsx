@@ -32,7 +32,7 @@ function DictionaryHeader({
 }
 
 function Dictionary() {
-  const { search, setSearch, clearSearch, searchQuery, entries, isSearching, hasEntries } =
+  const { search, setSearch, clearSearch, searchQuery, entries, isSearching } =
     useDictionarySearch();
 
   return (
@@ -50,14 +50,14 @@ function Dictionary() {
             <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
               Searching dictionary...
             </p>
-          ) : !hasEntries ? (
+          ) : !entries || entries.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
               No entries match your search.
             </p>
           ) : (
             <div className="rounded-lg border border-border bg-card px-3 sm:px-5">
               {entries.map((entry) => (
-                <DictionaryEntryRow key={entry._id} entry={entry} searchQuery={searchQuery} />
+                <DictionaryEntryRow key={entry.id} entry={entry} searchQuery={searchQuery} />
               ))}
             </div>
           )}

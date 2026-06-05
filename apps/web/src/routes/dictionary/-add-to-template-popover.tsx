@@ -1,5 +1,4 @@
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Id } from "@handeck/backend/convex/_generated/dataModel";
+import { orpc } from "@/utils/orpc";
 import { Button } from "@handeck/ui/components/button";
 import {
   Popover,
@@ -11,7 +10,7 @@ import {
 } from "@handeck/ui/components/popover";
 import { Spinner } from "@handeck/ui/components/spinner";
 import { cn } from "@handeck/ui/lib/utils";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ListPlus } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
@@ -20,21 +19,24 @@ import { toast } from "sonner";
 import { Route as RootRoute } from "@/routes/__root";
 
 type AddToTemplatePopoverProps = {
-  wordId: Id<"words">;
+  wordId: string;
   hanzi: string;
 };
 
 export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useRouteContext({ from: RootRoute.id });
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [pendingTemplateId, setPendingTemplateId] = useState<Id<"templates"> | null>(null);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
 
   const membership = useQuery(
-    api.template.listMembershipForWord,
-    open && isAuthenticated ? { wordId } : "skip",
+    orpc.template.listMembershipForWord.queryOptions({
+      input: { wordId },
+      enabled: open && isAuthenticated,
+    }),
   );
-  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
+  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen && !isAuthenticated) {
@@ -48,17 +50,20 @@ export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProp
     setOpen(nextOpen);
   }
 
-  async function handleToggle(
-    templateId: Id<"templates">,
-    templateName: string,
-    included: boolean,
-  ) {
+  async function handleToggle(templateId: string, templateName: string, included: boolean) {
     setPendingTemplateId(templateId);
     try {
-      await toggleWordInTemplate({
+      await toggleWordInTemplate.mutateAsync({
         templateId,
         wordId,
       });
+      void queryClient.invalidateQueries(
+        orpc.template.listMembershipForWord.queryOptions({ input: { wordId } }),
+      );
+      void queryClient.invalidateQueries(
+        orpc.template.getWords.queryOptions({ input: { templateId } }),
+      );
+      void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       toast.success(included ? `Removed from "${templateName}"` : `Added to "${templateName}"`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to update template";
@@ -68,8 +73,8 @@ export function AddToTemplatePopover({ wordId, hanzi }: AddToTemplatePopoverProp
     }
   }
 
-  const isLoading = open && isAuthenticated && membership === undefined;
-  const templates = membership ?? [];
+  const isLoading = open && isAuthenticated && membership.data === undefined;
+  const templates = membership.data ?? [];
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>

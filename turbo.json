@@ -6,7 +6,16 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".vercel/output/**"],
-      "env": ["VITE_CONVEX_URL", "VITE_CONVEX_SITE_URL", "VITE_APP_ORIGIN"]
+      "env": [
+        "VITE_APP_ORIGIN",
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CORS_ORIGIN",
+        "VERCEL_URL",
+        "VERCEL_BRANCH_URL",
+        "VERCEL_PROJECT_PRODUCTION_URL"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]

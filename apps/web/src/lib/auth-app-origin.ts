@@ -1,6 +1,6 @@
 "use client";
 
-import { env } from "@handeck/env/web";
+import { env, getVercelAppOrigin } from "@handeck/env/web";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -13,14 +13,13 @@ const subscribeNoop = () => () => {};
 
 /**
  * Better Auth UI must use the **browser app origin** for `baseURL` so OAuth
- * `callbackURL` matches Convex `trustedOrigins`. The client uses
- * `window.location.origin`; SSR uses `VITE_APP_ORIGIN` or the dev default.
- * `VITE_CONVEX_SITE_URL` remains the Convex `*.convex.site` URL for the auth HTTP proxy.
+ * `callbackURL` matches `trustedOrigins`. The client uses `window.location.origin`;
+ * SSR uses `VITE_APP_ORIGIN`, Vercel's deployment URL, or the dev default.
  */
 export function useAuthBaseUrl() {
   return useSyncExternalStore(
     subscribeNoop,
     () => window.location.origin,
-    () => env.VITE_APP_ORIGIN ?? DEFAULT_DEV_APP_ORIGIN,
+    () => env.VITE_APP_ORIGIN ?? getVercelAppOrigin() ?? DEFAULT_DEV_APP_ORIGIN,
   );
 }

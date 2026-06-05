@@ -2,9 +2,6 @@ import { Button } from "@handeck/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { convexQuery } from "@convex-dev/react-query";
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { FunctionReturnType } from "convex/server";
 import CreateTemplateDialog, { type CreateMode } from "./-create-template-dialog";
 import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
@@ -15,19 +12,25 @@ const KUAI_COST_PLACEHOLDER = 0;
 export const Route = createFileRoute("/templates/")({
   beforeLoad: requireAuth,
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(convexQuery(api.template.listForCurrentUser, {}));
+    await context.queryClient.ensureQueryData(
+      context.orpc.template.listForCurrentUser.queryOptions(),
+    );
   },
   component: Templates,
 });
 
-function toTemplateListItems(
-  templates: FunctionReturnType<typeof api.template.listForCurrentUser>,
-): TemplateListItem[] {
+type TemplateListItemSource = {
+  id: string;
+  name: string;
+  wordCount: number;
+  baseTemplate?: string;
+};
+
+function toTemplateListItems(templates: TemplateListItemSource[]): TemplateListItem[] {
   return templates.map((template) => ({
-    _id: template._id as string,
+    _id: template.id,
     name: template.name,
     wordCount: template.wordCount,
-    configs: template.configs,
     creditCost: KUAI_COST_PLACEHOLDER,
     baseTemplate: template.baseTemplate,
   }));
@@ -83,8 +86,7 @@ function EmptyTemplatesCTA({
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
       <p className="text-lg font-semibold text-foreground sm:text-xl">No templates yet</p>
       <p className="max-w-md text-sm text-muted-foreground">
-        Start from a base template or an empty template, then configure topics and card layout when
-        you edit.
+        Start from a base template or an empty template, then add words when you edit.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
@@ -105,7 +107,8 @@ function EmptyTemplatesCTA({
 }
 
 function Templates() {
-  const { data } = useSuspenseQuery(convexQuery(api.template.listForCurrentUser, {}));
+  const { orpc } = Route.useRouteContext();
+  const { data } = useSuspenseQuery(orpc.template.listForCurrentUser.queryOptions());
   const templates = toTemplateListItems(data);
   const [dialog, setDialog] = useState<CreateDialogState>({ kind: "closed" });
   const openFromBase = () => setDialog({ kind: "open", mode: "FromBase" });

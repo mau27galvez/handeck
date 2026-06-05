@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@handeck/backend": "workspace:*",
-    "convex": "catalog:",
+    "@handeck/api": "workspace:*",
+    "@orpc/client": "catalog:",
     "dotenv": "catalog:"
   },
   "devDependencies": {

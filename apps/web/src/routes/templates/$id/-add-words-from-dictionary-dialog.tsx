@@ -5,8 +5,7 @@ import {
 import { DictionarySearchInput } from "@/components/dictionary/dictionary-search-input";
 import { useDictionarySearch } from "@/components/dictionary/use-dictionary-search";
 import { wordIdentityKey } from "@/lib/dictionary-search";
-import { api } from "@handeck/backend/convex/_generated/api";
-import type { Id } from "@handeck/backend/convex/_generated/dataModel";
+import { orpc } from "@/utils/orpc";
 import { Button } from "@handeck/ui/components/button";
 import { Checkbox } from "@handeck/ui/components/checkbox";
 import {
@@ -19,14 +18,14 @@ import {
   DialogTitle,
 } from "@handeck/ui/components/dialog";
 import { cn } from "@handeck/ui/lib/utils";
-import { useMutation } from "convex/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type AddWordsFromDictionaryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  templateId: Id<"templates">;
+  templateId: string;
   existingWordKeys: Set<string>;
 };
 
@@ -90,8 +89,9 @@ export default function AddWordsFromDictionaryDialog({
 }: AddWordsFromDictionaryDialogProps) {
   const { search, setSearch, clearSearch, searchQuery, entries, isSearching } =
     useDictionarySearch();
-  const toggleWordInTemplate = useMutation(api.template.toggleWordInTemplate);
-  const [selectedIds, setSelectedIds] = useState<Set<Id<"words">>>(new Set());
+  const queryClient = useQueryClient();
+  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function AddWordsFromDictionaryDialog({
     }
   }, [open, setSearch]);
 
-  function toggleSelection(wordId: Id<"words">) {
+  function toggleSelection(wordId: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(wordId)) {
@@ -122,7 +122,7 @@ export default function AddWordsFromDictionaryDialog({
       let skipped = 0;
 
       for (const wordId of selectedIds) {
-        const entry = entries?.find((e) => e._id === wordId);
+        const entry = entries?.find((e) => e.id === wordId);
         if (!entry) continue;
 
         const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
@@ -131,8 +131,15 @@ export default function AddWordsFromDictionaryDialog({
           continue;
         }
 
-        await toggleWordInTemplate({ templateId, wordId });
+        await toggleWordInTemplate.mutateAsync({ templateId, wordId });
         added += 1;
+      }
+
+      if (added > 0) {
+        void queryClient.invalidateQueries(
+          orpc.template.getWords.queryOptions({ input: { templateId } }),
+        );
+        void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       }
 
       const addedLabel = added === 1 ? "1 word" : `${added} words`;
@@ -189,16 +196,16 @@ export default function AddWordsFromDictionaryDialog({
               {entries.map((entry) => {
                 const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
                 const alreadyAdded = existingWordKeys.has(identityKey);
-                const selected = selectedIds.has(entry._id);
+                const selected = selectedIds.has(entry.id);
 
                 return (
                   <SelectableDictionaryEntryRow
-                    key={entry._id}
+                    key={entry.id}
                     entry={entry}
                     searchQuery={searchQuery}
                     selected={selected}
                     disabled={alreadyAdded}
-                    onToggle={() => toggleSelection(entry._id)}
+                    onToggle={() => toggleSelection(entry.id)}
                   />
                 );
               })}

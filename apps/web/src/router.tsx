@@ -1,6 +1,3 @@
-import { ConvexQueryClient } from "@convex-dev/react-query";
-import { env } from "@handeck/env/web";
-import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
@@ -8,26 +5,17 @@ import Loader from "./components/loader";
 
 import "./index.css";
 import { routeTree } from "./routeTree.gen";
+import { createQueryClient, orpc } from "./utils/orpc";
 
 export function getRouter() {
-  const convexQueryClient = new ConvexQueryClient(env.VITE_CONVEX_URL);
-
-  const queryClient: QueryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        queryKeyHashFn: convexQueryClient.hashFn(),
-        queryFn: convexQueryClient.queryFn(),
-      },
-    },
-  });
-  convexQueryClient.connect(queryClient);
+  const queryClient = createQueryClient();
 
   const router = createTanStackRouter({
     routeTree,
     defaultPreload: "intent",
     defaultPendingComponent: () => <Loader />,
     defaultNotFoundComponent: () => <div>Not Found</div>,
-    context: { queryClient, convexQueryClient },
+    context: { queryClient, orpc },
   });
 
   setupRouterSsrQueryIntegration({

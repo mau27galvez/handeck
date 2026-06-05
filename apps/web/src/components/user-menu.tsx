@@ -1,4 +1,3 @@
-import { api } from "@handeck/backend/convex/_generated/api";
 import { Button } from "@handeck/ui/components/button";
 import {
   DropdownMenu,
@@ -9,12 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@handeck/ui/components/dropdown-menu";
-import { useQuery } from "convex/react";
 
 import { authClient } from "@/lib/auth-client";
 
 export default function UserMenu() {
-  const user = useQuery(api.auth.getCurrentUser);
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
   return (
     <DropdownMenu>

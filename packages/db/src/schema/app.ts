@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -94,15 +94,17 @@ export const notes = pgTable(
     wordId: uuid()
       .notNull()
       .references(() => words.id),
-    sentenceId: uuid()
-      .notNull()
-      .references(() => sentences.id),
+    // Linked when a sentence is generated; null until then.
+    sentenceId: uuid().references(() => sentences.id),
     ...timestamps,
   },
   (table) => [
     index("notes_word_id_idx").on(table.wordId),
     index("notes_sentence_id_idx").on(table.sentenceId),
     uniqueIndex("notes_word_id_sentence_id_idx").on(table.wordId, table.sentenceId),
+    uniqueIndex("notes_word_id_null_sentence_idx")
+      .on(table.wordId)
+      .where(sql`${table.sentenceId} is null`),
   ],
 );
 

@@ -45,7 +45,14 @@ async function loadTemplateAndWords(tx: DbTx, templateId: string, userId: string
   if (!template) throw new Error("Template not found");
 
   const wordRows = await tx
-    .select({ word: words })
+    .select({
+      word: {
+        id: words.id,
+        simplifiedHanzi: words.simplifiedHanzi,
+        diacriticPinyin: words.diacriticPinyin,
+        meaning: words.meaning,
+      },
+    })
     .from(templateWords)
     .innerJoin(words, eq(templateWords.wordId, words.id))
     .where(eq(templateWords.templateId, templateId))

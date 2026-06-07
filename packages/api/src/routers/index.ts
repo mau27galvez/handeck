@@ -1,19 +1,12 @@
 import { db } from "@handeck/db";
-import {
-  baseTemplates,
-  deckNotes,
-  decks,
-  notes,
-  templateWords,
-  templates,
-  words,
-} from "@handeck/db/schema";
+import { baseTemplates, templateWords, templates, words } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lt } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
 import { v4 } from "uuid";
 import { z } from "zod";
 
+import { buildDeckFromTemplate } from "../buildDeckFromTemplate";
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
@@ -72,103 +65,15 @@ export const appRouter = {
     buildFromTemplate: protectedProcedure
       .input(z.object({ templateId: uuidSchema }))
       .handler(async ({ input, context }) => {
-        const buildResult = await db.transaction(async (tx) => {
-          const [template] = await tx
-            .select()
-            .from(templates)
-            .where(
-              and(
-                eq(templates.id, input.templateId),
-                eq(templates.userId, context.session.user.id),
-              ),
-            )
-            .limit(1);
-          if (!template) throw new Error("Template not found");
-
-          const wordRows = await tx
-            .select({ word: words })
-            .from(templateWords)
-            .innerJoin(words, eq(templateWords.wordId, words.id))
-            .where(eq(templateWords.templateId, input.templateId))
-            .orderBy(asc(templateWords.createdAt), asc(templateWords.wordId));
-          if (wordRows.length === 0) throw new Error("Add words before generating a deck");
-
-          const now = new Date();
-          const deckId = v4();
-          const wordIds = wordRows.map((row) => row.word.id);
-          const existingWordNotes = await tx
-            .select({ id: notes.id, wordId: notes.wordId })
-            .from(notes)
-            .where(and(inArray(notes.wordId, wordIds), isNull(notes.sentenceId)));
-          const noteByWordId = new Map(
-            existingWordNotes.map((note) => [note.wordId, note.id] as const),
-          );
-          const missingWordIds = wordIds.filter((wordId) => !noteByWordId.has(wordId));
-
-          if (missingWordIds.length > 0) {
-            const insertedNotes = await tx
-              .insert(notes)
-              .values(
-                missingWordIds.map((wordId) => ({
-                  id: v4(),
-                  wordId,
-                  sentenceId: null,
-                  createdAt: now,
-                  updatedAt: now,
-                })),
-              )
-              .returning({ id: notes.id, wordId: notes.wordId });
-
-            for (const note of insertedNotes) {
-              noteByWordId.set(note.wordId, note.id);
-            }
-          }
-
-          await tx.insert(decks).values({
-            id: deckId,
-            userId: context.session.user.id,
-            templateId: input.templateId,
-            createdAt: now,
-            updatedAt: now,
-          });
-
-          await tx.insert(deckNotes).values(
-            wordRows.map((row, position) => {
-              const noteId = noteByWordId.get(row.word.id);
-              if (!noteId) throw new Error("Failed to create deck note");
-
-              return {
-                deckId,
-                noteId,
-                position,
-                createdAt: now,
-                updatedAt: now,
-              };
-            }),
-          );
-
-          return {
-            deckId,
-            templateName: template.name,
-            words: wordRows.map((row) => row.word),
-            wordCount: wordRows.length,
-            noteCount: wordRows.length,
-          };
+        const result = await buildDeckFromTemplate({
+          templateId: input.templateId,
+          userId: context.session.user.id,
         });
 
-        if (typeof Bun !== "undefined") {
-          const { writeDeckPackageToVoid } = await import("../deckPackage");
-          await writeDeckPackageToVoid({
-            deckId: buildResult.deckId,
-            templateName: buildResult.templateName,
-            words: buildResult.words,
-          });
-        }
-
         return {
-          deckId: buildResult.deckId,
-          wordCount: buildResult.wordCount,
-          noteCount: buildResult.noteCount,
+          deckId: result.deckId,
+          wordCount: result.wordCount,
+          noteCount: result.noteCount,
         };
       }),
   },

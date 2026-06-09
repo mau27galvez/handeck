@@ -90,7 +90,7 @@ export default function AddWordsFromDictionaryDialog({
   const { search, setSearch, clearSearch, searchQuery, entries, isSearching } =
     useDictionarySearch();
   const queryClient = useQueryClient();
-  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
+  const addWordsToTemplate = useMutation(orpc.template.addWordsToTemplate.mutationOptions());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [pending, setPending] = useState(false);
 
@@ -116,34 +116,33 @@ export default function AddWordsFromDictionaryDialog({
   async function handleAddWords() {
     if (selectedIds.size === 0) return;
 
+    const wordIds = [...selectedIds].filter((wordId) => {
+      const entry = entries?.find((e) => e.id === wordId);
+      if (!entry) return false;
+
+      const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
+      return !existingWordKeys.has(identityKey);
+    });
+
+    if (wordIds.length === 0) {
+      toast.info("Selected words are already in this template");
+      onOpenChange(false);
+      return;
+    }
+
     setPending(true);
     try {
-      let added = 0;
-      let skipped = 0;
+      const result = await addWordsToTemplate.mutateAsync({ templateId, wordIds });
 
-      for (const wordId of selectedIds) {
-        const entry = entries?.find((e) => e.id === wordId);
-        if (!entry) continue;
-
-        const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
-        if (existingWordKeys.has(identityKey)) {
-          skipped += 1;
-          continue;
-        }
-
-        await toggleWordInTemplate.mutateAsync({ templateId, wordId });
-        added += 1;
-      }
-
-      if (added > 0) {
+      if (result.added > 0) {
         void queryClient.invalidateQueries(
           orpc.template.getWords.queryOptions({ input: { templateId } }),
         );
         void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       }
 
-      const addedLabel = added === 1 ? "1 word" : `${added} words`;
-      if (added > 0) {
+      const addedLabel = result.added === 1 ? "1 word" : `${result.added} words`;
+      if (result.added > 0) {
         toast.success(`Added ${addedLabel} to template`);
       } else {
         toast.info("Selected words are already in this template");

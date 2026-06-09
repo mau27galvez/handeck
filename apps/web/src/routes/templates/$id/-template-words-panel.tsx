@@ -31,7 +31,9 @@ export default function TemplateWordsPanel({
   onGenerate,
 }: TemplateWordsPanelProps) {
   const queryClient = useQueryClient();
-  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
+  const removeWordsFromTemplate = useMutation(
+    orpc.template.removeWordsFromTemplate.mutationOptions(),
+  );
   const [removingWordId, setRemovingWordId] = useState<string | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
@@ -40,9 +42,9 @@ export default function TemplateWordsPanel({
   async function handleRemoveWord(word: TemplateWord) {
     setRemovingWordId(word.id);
     try {
-      await toggleWordInTemplate.mutateAsync({
+      await removeWordsFromTemplate.mutateAsync({
         templateId,
-        wordId: word.id,
+        wordIds: [word.id],
       });
       void queryClient.invalidateQueries(
         orpc.template.getWords.queryOptions({ input: { templateId } }),

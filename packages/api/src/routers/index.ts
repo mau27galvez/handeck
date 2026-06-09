@@ -14,8 +14,14 @@ import { parseDictionarySearchQuery } from "../dictionarySearch";
 const MAX_IMPORT_BATCH_SIZE = 500;
 const MAX_SEARCH_RESULTS = 50;
 const MAX_MIXED_SEARCH_CANDIDATES = 250;
+const MAX_TEMPLATE_WORD_BATCH_SIZE = 500;
 
 const uuidSchema = z.uuid();
+
+const templateWordIdsInputSchema = z.object({
+  templateId: uuidSchema,
+  wordIds: z.array(uuidSchema).min(1).max(MAX_TEMPLATE_WORD_BATCH_SIZE),
+});
 
 const wordFieldsSchema = z.object({
   simplifiedHanzi: z.string(),
@@ -292,6 +298,96 @@ export const appRouter = {
           name: template.name,
           included: includedTemplateIds.has(template.id),
         }));
+      }),
+
+    addWordsToTemplate: protectedProcedure
+      .input(templateWordIdsInputSchema)
+      .handler(async ({ input, context }) => {
+        const uniqueWordIds = [...new Set(input.wordIds)];
+        const requested = uniqueWordIds.length;
+
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+
+        const existingWords = await db
+          .select({ id: words.id })
+          .from(words)
+          .where(inArray(words.id, uniqueWordIds));
+        if (existingWords.length !== uniqueWordIds.length) {
+          throw new Error("Word not found");
+        }
+
+        const membershipRows = await db
+          .select({ wordId: templateWords.wordId })
+          .from(templateWords)
+          .where(
+            and(
+              eq(templateWords.templateId, input.templateId),
+              inArray(templateWords.wordId, uniqueWordIds),
+            ),
+          );
+        const existingWordIds = new Set(membershipRows.map((row) => row.wordId));
+        const wordIdsToAdd = uniqueWordIds.filter((wordId) => !existingWordIds.has(wordId));
+        const skipped = requested - wordIdsToAdd.length;
+
+        if (wordIdsToAdd.length > 0) {
+          const now = new Date();
+          await db
+            .insert(templateWords)
+            .values(
+              wordIdsToAdd.map((wordId) => ({
+                templateId: input.templateId,
+                wordId,
+                createdAt: now,
+              })),
+            )
+            .onConflictDoNothing();
+
+          await db
+            .update(templates)
+            .set({ updatedAt: now })
+            .where(eq(templates.id, input.templateId));
+        }
+
+        return {
+          added: wordIdsToAdd.length,
+          skipped,
+          requested,
+        };
+      }),
+
+    removeWordsFromTemplate: protectedProcedure
+      .input(templateWordIdsInputSchema)
+      .handler(async ({ input, context }) => {
+        const uniqueWordIds = [...new Set(input.wordIds)];
+        const requested = uniqueWordIds.length;
+
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+
+        const removedRows = await db
+          .delete(templateWords)
+          .where(
+            and(
+              eq(templateWords.templateId, input.templateId),
+              inArray(templateWords.wordId, uniqueWordIds),
+            ),
+          )
+          .returning({ wordId: templateWords.wordId });
+
+        const removed = removedRows.length;
+        const skipped = requested - removed;
+
+        if (removed > 0) {
+          await db
+            .update(templates)
+            .set({ updatedAt: new Date() })
+            .where(eq(templates.id, input.templateId));
+        }
+
+        return {
+          removed,
+          skipped,
+          requested,
+        };
       }),
 
     toggleWordInTemplate: protectedProcedure

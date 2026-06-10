@@ -66,12 +66,11 @@ function SelectableDictionaryEntryRow({
       <div className="min-w-0 flex-1">
         <DictionaryEntryRow entry={entry} searchQuery={searchQuery} showAddToTemplate={false} />
       </div>
-      <div className="flex shrink-0 items-center">
+      <div className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={disabled || selected}
           disabled={disabled}
           aria-label={`Select ${entry.simplifiedHanzi}`}
-          onClick={(e) => e.stopPropagation()}
           onCheckedChange={() => {
             if (!disabled) onToggle();
           }}

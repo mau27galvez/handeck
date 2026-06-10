@@ -116,19 +116,7 @@ export default function AddWordsFromDictionaryDialog({
   async function handleAddWords() {
     if (selectedIds.size === 0) return;
 
-    const wordIds = [...selectedIds].filter((wordId) => {
-      const entry = entries?.find((e) => e.id === wordId);
-      if (!entry) return false;
-
-      const identityKey = wordIdentityKey(entry.simplifiedHanzi, entry.normalizedPinyin);
-      return !existingWordKeys.has(identityKey);
-    });
-
-    if (wordIds.length === 0) {
-      toast.info("Selected words are already in this template");
-      onOpenChange(false);
-      return;
-    }
+    const wordIds = [...selectedIds];
 
     setPending(true);
     try {

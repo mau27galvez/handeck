@@ -1,6 +1,6 @@
 import { db } from "@handeck/db";
 import { deckNotes, decks, notes, templateWords, templates, words } from "@handeck/db/schema";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { v4 } from "uuid";
 
 import { writeDeckPackageToVoid } from "./deckPackage";
@@ -71,7 +71,7 @@ async function ensureWordNotes(
   const existingWordNotes = await tx
     .select({ id: notes.id, wordId: notes.wordId })
     .from(notes)
-    .where(and(inArray(notes.wordId, wordIds), isNull(notes.sentenceId)));
+    .where(inArray(notes.wordId, wordIds));
   const noteByWordId = new Map(existingWordNotes.map((note) => [note.wordId, note.id] as const));
   const missingWordIds = wordIds.filter((wordId) => !noteByWordId.has(wordId));
 
@@ -82,7 +82,6 @@ async function ensureWordNotes(
         missingWordIds.map((wordId) => ({
           id: v4(),
           wordId,
-          sentenceId: null,
           createdAt: now,
           updatedAt: now,
         })),

@@ -1,14 +1,5 @@
-import { relations, sql } from "drizzle-orm";
-import {
-  index,
-  integer,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
@@ -91,6 +82,9 @@ export const notes = pgTable(
   "notes",
   {
     id: uuid().primaryKey(),
+    deckId: uuid()
+      .notNull()
+      .references(() => decks.id),
     wordId: uuid()
       .notNull()
       .references(() => words.id),
@@ -99,12 +93,9 @@ export const notes = pgTable(
     ...timestamps,
   },
   (table) => [
+    index("notes_deck_id_idx").on(table.deckId),
     index("notes_word_id_idx").on(table.wordId),
-    index("notes_sentence_id_idx").on(table.sentenceId),
-    uniqueIndex("notes_word_id_sentence_id_idx").on(table.wordId, table.sentenceId),
-    uniqueIndex("notes_word_id_null_sentence_idx")
-      .on(table.wordId)
-      .where(sql`${table.sentenceId} is null`),
+    uniqueIndex("notes_unique_deck_word_idx").on(table.deckId, table.wordId),
   ],
 );
 

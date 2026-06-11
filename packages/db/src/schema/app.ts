@@ -70,14 +70,6 @@ export const templateWords = pgTable(
   ],
 );
 
-export const sentences = pgTable("sentences", {
-  id: uuid().primaryKey(),
-  simplifiedHanzi: text().notNull(),
-  translation: text().notNull(),
-  audioUrl: text(),
-  ...timestamps,
-});
-
 export const notes = pgTable(
   "notes",
   {
@@ -88,14 +80,14 @@ export const notes = pgTable(
     wordId: uuid()
       .notNull()
       .references(() => words.id),
-    // Linked when a sentence is generated; null until then.
-    sentenceId: uuid().references(() => sentences.id),
-    ...timestamps,
+      position: integer().notNull(),
+      ...timestamps,
   },
   (table) => [
     index("notes_deck_id_idx").on(table.deckId),
     index("notes_word_id_idx").on(table.wordId),
     uniqueIndex("notes_unique_deck_word_idx").on(table.deckId, table.wordId),
+    uniqueIndex("notes_unique_position_idx").on(table.deckId, table.position),
   ],
 );
 
@@ -114,24 +106,6 @@ export const decks = pgTable(
   (table) => [
     index("decks_user_id_idx").on(table.userId),
     index("decks_template_id_idx").on(table.templateId),
-  ],
-);
-
-export const deckNotes = pgTable(
-  "deck_notes",
-  {
-    deckId: uuid()
-      .notNull()
-      .references(() => decks.id),
-    noteId: uuid()
-      .notNull()
-      .references(() => notes.id),
-    position: integer().notNull(),
-    ...timestamps,
-  },
-  (table) => [
-    primaryKey({ columns: [table.deckId, table.noteId] }),
-    index("deck_notes_note_id_idx").on(table.noteId),
   ],
 );
 
@@ -168,20 +142,15 @@ export const templateWordRelations = relations(templateWords, ({ one }) => ({
   }),
 }));
 
-export const sentenceRelations = relations(sentences, ({ many }) => ({
-  notes: many(notes),
-}));
-
-export const noteRelations = relations(notes, ({ one, many }) => ({
+export const noteRelations = relations(notes, ({ one }) => ({
+  deck: one(decks, {
+    fields: [notes.deckId],
+    references: [decks.id],
+  }),
   word: one(words, {
     fields: [notes.wordId],
     references: [words.id],
   }),
-  sentence: one(sentences, {
-    fields: [notes.sentenceId],
-    references: [sentences.id],
-  }),
-  deckNotes: many(deckNotes),
 }));
 
 export const deckRelations = relations(decks, ({ one, many }) => ({
@@ -193,16 +162,5 @@ export const deckRelations = relations(decks, ({ one, many }) => ({
     fields: [decks.templateId],
     references: [templates.id],
   }),
-  deckNotes: many(deckNotes),
-}));
-
-export const deckNoteRelations = relations(deckNotes, ({ one }) => ({
-  deck: one(decks, {
-    fields: [deckNotes.deckId],
-    references: [decks.id],
-  }),
-  note: one(notes, {
-    fields: [deckNotes.noteId],
-    references: [notes.id],
-  }),
+  notes: many(notes),
 }));

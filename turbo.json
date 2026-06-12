@@ -33,6 +33,10 @@
     "dev:setup": {
       "cache": false,
       "persistent": true
+    },
+    "db:push": {
+      "cache": false,
+      "env": ["DATABASE_URL"]
     }
   }
 }

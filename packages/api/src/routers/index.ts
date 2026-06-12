@@ -71,6 +71,14 @@ export const appRouter = {
     buildFromTemplate: protectedProcedure
       .input(z.object({ templateId: uuidSchema }))
       .handler(async ({ input, context }) => {
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+        const [templateWord] = await db
+          .select({ wordId: templateWords.wordId })
+          .from(templateWords)
+          .where(eq(templateWords.templateId, input.templateId))
+          .limit(1);
+        if (!templateWord) throw new Error("Add words before generating a deck");
+
         const result = await buildDeckFromTemplate({
           templateId: input.templateId,
           userId: context.session.user.id,

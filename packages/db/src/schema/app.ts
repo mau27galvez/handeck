@@ -1,5 +1,13 @@
 import { relations } from "drizzle-orm";
-import { index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
@@ -80,14 +88,12 @@ export const notes = pgTable(
     wordId: uuid()
       .notNull()
       .references(() => words.id),
-      position: integer().notNull(),
-      ...timestamps,
+    ...timestamps,
   },
   (table) => [
     index("notes_deck_id_idx").on(table.deckId),
     index("notes_word_id_idx").on(table.wordId),
     uniqueIndex("notes_unique_deck_word_idx").on(table.deckId, table.wordId),
-    uniqueIndex("notes_unique_position_idx").on(table.deckId, table.position),
   ],
 );
 

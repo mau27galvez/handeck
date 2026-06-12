@@ -6,7 +6,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "dev": "vite dev",
-    "db:push": "turbo -F @handeck/db db:push --verbose",
+    "db:push": "turbo -F @handeck/db db:push",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

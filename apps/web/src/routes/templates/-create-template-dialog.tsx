@@ -78,18 +78,18 @@ export default function CreateTemplateDialog({
     if (!canSubmit) return;
     setPending(true);
     try {
-      const templateId = await createTemplate.mutateAsync({
+      const templateId = crypto.randomUUID();
+      await createTemplate.mutateAsync({
+        id: templateId,
         name: name.trim(),
         ...(isFromBase && selectedBaseId != null ? { baseTemplateId: selectedBaseId } : {}),
       });
       void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       toast.success("Template created");
-      if (templateId) {
-        await navigate({
-          to: "/templates/$id",
-          params: { id: templateId },
-        });
-      }
+      await navigate({
+        to: "/templates/$id",
+        params: { id: templateId },
+      });
       handleDialogOpenChange(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Something went wrong";

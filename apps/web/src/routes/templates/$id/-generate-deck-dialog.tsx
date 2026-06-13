@@ -37,7 +37,8 @@ export default function GenerateDeckDialog({
   async function handleGenerate() {
     setPending(true);
     try {
-      const result = await buildDeck.mutateAsync({ templateId });
+      const deckId = crypto.randomUUID();
+      const result = await buildDeck.mutateAsync({ deckId, templateId });
       onOpenChange(false);
       toast.success(`Generated deck with ${result.noteCount} notes`);
     } catch (error) {

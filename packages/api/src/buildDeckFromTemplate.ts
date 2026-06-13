@@ -1,7 +1,6 @@
 import { db } from "@handeck/db";
 import { decks, notes } from "@handeck/db/schema";
 import { v4 } from "uuid";
-
 import { writeDeckPackageToVoid } from "./deckPackage";
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -14,14 +13,15 @@ type TemplateWord = {
 };
 
 export async function buildDeckFromTemplate({
+  deckId,
   templateId,
   userId,
 }: {
+  deckId: string;
   templateId: string;
   userId: string;
 }) {
   const now = new Date();
-  const deckId = v4();
 
   const result = await db.transaction(async (tx) => {
     const { template, templateWords } = await getTemplateAndWords(tx, templateId);
@@ -37,7 +37,7 @@ export async function buildDeckFromTemplate({
     };
   });
 
-  await writeDeckPackageToVoid(result);
+  await writeDeckPackageToVoid({ deckId, templateName: result.templateName, words: result.words });
   return result;
 }
 

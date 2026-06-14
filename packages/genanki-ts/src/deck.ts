@@ -1,23 +1,22 @@
-import { type SQLQueryBindings } from "bun:sqlite";
-
+import { type SqliteBinding } from "./db";
 import { Model } from "./model";
 import { Note } from "./note";
 import { type JsonValue, type ValidationContext } from "./types";
 
 type SelectStringStatement = {
-  get: (...params: SQLQueryBindings[]) => unknown;
+  get: (...params: SqliteBinding[]) => unknown;
 };
 
 type UpdateStringStatement = {
-  run: (...params: SQLQueryBindings[]) => unknown;
+  run: (...params: SqliteBinding[]) => unknown;
 };
 
 type InsertNoteStatement = {
-  run: (...params: SQLQueryBindings[]) => { lastInsertRowid: number | bigint };
+  run: (...params: SqliteBinding[]) => { lastInsertRowid: number | bigint };
 };
 
 type InsertCardStatement = {
-  run: (...params: SQLQueryBindings[]) => unknown;
+  run: (...params: SqliteBinding[]) => unknown;
 };
 
 export type DeckOptions = {

@@ -1,9 +1,9 @@
-import { Database } from "bun:sqlite";
-import { expect, test } from "bun:test";
+import Database from "better-sqlite3";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { expect, test } from "vitest";
 import { unzipSync } from "fflate";
 
 import { Deck, Model, Note, Package } from "../src";
@@ -59,17 +59,17 @@ test("writes a structurally valid apkg archive", async () => {
 
     const db = new Database(dbPath);
     try {
-      const deckRow = db.query("SELECT decks FROM col").get() as { decks: string };
+      const deckRow = db.prepare("SELECT decks FROM col").get() as { decks: string };
       const decks = JSON.parse(deckRow.decks);
       expect(decks["123456"].name).toBe("foodeck");
       expect(decks["123456"].desc).toBe("This is my great deck.");
 
-      const modelRow = db.query("SELECT models FROM col").get() as { models: string };
+      const modelRow = db.prepare("SELECT models FROM col").get() as { models: string };
       const models = JSON.parse(modelRow.models);
       expect(models["234567"].name).toBe("foomodel");
       expect(models["234567"].sortf).toBe(0);
 
-      const notes = db.query("SELECT id, guid, mid, flds, sfld, tags FROM notes").all() as Array<{
+      const notes = db.prepare("SELECT id, guid, mid, flds, sfld, tags FROM notes").all() as Array<{
         id: number;
         guid: string;
         mid: number;
@@ -86,7 +86,7 @@ test("writes a structurally valid apkg archive", async () => {
         tags: "  ",
       });
 
-      const cards = db.query("SELECT id, nid, did, ord, due, queue FROM cards").all() as Array<{
+      const cards = db.prepare("SELECT id, nid, did, ord, due, queue FROM cards").all() as Array<{
         id: number;
         nid: number;
         did: number;
@@ -121,7 +121,7 @@ test("writes valid cards for multi-template notes", async () => {
 
     const db = new Database(dbPath);
     try {
-      const cards = db.query("SELECT nid, ord FROM cards ORDER BY id").all();
+      const cards = db.prepare("SELECT nid, ord FROM cards ORDER BY id").all();
       expect(cards).toEqual([
         { nid: 0, ord: 0 },
         { nid: 0, ord: 1 },
@@ -154,7 +154,7 @@ test("writes suspended cards and due values", async () => {
 
     const db = new Database(dbPath);
     try {
-      const cards = db.query("SELECT ord, due, queue FROM cards ORDER BY id").all();
+      const cards = db.prepare("SELECT ord, due, queue FROM cards ORDER BY id").all();
       expect(cards).toEqual([
         { ord: 0, due: 7, queue: 0 },
         { ord: 1, due: 7, queue: -1 },

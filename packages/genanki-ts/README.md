@@ -2,7 +2,7 @@
 
 `@handeck/genanki-ts` is an internal TypeScript package for generating Anki deck packages (`.apkg`) from code.
 
-It is a TypeScript port of the core ideas from Python's `genanki` library, adapted for TypeScript and Bun. The package is meant to be used by server-side or worker code that can do file system, SQLite, and ZIP work.
+It is a TypeScript port of the core ideas from Python's `genanki` library. The package is meant to be used by server-side or worker code that can do file system, SQLite, and ZIP work.
 
 ## What Is Anki?
 
@@ -378,7 +378,7 @@ Internally:
 
 The implementation uses:
 
-- Bun SQLite for `collection.anki2`.
+- `better-sqlite3` for `collection.anki2`.
 - `fflate` for ZIP creation.
 - `mustache` only to approximate Anki's template rules when deciding whether a note should generate a card for a template.
 
@@ -414,13 +414,13 @@ bun run --filter @handeck/genanki-ts example -- /tmp/my-deck.apkg
 From the repository root:
 
 ```bash
-bun test packages/genanki-ts
+bun run --filter @handeck/genanki-ts test
 ```
 
 Or run the package script:
 
 ```bash
-bun run --filter @handeck/genanki-ts test
+bun run test
 ```
 
 The tests inspect generated ZIP archives and SQLite contents directly. They do not currently import packages into a real Anki runtime.

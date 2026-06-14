@@ -1,7 +1,7 @@
-import { type SQLQueryBindings } from "bun:sqlite";
+import { type SqliteBinding } from "./db";
 
 type StatementRunner = {
-  run: (...params: SQLQueryBindings[]) => unknown;
+  run: (...params: SqliteBinding[]) => unknown;
 };
 
 export type CardOptions = {

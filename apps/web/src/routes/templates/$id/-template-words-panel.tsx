@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@handeck/ui/components/card";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { Plus, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,15 +21,19 @@ type TemplateWordsPanelProps = {
   templateId: string;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
+  onGenerate: () => void;
 };
 
 export default function TemplateWordsPanel({
   templateId,
   words,
   onAddWords,
+  onGenerate,
 }: TemplateWordsPanelProps) {
   const queryClient = useQueryClient();
-  const toggleWordInTemplate = useMutation(orpc.template.toggleWordInTemplate.mutationOptions());
+  const removeWordsFromTemplate = useMutation(
+    orpc.template.removeWordsFromTemplate.mutationOptions(),
+  );
   const [removingWordId, setRemovingWordId] = useState<string | null>(null);
   const isLoading = words === undefined;
   const wordList = words ?? [];
@@ -38,9 +42,9 @@ export default function TemplateWordsPanel({
   async function handleRemoveWord(word: TemplateWord) {
     setRemovingWordId(word.id);
     try {
-      await toggleWordInTemplate.mutateAsync({
+      await removeWordsFromTemplate.mutateAsync({
         templateId,
-        wordId: word.id,
+        wordIds: [word.id],
       });
       void queryClient.invalidateQueries(
         orpc.template.getWords.queryOptions({ input: { templateId } }),
@@ -120,10 +124,14 @@ export default function TemplateWordsPanel({
           </>
         )}
       </CardContent>
-      <CardFooter className="shrink-0">
+      <CardFooter className="shrink-0 flex-row items-center justify-between gap-3 border-t">
         <p className="text-xs text-muted-foreground">
           {wordList.length} {wordList.length === 1 ? "word" : "words"}
         </p>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onGenerate}>
+          <Sparkles className="size-4" />
+          Generate
+        </Button>
       </CardFooter>
     </Card>
   );

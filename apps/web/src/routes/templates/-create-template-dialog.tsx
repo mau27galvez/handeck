@@ -22,6 +22,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { v4 } from "uuid";
 
 export type CreateMode = "scratch" | "FromBase";
 
@@ -78,18 +79,18 @@ export default function CreateTemplateDialog({
     if (!canSubmit) return;
     setPending(true);
     try {
-      const templateId = await createTemplate.mutateAsync({
+      const templateId = v4();
+      await createTemplate.mutateAsync({
+        id: templateId,
         name: name.trim(),
         ...(isFromBase && selectedBaseId != null ? { baseTemplateId: selectedBaseId } : {}),
       });
       void queryClient.invalidateQueries(orpc.template.listForCurrentUser.queryOptions());
       toast.success("Template created");
-      if (templateId) {
-        await navigate({
-          to: "/templates/$id",
-          params: { id: templateId },
-        });
-      }
+      await navigate({
+        to: "/templates/$id",
+        params: { id: templateId },
+      });
       handleDialogOpenChange(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Something went wrong";

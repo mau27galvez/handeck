@@ -2,10 +2,11 @@ import { db } from "@handeck/db";
 import { baseTemplates, templateWords, templates, words } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
-import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
 import { v4 } from "uuid";
 import { z } from "zod";
 
+import { buildDeckFromTemplate } from "../buildDeckFromTemplate";
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
@@ -13,8 +14,12 @@ import { parseDictionarySearchQuery } from "../dictionarySearch";
 const MAX_IMPORT_BATCH_SIZE = 500;
 const MAX_SEARCH_RESULTS = 50;
 const MAX_MIXED_SEARCH_CANDIDATES = 250;
+const MAX_TEMPLATE_WORD_BATCH_SIZE = 500;
 
-const uuidSchema = z.uuid();
+const templateWordIdsInputSchema = z.object({
+  templateId: z.uuid(),
+  wordIds: z.array(z.uuid()).min(1).max(MAX_TEMPLATE_WORD_BATCH_SIZE),
+});
 
 const wordFieldsSchema = z.object({
   simplifiedHanzi: z.string(),
@@ -37,13 +42,6 @@ export const appRouter = {
     return "OK";
   }),
 
-  privateData: protectedProcedure.handler(({ context }) => {
-    return {
-      message: "This is private",
-      user: context.session.user,
-    };
-  }),
-
   auth: {
     getSession: publicProcedure.handler(({ context }) => {
       return context.session;
@@ -58,6 +56,26 @@ export const appRouter = {
     list: publicProcedure.handler(async () => {
       return await db.select().from(baseTemplates);
     }),
+  },
+
+  deck: {
+    buildFromTemplate: protectedProcedure
+      .input(z.object({ deckId: z.uuid(), templateId: z.uuid() }))
+      .handler(async ({ input, context }) => {
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+
+        const result = await buildDeckFromTemplate({
+          deckId: input.deckId,
+          templateId: input.templateId,
+          userId: context.session.user.id,
+        });
+
+        return {
+          deckId: result.deckId,
+          wordCount: result.notes.length,
+          noteCount: result.notes.length,
+        };
+      }),
   },
 
   word: {
@@ -149,8 +167,9 @@ export const appRouter = {
     create: protectedProcedure
       .input(
         z.object({
+          id: z.uuid(),
           name: z.string(),
-          baseTemplateId: uuidSchema.optional(),
+          baseTemplateId: z.uuid().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
@@ -158,40 +177,33 @@ export const appRouter = {
         if (!trimmed) throw new Error("Name is required");
 
         if (input.baseTemplateId != null) {
-          const [base] = await db
-            .select()
-            .from(baseTemplates)
-            .where(eq(baseTemplates.id, input.baseTemplateId))
-            .limit(1);
-          if (!base) throw new Error("Base template not found");
+          const baseTemplate = await db.query.baseTemplates.findFirst({
+            where: eq(baseTemplates.id, input.baseTemplateId),
+          });
+
+          if (!baseTemplate) throw new Error("Base template not found");
         }
 
         const now = new Date();
-        const [template] = await db
-          .insert(templates)
-          .values({
-            id: v4(),
-            userId: context.session.user.id,
-            name: trimmed,
-            baseTemplateId: input.baseTemplateId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning({ id: templates.id });
-
-        return template?.id;
+        await db.insert(templates).values({
+          id: input.id,
+          userId: context.session.user.id,
+          name: trimmed,
+          baseTemplateId: input.baseTemplateId,
+          createdAt: now,
+          updatedAt: now,
+        });
       }),
 
     getById: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
+      .input(z.object({ templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
-        const [template] = await db
-          .select()
-          .from(templates)
-          .where(
-            and(eq(templates.id, input.templateId), eq(templates.userId, context.session.user.id)),
-          )
-          .limit(1);
+        const template = await db.query.templates.findFirst({
+          where: and(
+            eq(templates.id, input.templateId),
+            eq(templates.userId, context.session.user.id),
+          ),
+        });
 
         return template ?? null;
       }),
@@ -204,103 +216,179 @@ export const appRouter = {
           baseTemplateId: templates.baseTemplateId,
           baseTemplate: baseTemplates.name,
           updatedAt: templates.updatedAt,
+          wordCount: count(templateWords.wordId),
         })
         .from(templates)
         .leftJoin(baseTemplates, eq(templates.baseTemplateId, baseTemplates.id))
+        .leftJoin(templateWords, eq(templateWords.templateId, templates.id))
         .where(eq(templates.userId, context.session.user.id))
+        .groupBy(
+          templates.id,
+          templates.name,
+          templates.baseTemplateId,
+          templates.updatedAt,
+          baseTemplates.name,
+        )
         .orderBy(desc(templates.updatedAt));
-
-      const counts = await Promise.all(
-        rows.map(async (template) => {
-          const wordRows = await db
-            .select({ wordId: templateWords.wordId })
-            .from(templateWords)
-            .where(eq(templateWords.templateId, template.id));
-          return [template.id, wordRows.length] as const;
-        }),
-      );
-      const wordCountByTemplateId = new Map(counts);
 
       return rows.map((template) => ({
         ...template,
-        wordCount: wordCountByTemplateId.get(template.id) ?? 0,
+        baseTemplateId: template.baseTemplateId ?? undefined,
         baseTemplate: template.baseTemplate ?? undefined,
       }));
     }),
 
     remove: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
-      .handler(async ({ input, context }) => {
-        await getOwnedTemplate(input.templateId, context.session.user.id);
-        await db.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
-        await db.delete(templates).where(eq(templates.id, input.templateId));
+      .input(z.object({ templateId: z.uuid() }))
+      .handler(async ({ input }) => {
+        await db.transaction(async (tx) => {
+          await tx.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
+          await tx.delete(templates).where(eq(templates.id, input.templateId));
+        });
       }),
 
     getWords: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
+      .input(z.object({ templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
-        const template = await getOwnedTemplateOrNull(input.templateId, context.session.user.id);
-        if (!template) return null;
+        // Throws if template is not owned by user or does not exist
+        await getOwnedTemplate(input.templateId, context.session.user.id);
 
-        const rows = await db
-          .select({ word: words })
-          .from(templateWords)
-          .innerJoin(words, eq(templateWords.wordId, words.id))
-          .where(eq(templateWords.templateId, input.templateId));
-
-        return rows.map((row) => row.word);
+        return (
+          await db.query.templateWords.findMany({
+            where: eq(templateWords.templateId, input.templateId),
+            with: {
+              word: true,
+            },
+          })
+        ).map((row) => row.word);
       }),
 
     listMembershipForWord: protectedProcedure
-      .input(z.object({ wordId: uuidSchema }))
+      .input(z.object({ wordId: z.uuid() }))
       .handler(async ({ input, context }) => {
-        const [word] = await db.select().from(words).where(eq(words.id, input.wordId)).limit(1);
-        if (!word) return [];
-
-        const userTemplates = await db
-          .select({ id: templates.id, name: templates.name })
+        const rows = await db
+          .select({
+            templateId: templates.id,
+            name: templates.name,
+            includedWordId: templateWords.wordId,
+          })
           .from(templates)
+          .innerJoin(words, eq(words.id, input.wordId))
+          .leftJoin(
+            templateWords,
+            and(eq(templateWords.templateId, templates.id), eq(templateWords.wordId, words.id)),
+          )
           .where(eq(templates.userId, context.session.user.id))
           .orderBy(desc(templates.createdAt));
 
-        const membershipRows = await db
-          .select({ templateId: templateWords.templateId })
-          .from(templateWords)
-          .where(eq(templateWords.wordId, input.wordId));
-        const includedTemplateIds = new Set(membershipRows.map((row) => row.templateId));
-
-        return userTemplates.map((template) => ({
-          templateId: template.id,
+        return rows.map((template) => ({
+          templateId: template.templateId,
           name: template.name,
-          included: includedTemplateIds.has(template.id),
+          included: template.includedWordId != null,
         }));
+      }),
+
+    addWordsToTemplate: protectedProcedure
+      .input(templateWordIdsInputSchema)
+      .handler(async ({ input, context }) => {
+        const uniqueWordIds = [...new Set(input.wordIds)];
+        const requestedInsertsCount = uniqueWordIds.length;
+
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+
+        const existingWords = await db
+          .select({ id: words.id })
+          .from(words)
+          .where(inArray(words.id, uniqueWordIds));
+        if (existingWords.length !== uniqueWordIds.length) {
+          throw new Error("Word not found");
+        }
+
+        const now = new Date();
+        const addedRows = await db
+          .insert(templateWords)
+          .values(
+            uniqueWordIds.map((wordId) => ({
+              templateId: input.templateId,
+              wordId,
+              createdAt: now,
+            })),
+          )
+          .onConflictDoNothing()
+          .returning({ wordId: templateWords.wordId });
+
+        if (addedRows.length > 0) {
+          await db
+            .update(templates)
+            .set({ updatedAt: now })
+            .where(eq(templates.id, input.templateId));
+        }
+
+        return {
+          added: addedRows.length,
+          skipped: requestedInsertsCount - addedRows.length,
+          requestedInsertsCount,
+        };
+      }),
+
+    removeWordsFromTemplate: protectedProcedure
+      .input(templateWordIdsInputSchema)
+      .handler(async ({ input, context }) => {
+        const uniqueWordIds = [...new Set(input.wordIds)];
+        const requestedRemovalsCount = uniqueWordIds.length;
+
+        await getOwnedTemplate(input.templateId, context.session.user.id);
+
+        const removedRows = await db
+          .delete(templateWords)
+          .where(
+            and(
+              eq(templateWords.templateId, input.templateId),
+              inArray(templateWords.wordId, uniqueWordIds),
+            ),
+          )
+          .returning({ wordId: templateWords.wordId });
+
+        const removed = removedRows.length;
+        const skipped = requestedRemovalsCount - removed;
+
+        if (removed > 0) {
+          await db
+            .update(templates)
+            .set({ updatedAt: new Date() })
+            .where(eq(templates.id, input.templateId));
+        }
+
+        return {
+          removed,
+          skipped,
+          requestedRemovalsCount,
+        };
       }),
 
     toggleWordInTemplate: protectedProcedure
       .input(
         z.object({
-          templateId: uuidSchema,
-          wordId: uuidSchema,
+          templateId: z.uuid(),
+          wordId: z.uuid(),
         }),
       )
       .handler(async ({ input, context }) => {
         await getOwnedTemplate(input.templateId, context.session.user.id);
-        const [word] = await db.select().from(words).where(eq(words.id, input.wordId)).limit(1);
+        const word = await db.query.words.findFirst({
+          where: eq(words.id, input.wordId),
+        });
         if (!word) throw new Error("Word not found");
 
-        const [existing] = await db
-          .select()
-          .from(templateWords)
-          .where(
-            and(
-              eq(templateWords.templateId, input.templateId),
-              eq(templateWords.wordId, input.wordId),
-            ),
-          )
-          .limit(1);
+        const doesExist = await db.query.templateWords.findFirst({
+          where: and(
+            eq(templateWords.templateId, input.templateId),
+            eq(templateWords.wordId, input.wordId),
+          ),
+        });
         const now = new Date();
 
-        if (existing) {
+        if (doesExist) {
           await db
             .delete(templateWords)
             .where(

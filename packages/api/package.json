@@ -17,6 +17,7 @@
     "@handeck/auth": "workspace:*",
     "@handeck/db": "workspace:*",
     "@handeck/env": "workspace:*",
+    "@handeck/genanki-ts": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",

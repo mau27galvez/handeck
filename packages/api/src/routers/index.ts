@@ -85,8 +85,8 @@ export const appRouter = {
 
         return {
           deckId: result.deckId,
-          wordCount: result.wordCount,
-          noteCount: result.noteCount,
+          wordCount: result.notes.length,
+          noteCount: result.notes.length,
         };
       }),
   },

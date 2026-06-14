@@ -162,7 +162,6 @@
         "@types/better-sqlite3": "^7.6.13",
         "@types/mustache": "^4.2.6",
         "@types/node": "catalog:",
-        "node-linux-x64": "^24.16.0",
         "typescript": "catalog:",
         "vitest": "^3.2.4",
       },
@@ -1419,8 +1418,6 @@
     "node-domexception": ["node-domexception@1.0.0", "", {}, "sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ=="],
 
     "node-fetch": ["node-fetch@3.3.2", "", { "dependencies": { "data-uri-to-buffer": "^4.0.0", "fetch-blob": "^3.1.4", "formdata-polyfill": "^4.0.10" } }, "sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA=="],
-
-    "node-linux-x64": ["node-linux-x64@24.16.0", "", { "os": "linux", "cpu": "x64", "bin": { "node": "bin/node" } }, "sha512-de1hk23Hh0J8mmY2PVLgBfJkQV4enyhmZXrz/mFu+uRnSIE7xLVQtG5LHsjo8lcj8AVqponK9WGCviKJjyz3dw=="],
 
     "node-releases": ["node-releases@2.0.47", "", {}, "sha512-Uzmd6LXpouKo8EUK68IjH4+E01w/hXyV3R3g/geCJo+rXLNfh1xucB+LOzYEOQPSiUK3h/xZf0cQGcSsmyL2Og=="],
 

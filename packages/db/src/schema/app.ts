@@ -1,13 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  index,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
@@ -93,7 +85,7 @@ export const notes = pgTable(
   (table) => [
     index("notes_deck_id_idx").on(table.deckId),
     index("notes_word_id_idx").on(table.wordId),
-    uniqueIndex("notes_unique_deck_word_idx").on(table.deckId, table.wordId),
+    unique("notes_unique_deck_word_idx").on(table.deckId, table.wordId),
   ],
 );
 

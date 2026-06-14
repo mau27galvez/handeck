@@ -31,13 +31,11 @@ export async function buildDeckFromTemplate({
     return {
       deckId,
       templateName: template.name,
-      words: templateWords,
-      wordCount: templateWords.length,
-      noteCount: templateWords.length,
+      notes: templateWords,
     };
   });
 
-  await writeDeckPackageToVoid({ deckId, templateName: result.templateName, words: result.words });
+  await writeDeckPackageToVoid(result);
   return result;
 }
 
@@ -47,14 +45,7 @@ async function getTemplateAndWords(tx: DbTx, templateId: string) {
     with: {
       templateWords: {
         with: {
-          word: {
-            columns: {
-              id: true,
-              simplifiedHanzi: true,
-              diacriticPinyin: true,
-              meaning: true,
-            },
-          },
+          word: true,
         },
       },
     },

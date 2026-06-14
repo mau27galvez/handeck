@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { BASIC_MODEL, Deck, Note, Package } from "@handeck/genanki-ts";
 
 type Word = {
   id: string;
@@ -16,10 +17,6 @@ type Notes = {
 };
 
 export async function writeDeckPackageToVoid({ deckId, templateName, words }: Notes) {
-  if (typeof Bun === "undefined") return;
-
-  const { BASIC_MODEL, Deck, Note, Package } = await import("@handeck/genanki-ts");
-
   const deck = new Deck({
     id: deckNumberFromUuid(deckId),
     name: templateName,

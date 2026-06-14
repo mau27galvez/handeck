@@ -25,6 +25,9 @@ export async function buildDeckFromTemplate({
 
   const result = await db.transaction(async (tx) => {
     const { template, templateWords } = await getTemplateAndWords(tx, templateId);
+
+    if (templateWords.length === 0) throw new Error("Add words before generating a deck");
+
     await insertDeck(tx, { deckId, userId, templateId, now });
     await insertNotes(tx, { deckId, templateWords, now });
 

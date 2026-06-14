@@ -1,4 +1,4 @@
-import { describe, expect, mock, spyOn, test } from "bun:test";
+import { describe, expect, test, vi } from "vitest";
 
 import {
   BASIC_MODEL,
@@ -173,7 +173,7 @@ describe("Note validation", () => {
   });
 
   test("warns on invalid HTML tags by default and throws in strict mode", async () => {
-    const warn = spyOn(console, "warn").mockImplementation(mock(() => undefined));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     try {
       const warnDeck = new Deck({ id: 123456, name: "foodeck" });
@@ -198,7 +198,7 @@ describe("Note validation", () => {
   });
 
   test("does not warn on HTML-like text in guid", async () => {
-    const warn = spyOn(console, "warn").mockImplementation(mock(() => undefined));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const deck = new Deck({ id: 123456, name: "foodeck" });
     deck.addNote(
       new Note({

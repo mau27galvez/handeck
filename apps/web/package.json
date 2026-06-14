@@ -37,6 +37,7 @@
     "react-dom": "catalog:",
     "sonner": "catalog:",
     "tailwindcss": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

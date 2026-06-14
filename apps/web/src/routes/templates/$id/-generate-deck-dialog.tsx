@@ -15,6 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 import { FileText, Hash, Settings } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { v4 } from "uuid";
 
 type GenerateDeckDialogProps = {
   open: boolean;
@@ -37,7 +38,7 @@ export default function GenerateDeckDialog({
   async function handleGenerate() {
     setPending(true);
     try {
-      const deckId = crypto.randomUUID();
+      const deckId = v4();
       const result = await buildDeck.mutateAsync({ deckId, templateId });
       onOpenChange(false);
       toast.success(`Generated deck with ${result.noteCount} notes`);

@@ -22,6 +22,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { v4 } from "uuid";
 
 export type CreateMode = "scratch" | "FromBase";
 
@@ -78,7 +79,7 @@ export default function CreateTemplateDialog({
     if (!canSubmit) return;
     setPending(true);
     try {
-      const templateId = crypto.randomUUID();
+      const templateId = v4();
       await createTemplate.mutateAsync({
         id: templateId,
         name: name.trim(),

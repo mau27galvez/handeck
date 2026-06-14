@@ -21,7 +21,6 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/mustache": "^4.2.6",
     "@types/node": "catalog:",
-    "node-linux-x64": "^24.16.0",
     "typescript": "catalog:",
     "vitest": "^3.2.4"
   }

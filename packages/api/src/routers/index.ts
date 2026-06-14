@@ -16,11 +16,9 @@ const MAX_SEARCH_RESULTS = 50;
 const MAX_MIXED_SEARCH_CANDIDATES = 250;
 const MAX_TEMPLATE_WORD_BATCH_SIZE = 500;
 
-const uuidSchema = z.uuid();
-
 const templateWordIdsInputSchema = z.object({
-  templateId: uuidSchema,
-  wordIds: z.array(uuidSchema).min(1).max(MAX_TEMPLATE_WORD_BATCH_SIZE),
+  templateId: z.uuid(),
+  wordIds: z.array(z.uuid()).min(1).max(MAX_TEMPLATE_WORD_BATCH_SIZE),
 });
 
 const wordFieldsSchema = z.object({
@@ -69,7 +67,7 @@ export const appRouter = {
 
   deck: {
     buildFromTemplate: protectedProcedure
-      .input(z.object({ deckId: uuidSchema, templateId: uuidSchema }))
+      .input(z.object({ deckId: z.uuid(), templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
         await getOwnedTemplate(input.templateId, context.session.user.id);
         const [templateWord] = await db
@@ -182,9 +180,9 @@ export const appRouter = {
     create: protectedProcedure
       .input(
         z.object({
-          id: uuidSchema,
+          id: z.uuid(),
           name: z.string(),
-          baseTemplateId: uuidSchema.optional(),
+          baseTemplateId: z.uuid().optional(),
         }),
       )
       .handler(async ({ input, context }) => {
@@ -217,7 +215,7 @@ export const appRouter = {
       }),
 
     getById: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
+      .input(z.object({ templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
         const [template] = await db
           .select()
@@ -263,7 +261,7 @@ export const appRouter = {
     }),
 
     remove: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
+      .input(z.object({ templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
         await getOwnedTemplate(input.templateId, context.session.user.id);
         await db.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
@@ -271,7 +269,7 @@ export const appRouter = {
       }),
 
     getWords: protectedProcedure
-      .input(z.object({ templateId: uuidSchema }))
+      .input(z.object({ templateId: z.uuid() }))
       .handler(async ({ input, context }) => {
         const template = await getOwnedTemplateOrNull(input.templateId, context.session.user.id);
         if (!template) return null;
@@ -286,7 +284,7 @@ export const appRouter = {
       }),
 
     listMembershipForWord: protectedProcedure
-      .input(z.object({ wordId: uuidSchema }))
+      .input(z.object({ wordId: z.uuid() }))
       .handler(async ({ input, context }) => {
         const [word] = await db.select().from(words).where(eq(words.id, input.wordId)).limit(1);
         if (!word) return [];
@@ -403,8 +401,8 @@ export const appRouter = {
     toggleWordInTemplate: protectedProcedure
       .input(
         z.object({
-          templateId: uuidSchema,
-          wordId: uuidSchema,
+          templateId: z.uuid(),
+          wordId: z.uuid(),
         }),
       )
       .handler(async ({ input, context }) => {

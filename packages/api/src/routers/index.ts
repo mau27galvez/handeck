@@ -42,13 +42,6 @@ export const appRouter = {
     return "OK";
   }),
 
-  privateData: protectedProcedure.handler(({ context }) => {
-    return {
-      message: "This is private",
-      user: context.session.user,
-    };
-  }),
-
   auth: {
     getSession: publicProcedure.handler(({ context }) => {
       return context.session;

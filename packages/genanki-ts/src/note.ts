@@ -1,16 +1,15 @@
-import { type SQLQueryBindings } from "bun:sqlite";
-
 import { Card } from "./card";
+import { type SqliteBinding } from "./db";
 import { Model } from "./model";
 import { ModelType, type NoteValueResolver, type ValidationContext } from "./types";
 import { guidFor, warnOrThrow } from "./util";
 
 type InsertNoteStatement = {
-  run: (...params: SQLQueryBindings[]) => { lastInsertRowid: number | bigint };
+  run: (...params: SqliteBinding[]) => { lastInsertRowid: number | bigint };
 };
 
 type InsertCardStatement = {
-  run: (...params: SQLQueryBindings[]) => unknown;
+  run: (...params: SqliteBinding[]) => unknown;
 };
 
 export type NoteOptions = {

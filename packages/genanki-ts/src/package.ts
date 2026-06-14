@@ -1,12 +1,12 @@
-import { Database } from "bun:sqlite";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { zipSync } from "fflate";
 
 import { APKG_COL } from "./apkg-col";
 import { APKG_SCHEMA } from "./apkg-schema";
+import { type PackageDatabase, openPackageDatabase } from "./db";
 import { Deck } from "./deck";
 import { type ValidationContext, type WritePackageOptions } from "./types";
 
@@ -31,7 +31,7 @@ export class Package {
     await mkdir(tempDir, { recursive: true });
 
     try {
-      const db = new Database(dbPath, { create: true });
+      const db = openPackageDatabase(dbPath);
       try {
         this.writeToDb(db, timestamp, count(Math.trunc(timestamp * 1000)), {
           validation: options.validation ?? "warn",
@@ -53,27 +53,27 @@ export class Package {
       }
 
       await mkdir(dirname(file), { recursive: true });
-      await Bun.write(file, zipSync(entries, { level: 0 }));
+      await writeFile(file, zipSync(entries, { level: 0 }));
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
   }
 
   writeToDb(
-    db: Database,
+    db: PackageDatabase,
     timestamp: number,
     idGen: Iterator<number>,
     validationContext: ValidationContext = { validation: "warn" },
   ) {
-    db.run(APKG_SCHEMA);
-    db.run(APKG_COL);
+    db.exec(APKG_SCHEMA);
+    db.exec(APKG_COL);
 
-    const selectDecks = db.query("SELECT decks FROM col");
-    const updateDecks = db.query("UPDATE col SET decks = ?");
-    const selectModels = db.query("SELECT models FROM col");
-    const updateModels = db.query("UPDATE col SET models = ?");
-    const insertNote = db.query("INSERT INTO notes VALUES(?,?,?,?,?,?,?,?,?,?,?)");
-    const insertCard = db.query("INSERT INTO cards VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    const selectDecks = db.prepare("SELECT decks FROM col");
+    const updateDecks = db.prepare("UPDATE col SET decks = ?");
+    const selectModels = db.prepare("SELECT models FROM col");
+    const updateModels = db.prepare("UPDATE col SET models = ?");
+    const insertNote = db.prepare("INSERT INTO notes VALUES(?,?,?,?,?,?,?,?,?,?,?)");
+    const insertCard = db.prepare("INSERT INTO cards VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     for (const deck of this.decks) {
       deck.writeToDb(

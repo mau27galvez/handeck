@@ -15,13 +15,6 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate",
-    "typecheck": "tsc --noEmit"
-  },
   "dependencies": {
     "@handeck/env": "workspace:*",
     "dotenv": "catalog:",
@@ -33,6 +26,7 @@
     "@handeck/config": "workspace:*",
     "@types/node": "catalog:",
     "drizzle-kit": "^0.31.8",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
   }
 }

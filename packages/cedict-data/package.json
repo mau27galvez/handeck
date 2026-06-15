@@ -5,9 +5,7 @@
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun run seed.ts",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "seed": "bun run seed.ts"
   },
   "dependencies": {
     "@handeck/api": "workspace:*",
@@ -17,6 +15,7 @@
   "devDependencies": {
     "@handeck/config": "workspace:*",
     "@types/bun": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
   }
 }

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { expect, test } from "vitest";
+import { expect, test } from "vite-plus/test";
 import { unzipSync } from "fflate";
 
 import { Deck, Model, Note, Package } from "../src";

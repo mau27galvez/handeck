@@ -9,8 +9,7 @@
 - **PostgreSQL + Drizzle** - Database schema and client in `packages/db`
 - **oRPC** - API procedures for app calls and external integrations
 - **Authentication** - Better Auth
-- **Oxlint** - Oxlint + Oxfmt (linting & formatting)
-- **Turborepo** - Optimized monorepo build system
+- **Vite+** - Unified toolchain (`vp`) for dev, build, lint, format, test, and workspace tasks
 
 ## Getting Started
 
@@ -27,13 +26,13 @@ Create `apps/web/.env` from `apps/web/.env.example`, then fill in the Postgres U
 Push the Drizzle schema to your database:
 
 ```bash
-bun run db:push
+vp run db:push
 ```
 
 Start the whole project together:
 
 ```bash
-bun run dev
+vp run dev
 ```
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
@@ -66,8 +65,8 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Git Hooks and Formatting
 
-- Check types, formatting and lint: `bun run check`
-- Format files: `bun run format`
+- Full validation (lint, format, typecheck, tests): `bun run full-check` (or run `vp check`, `vp run typecheck`, and `vp run test` separately)
+- Format files: `vp fmt` (or `bun run format`)
 
 ## Project Structure
 

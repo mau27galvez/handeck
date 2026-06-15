@@ -519,7 +519,7 @@ function firstHanPrefix(tokens: MixedSearchToken[]) {
 }
 
 function matchesMixedSearch(entry: Word, tokens: MixedSearchToken[]) {
-  const hanzi = [...entry.simplifiedHanzi];
+  const hanzi = Array.from(entry.simplifiedHanzi);
   return matchesMixedSearchFrom(entry, tokens, hanzi, 0, 0);
 }
 

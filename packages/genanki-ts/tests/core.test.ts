@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vite-plus/test";
 
 import {
   BASIC_MODEL,
@@ -106,7 +106,7 @@ describe("Note cards", () => {
       fields: ["NOTE TWO: {{c1::1st deletion}} {{c2::2nd deletion}} {{c3::3rd deletion}}", ""],
     });
 
-    expect(note.cards.map((card) => card.ord).sort()).toEqual([0, 1, 2]);
+    expect(note.cards.map((card) => card.ord).sort((a, b) => a - b)).toEqual([0, 1, 2]);
   });
 
   test("generates cloze cards for repeated and multiline deletions", () => {
@@ -125,8 +125,8 @@ describe("Note cards", () => {
       ],
     });
 
-    expect(repeated.cards.map((card) => card.ord).sort()).toEqual([0, 1]);
-    expect(multiline.cards.map((card) => card.ord).sort()).toEqual([0, 1]);
+    expect(repeated.cards.map((card) => card.ord).sort((a, b) => a - b)).toEqual([0, 1]);
+    expect(multiline.cards.map((card) => card.ord).sort((a, b) => a - b)).toEqual([0, 1]);
   });
 
   test("does not require cloze indexes to start at one", () => {
@@ -135,7 +135,7 @@ describe("Note cards", () => {
       fields: ["{{c2::Mitochondria}} are the {{c3::powerhouses}} of the cell", ""],
     });
 
-    expect(note.cards.map((card) => card.ord).sort()).toEqual([1, 2]);
+    expect(note.cards.map((card) => card.ord).sort((a, b) => a - b)).toEqual([1, 2]);
   });
 });
 

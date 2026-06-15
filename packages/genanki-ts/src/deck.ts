@@ -86,7 +86,7 @@ export class Deck {
     }
 
     if (typeof this.name !== "string") {
-      throw new TypeError(`Deck .name must be a string, not ${this.name}.`);
+      throw new TypeError("Deck .name must be a string.");
     }
 
     const decksRow = selectDecks.get() as { decks: string } | undefined;

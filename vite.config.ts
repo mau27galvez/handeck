@@ -34,18 +34,6 @@ export default defineConfig({
     tasks: {
       build: {
         command: "vp build apps/web",
-        env: [
-          "VITE_APP_ORIGIN",
-          "DATABASE_URL",
-          "BETTER_AUTH_SECRET",
-          "BETTER_AUTH_URL",
-          "CORS_ORIGIN",
-          "VERCEL_URL",
-          "VERCEL_BRANCH_URL",
-          "VERCEL_PROJECT_PRODUCTION_URL",
-        ],
-        input: [{ auto: true }, { pattern: ".env*", base: "workspace" }],
-        output: ["dist/**", ".vercel/output/**"],
       },
       dev: {
         command: "vp run -r --parallel dev",

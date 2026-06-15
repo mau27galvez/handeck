@@ -40,7 +40,7 @@
   "scripts": {
     "lint": "vp lint --report-unused-disable-directives",
     "format": "vp fmt",
-    "check": "vp check && vp run typecheck && vp run test"
+    "full-check": "vp check && vp run typecheck && vp run test"
   },
   "dependencies": {
     "dotenv": "catalog:",

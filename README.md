@@ -65,7 +65,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Git Hooks and Formatting
 
-- Check types, formatting and lint: `vp check` (or `bun run check`)
+- Full validation (lint, format, typecheck, tests): `bun run full-check` (or run `vp check`, `vp run typecheck`, and `vp run test` separately)
 - Format files: `vp fmt` (or `bun run format`)
 
 ## Project Structure

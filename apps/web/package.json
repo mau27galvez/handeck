@@ -6,6 +6,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "dev": "vite dev",
+    "vercel:build": "bun run db:push && bun run build",
     "db:push": "turbo -F @handeck/db db:push -- --verbose",
     "typecheck": "tsc --noEmit"
   },

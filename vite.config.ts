@@ -80,10 +80,6 @@ export default defineConfig({
       test: {
         command: "vp run -r test",
       },
-      "dev:setup": {
-        command: "true",
-        cache: false,
-      },
     },
   },
 });

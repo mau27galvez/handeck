@@ -7,9 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "example": "bun run examples/generate-example.ts",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "example": "bun run examples/generate-example.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.1",
@@ -22,6 +20,6 @@
     "@types/mustache": "^4.2.6",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^3.2.4"
+    "vite-plus": "catalog:"
   }
 }

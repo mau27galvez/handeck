@@ -30,24 +30,17 @@
       "better-auth": "1.6.18",
       "@types/node": "^24.13.0",
       "@types/react-dom": "^19.2.3",
-      "@types/bun": "^1.3.14"
+      "@types/bun": "^1.3.14",
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
+      "vite-plus": "latest"
     }
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "build:web": "turbo -F web build",
-    "dev:web": "turbo -F web dev",
-    "db:push": "turbo -F @handeck/db db:push",
-    "db:studio": "turbo -F @handeck/db db:studio",
-    "db:generate": "turbo -F @handeck/db db:generate",
-    "db:migrate": "turbo -F @handeck/db db:migrate",
-    "lint": "oxlint --report-unused-disable-directives",
-    "typecheck": "turbo typecheck",
-    "format": "oxfmt",
-    "test": "turbo test",
-    "check": "bun run lint && bun run format --check && bun run typecheck && bun run test"
+    "lint": "vp lint --report-unused-disable-directives",
+    "format": "vp fmt",
+    "check": "vp check && vp run typecheck && vp run test"
   },
   "dependencies": {
     "dotenv": "catalog:",
@@ -55,10 +48,12 @@
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
-    "oxfmt": "^0.53.0",
-    "oxlint": "^1.67.0",
-    "turbo": "^2.9.16",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "overrides": {
+    "vite": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "bun@1.3.14"
 }

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "serve": "vp preview",
-    "db:push": "vp run --filter @handeck/db db:push -- --verbose",
+    "vercel:build": "bun run db:push && bunx vp build",
+    "db:push": "vp run --filter @handeck/db db:push --verbose",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

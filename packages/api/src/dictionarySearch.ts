@@ -36,7 +36,7 @@ export function parseDictionarySearchQuery(rawQuery: string): DictionarySearchQu
   }
 
   const compactQuery = query.replace(/\s+/g, "");
-  if ([...compactQuery].every((character) => HAN_REGEX.test(character))) {
+  if (Array.from(compactQuery).every((character) => HAN_REGEX.test(character))) {
     return { kind: "simplified", value: compactQuery };
   }
 

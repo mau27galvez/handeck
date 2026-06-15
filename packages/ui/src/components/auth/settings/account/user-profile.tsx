@@ -137,9 +137,9 @@ export function UserProfile({ className }: UserProfileProps) {
 
               // Re-mount when the session value loads so the field's
               // uncontrolled `defaultValue` reflects the latest data.
-              const key = `${field.name}:${
-                value instanceof Date ? value.toISOString() : String(value ?? "")
-              }`;
+              // oxlint-disable-next-line typescript/no-base-to-string -- additional field values are primitives or Dates from Better Auth config.
+              const keyValue = value instanceof Date ? value.toISOString() : String(value ?? "");
+              const key = `${field.name}:${keyValue}`;
 
               return (
                 <AdditionalField

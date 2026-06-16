@@ -31,6 +31,9 @@ export default defineConfig({
     nitro({
       preset: "vercel",
       traceDeps: ["react"],
+      rolldownConfig: {
+        external: awsSdkExternals,
+      },
     }),
     viteReact(),
   ],

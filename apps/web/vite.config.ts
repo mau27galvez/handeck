@@ -4,14 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nitro } from "nitro/vite";
 
-const awsSdkExternals = [
-  "@aws-sdk/client-s3",
-  "@aws-sdk/s3-request-presigner",
-  /^@aws-sdk\//,
-  /^@aws-crypto\//,
-  /^@smithy\//,
-  "tslib",
-];
+const awsSdkExternals = ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner", "tslib"];
 
 export default defineConfig({
   server: {
@@ -20,6 +13,16 @@ export default defineConfig({
   },
   resolve: {
     tsconfigPaths: true,
+  },
+  ssr: {
+    external: awsSdkExternals,
+  },
+  environments: {
+    ssr: {
+      resolve: {
+        external: awsSdkExternals,
+      },
+    },
   },
   plugins: [
     tailwindcss(),

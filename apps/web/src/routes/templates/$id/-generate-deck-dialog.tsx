@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@handeck/ui/components/dialog";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Hash, Settings } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function GenerateDeckDialog({
   wordCount,
 }: GenerateDeckDialogProps) {
   const buildDeck = useMutation(orpc.deck.buildFromTemplate.mutationOptions());
+  const queryClient = useQueryClient();
   const [pending, setPending] = useState(false);
 
   async function handleGenerate() {
@@ -40,6 +41,7 @@ export default function GenerateDeckDialog({
     try {
       const deckId = v4();
       const result = await buildDeck.mutateAsync({ deckId, templateId });
+      void queryClient.invalidateQueries(orpc.deck.listForCurrentUser.queryOptions());
       onOpenChange(false);
       toast.success(`Generated deck with ${result.noteCount} notes`);
     } catch (error) {

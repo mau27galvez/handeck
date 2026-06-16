@@ -102,7 +102,7 @@ export const appRouter = {
         const filename = getDeckDownloadFilename(deck.template.name);
         const url = await getDeckDownloadUrl(getDeckObjectKey(userId, deck.id), filename);
 
-        return { url, filename };
+        return url;
       }),
   },
 

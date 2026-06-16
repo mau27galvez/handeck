@@ -40,6 +40,7 @@ export async function writeDeckPackageToS3({
           [note.diacriticPinyin, note.meaning].filter(Boolean).join("\n\n"),
         ],
         tags: ["handeck"],
+        // we may want to review this in the future
         guid: `handeck:${note.id}`,
       }),
     );

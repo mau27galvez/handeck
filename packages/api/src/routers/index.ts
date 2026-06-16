@@ -7,6 +7,7 @@ import { v4 } from "uuid";
 import { z } from "zod";
 
 import { buildDeckFromTemplate } from "../buildDeckFromTemplate";
+import { getDeckDownloadFilename, getDeckDownloadUrl, getDeckObjectKey } from "../deckStorage";
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
@@ -90,6 +91,25 @@ export const appRouter = {
           noteCount: result.notes.length,
           objectKey: result.objectKey,
         };
+      }),
+
+    getDownloadUrl: protectedProcedure
+      .input(z.object({ deckId: z.uuid() }))
+      .handler(async ({ input, context }) => {
+        const userId = context.session.user.id;
+        const deck = await db.query.decks.findFirst({
+          where: and(eq(decks.id, input.deckId), eq(decks.userId, userId)),
+          with: {
+            template: true,
+          },
+        });
+
+        if (!deck) throw new Error("Deck not found");
+
+        const filename = getDeckDownloadFilename(deck.template.name);
+        const url = await getDeckDownloadUrl(getDeckObjectKey(userId, deck.id), filename);
+
+        return { url, filename };
       }),
   },
 

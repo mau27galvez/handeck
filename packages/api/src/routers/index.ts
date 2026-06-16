@@ -275,10 +275,19 @@ export const appRouter = {
 
     remove: protectedProcedure
       .input(z.object({ templateId: z.uuid() }))
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         await db.transaction(async (tx) => {
           await tx.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
-          await tx.delete(templates).where(eq(templates.id, input.templateId));
+
+          // this ensure that we only delete if the auth user own the template
+          await tx
+            .delete(templates)
+            .where(
+              and(
+                eq(templates.id, input.templateId),
+                eq(templates.userId, context.session.user.id),
+              ),
+            );
         });
       }),
 

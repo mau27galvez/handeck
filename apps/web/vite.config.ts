@@ -4,7 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nitro } from "nitro/vite";
 
-const awsSdkExternals = ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner", "tslib"];
+const awsSdkExternals = ["@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"];
 
 export default defineConfig({
   server: {

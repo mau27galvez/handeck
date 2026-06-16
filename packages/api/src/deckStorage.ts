@@ -21,7 +21,7 @@ export function createS3Client() {
 }
 
 export function getDeckObjectKey(userId: string, deckId: string) {
-  return `decks/${userId}/${deckId}.apkg`;
+  return `${env.S3_KEY_PREFIX}/decks/${userId}/${deckId}.apkg`;
 }
 
 // this deserves a better implementation in the future

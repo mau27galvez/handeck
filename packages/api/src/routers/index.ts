@@ -79,18 +79,11 @@ export const appRouter = {
       .handler(async ({ input, context }) => {
         await getOwnedTemplate(input.templateId, context.session.user.id);
 
-        const result = await buildDeckFromTemplate({
+        await buildDeckFromTemplate({
           deckId: input.deckId,
           templateId: input.templateId,
           userId: context.session.user.id,
         });
-
-        return {
-          deckId: result.deckId,
-          wordCount: result.notes.length,
-          noteCount: result.notes.length,
-          objectKey: result.objectKey,
-        };
       }),
 
     getDownloadUrl: protectedProcedure

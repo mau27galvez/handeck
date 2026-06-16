@@ -17,13 +17,6 @@ export default defineConfig({
   ssr: {
     external: awsSdkExternals,
   },
-  environments: {
-    ssr: {
-      resolve: {
-        external: awsSdkExternals,
-      },
-    },
-  },
   plugins: [
     tailwindcss(),
     tanstackStart(),

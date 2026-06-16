@@ -4,6 +4,15 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nitro } from "nitro/vite";
 
+const awsSdkExternals = [
+  "@aws-sdk/client-s3",
+  "@aws-sdk/s3-request-presigner",
+  /^@aws-sdk\//,
+  /^@aws-crypto\//,
+  /^@smithy\//,
+  "tslib",
+];
+
 export default defineConfig({
   server: {
     // Keep in sync with `DEFAULT_DEV_APP_ORIGIN` in `src/lib/auth-app-origin.ts` (SSR auth baseURL fallback).
@@ -19,6 +28,9 @@ export default defineConfig({
     nitro({
       preset: "vercel",
       traceDeps: ["react", "@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
+      rolldownConfig: {
+        external: awsSdkExternals,
+      },
     }),
     viteReact(),
   ],

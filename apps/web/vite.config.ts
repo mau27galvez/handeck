@@ -14,6 +14,9 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  ssr: {
+    external: awsSdkExternals,
+  },
   plugins: [
     tailwindcss(),
     tanstackStart(),

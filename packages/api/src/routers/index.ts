@@ -1,5 +1,5 @@
 import { db } from "@handeck/db";
-import { baseTemplates, templateWords, templates, words } from "@handeck/db/schema";
+import { baseTemplates, decks, templateWords, templates, words } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
 import { and, count, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
@@ -59,6 +59,20 @@ export const appRouter = {
   },
 
   deck: {
+    listForCurrentUser: protectedProcedure.handler(async ({ context }) => {
+      return await db
+        .select({
+          id: decks.id,
+          templateId: decks.templateId,
+          templateName: templates.name,
+          createdAt: decks.createdAt,
+        })
+        .from(decks)
+        .innerJoin(templates, eq(decks.templateId, templates.id))
+        .where(eq(decks.userId, context.session.user.id))
+        .orderBy(desc(decks.createdAt));
+    }),
+
     buildFromTemplate: protectedProcedure
       .input(z.object({ deckId: z.uuid(), templateId: z.uuid() }))
       .handler(async ({ input, context }) => {

@@ -88,6 +88,7 @@ export const appRouter = {
           deckId: result.deckId,
           wordCount: result.notes.length,
           noteCount: result.notes.length,
+          objectKey: result.objectKey,
         };
       }),
   },

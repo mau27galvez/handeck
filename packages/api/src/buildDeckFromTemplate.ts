@@ -1,7 +1,7 @@
 import { db } from "@handeck/db";
 import { decks, notes } from "@handeck/db/schema";
 import { v4 } from "uuid";
-import { writeDeckPackageToVoid } from "./deckPackage";
+import { writeDeckPackageToS3 } from "./deckPackage";
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -38,8 +38,8 @@ export async function buildDeckFromTemplate({
     };
   });
 
-  await writeDeckPackageToVoid(result);
-  return result;
+  const { objectKey } = await writeDeckPackageToS3({ ...result, userId });
+  return { ...result, objectKey };
 }
 
 async function getTemplateAndWords(tx: DbTx, templateId: string) {

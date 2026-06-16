@@ -37,8 +37,7 @@ export async function buildDeckFromTemplate({
       notes: templateWords,
     };
 
-    const { objectKey } = await writeDeckPackageToS3({ ...result, userId });
-    return { ...result, objectKey };
+    await writeDeckPackageToS3({ ...result, userId });
   });
 }
 

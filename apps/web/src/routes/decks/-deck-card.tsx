@@ -32,7 +32,7 @@ export default function DeckCard({ deck }: { deck: DeckListItem }) {
 
   async function handleDownload() {
     try {
-      const { url } = await getDownloadUrl.mutateAsync({ deckId: deck.id });
+      const url = await getDownloadUrl.mutateAsync({ deckId: deck.id });
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to download deck";

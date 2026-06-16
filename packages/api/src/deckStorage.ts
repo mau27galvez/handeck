@@ -24,6 +24,7 @@ export function getDeckObjectKey(userId: string, deckId: string) {
   return `decks/${userId}/${deckId}.apkg`;
 }
 
+// this deserves a better implementation in the future
 export function getDeckDownloadFilename(templateName: string) {
   const sanitized = templateName
     .trim()
@@ -47,6 +48,7 @@ export async function getDeckDownloadUrl(objectKey: string, filename: string) {
 
 export async function uploadDeckPackage(objectKey: string, body: Buffer) {
   const s3Client = createS3Client();
+
   await s3Client.send(
     new PutObjectCommand({
       Bucket: env.S3_BUCKET,

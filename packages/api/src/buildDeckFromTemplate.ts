@@ -23,7 +23,7 @@ export async function buildDeckFromTemplate({
 }) {
   const now = new Date();
 
-  const result = await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const { template, templateWords } = await getTemplateAndWords(tx, templateId);
 
     if (templateWords.length === 0) throw new Error("Add words before generating a deck");
@@ -31,15 +31,15 @@ export async function buildDeckFromTemplate({
     await insertDeck(tx, { deckId, userId, templateId, now });
     await insertNotes(tx, { deckId, templateWords, now });
 
-    return {
+    const result = {
       deckId,
       templateName: template.name,
       notes: templateWords,
     };
-  });
 
-  const { objectKey } = await writeDeckPackageToS3({ ...result, userId });
-  return { ...result, objectKey };
+    const { objectKey } = await writeDeckPackageToS3({ ...result, userId });
+    return { ...result, objectKey };
+  });
 }
 
 async function getTemplateAndWords(tx: DbTx, templateId: string) {

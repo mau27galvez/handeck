@@ -7,6 +7,10 @@ const DOWNLOAD_URL_EXPIRES_IN_SECONDS = 60 * 5;
 export function createS3Client() {
   return new S3Client({
     region: env.S3_REGION,
+    credentials: {
+      accessKeyId: env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    },
     ...(env.S3_ENDPOINT
       ? {
           endpoint: env.S3_ENDPOINT,

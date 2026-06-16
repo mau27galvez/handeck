@@ -1,7 +1,7 @@
 import { db } from "@handeck/db";
 import { decks, notes } from "@handeck/db/schema";
 import { v4 } from "uuid";
-import { writeDeckPackageToVoid } from "./deckPackage";
+import { writeDeckPackageToS3 } from "./deckPackage";
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -23,7 +23,7 @@ export async function buildDeckFromTemplate({
 }) {
   const now = new Date();
 
-  const result = await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const { template, templateWords } = await getTemplateAndWords(tx, templateId);
 
     if (templateWords.length === 0) throw new Error("Add words before generating a deck");
@@ -31,15 +31,14 @@ export async function buildDeckFromTemplate({
     await insertDeck(tx, { deckId, userId, templateId, now });
     await insertNotes(tx, { deckId, templateWords, now });
 
-    return {
+    const result = {
       deckId,
       templateName: template.name,
       notes: templateWords,
     };
-  });
 
-  await writeDeckPackageToVoid(result);
-  return result;
+    await writeDeckPackageToS3({ ...result, userId });
+  });
 }
 
 async function getTemplateAndWords(tx: DbTx, templateId: string) {

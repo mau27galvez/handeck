@@ -1,7 +1,9 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BASIC_MODEL, Deck, Note, Package } from "@handeck/genanki-ts";
+
+import { getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
 
 type NoteData = {
   id: string;
@@ -12,11 +14,17 @@ type NoteData = {
 
 type DeckPackageInput = {
   deckId: string;
+  userId: string;
   templateName: string;
   notes: NoteData[];
 };
 
-export async function writeDeckPackageToVoid({ deckId, templateName, notes }: DeckPackageInput) {
+export async function writeDeckPackageToS3({
+  deckId,
+  userId,
+  templateName,
+  notes,
+}: DeckPackageInput) {
   const deck = new Deck({
     id: deckNumberFromUuid(deckId),
     name: templateName,
@@ -32,14 +40,22 @@ export async function writeDeckPackageToVoid({ deckId, templateName, notes }: De
           [note.diacriticPinyin, note.meaning].filter(Boolean).join("\n\n"),
         ],
         tags: ["handeck"],
+        // we may want to review this in the future
         guid: `handeck:${note.id}`,
       }),
     );
   }
 
+  const objectKey = getDeckObjectKey(userId, deckId);
   const tempDir = await mkdtemp(join(tmpdir(), "handeck-deck-package-"));
+  const apkgPath = join(tempDir, "deck.apkg");
+
   try {
-    await new Package(deck).writeToFile(join(tempDir, "deck.apkg"));
+    await new Package(deck).writeToFile(apkgPath);
+    const body = await readFile(apkgPath);
+    await uploadDeckPackage(objectKey, body);
+
+    return { objectKey };
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

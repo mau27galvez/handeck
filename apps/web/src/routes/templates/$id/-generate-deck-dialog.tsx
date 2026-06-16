@@ -40,10 +40,10 @@ export default function GenerateDeckDialog({
     setPending(true);
     try {
       const deckId = v4();
-      const result = await buildDeck.mutateAsync({ deckId, templateId });
+      await buildDeck.mutateAsync({ deckId, templateId });
       void queryClient.invalidateQueries(orpc.deck.listForCurrentUser.queryOptions());
       onOpenChange(false);
-      toast.success(`Generated deck with ${result.noteCount} notes`);
+      toast.success(`Generated deck with template ${templateName}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to generate deck";
       toast.error(message);

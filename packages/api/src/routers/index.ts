@@ -7,6 +7,7 @@ import { v4 } from "uuid";
 import { z } from "zod";
 
 import { buildDeckFromTemplate } from "../buildDeckFromTemplate";
+import { getDeckDownloadFilename, getDeckDownloadUrl, getDeckObjectKey } from "../deckStorage";
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
@@ -78,17 +79,30 @@ export const appRouter = {
       .handler(async ({ input, context }) => {
         await getOwnedTemplate(input.templateId, context.session.user.id);
 
-        const result = await buildDeckFromTemplate({
+        await buildDeckFromTemplate({
           deckId: input.deckId,
           templateId: input.templateId,
           userId: context.session.user.id,
         });
+      }),
 
-        return {
-          deckId: result.deckId,
-          wordCount: result.notes.length,
-          noteCount: result.notes.length,
-        };
+    getDownloadUrl: protectedProcedure
+      .input(z.object({ deckId: z.uuid() }))
+      .handler(async ({ input, context }) => {
+        const userId = context.session.user.id;
+        const deck = await db.query.decks.findFirst({
+          where: and(eq(decks.id, input.deckId), eq(decks.userId, userId)),
+          with: {
+            template: true,
+          },
+        });
+
+        if (!deck) throw new Error("Deck not found");
+
+        const filename = getDeckDownloadFilename(deck.template.name);
+        const url = await getDeckDownloadUrl(getDeckObjectKey(userId, deck.id), filename);
+
+        return url;
       }),
   },
 
@@ -254,10 +268,19 @@ export const appRouter = {
 
     remove: protectedProcedure
       .input(z.object({ templateId: z.uuid() }))
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         await db.transaction(async (tx) => {
           await tx.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
-          await tx.delete(templates).where(eq(templates.id, input.templateId));
+
+          // this ensure that we only delete if the auth user own the template
+          await tx
+            .delete(templates)
+            .where(
+              and(
+                eq(templates.id, input.templateId),
+                eq(templates.userId, context.session.user.id),
+              ),
+            );
         });
       }),
 

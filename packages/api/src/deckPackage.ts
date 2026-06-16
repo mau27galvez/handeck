@@ -1,9 +1,9 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { env } from "@handeck/env/server";
 import { BASIC_MODEL, Deck, Note, Package } from "@handeck/genanki-ts";
+
+import { getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
 
 type NoteData = {
   id: string;
@@ -18,18 +18,6 @@ type DeckPackageInput = {
   templateName: string;
   notes: NoteData[];
 };
-
-function createS3Client() {
-  return new S3Client({
-    region: env.S3_REGION,
-    ...(env.S3_ENDPOINT
-      ? {
-          endpoint: env.S3_ENDPOINT,
-          forcePathStyle: env.S3_FORCE_PATH_STYLE,
-        }
-      : {}),
-  });
-}
 
 export async function writeDeckPackageToS3({
   deckId,
@@ -57,23 +45,14 @@ export async function writeDeckPackageToS3({
     );
   }
 
-  const objectKey = `decks/${userId}/${deckId}.apkg`;
+  const objectKey = getDeckObjectKey(userId, deckId);
   const tempDir = await mkdtemp(join(tmpdir(), "handeck-deck-package-"));
   const apkgPath = join(tempDir, "deck.apkg");
 
   try {
     await new Package(deck).writeToFile(apkgPath);
     const body = await readFile(apkgPath);
-
-    const s3Client = createS3Client();
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: env.S3_BUCKET,
-        Key: objectKey,
-        Body: body,
-        ContentType: "application/octet-stream",
-      }),
-    );
+    await uploadDeckPackage(objectKey, body);
 
     return { objectKey };
   } finally {

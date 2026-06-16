@@ -1,3 +1,5 @@
+import { orpc } from "@/utils/orpc";
+import { Button } from "@handeck/ui/components/button";
 import {
   Card,
   CardHeader,
@@ -6,8 +8,9 @@ import {
   CardContent,
   CardFooter,
 } from "@handeck/ui/components/card";
-import { Button } from "@handeck/ui/components/button";
+import { useMutation } from "@tanstack/react-query";
 import { BookOpen, Calendar, Download } from "lucide-react";
+import { toast } from "sonner";
 
 export type DeckListItem = {
   id: string;
@@ -25,6 +28,17 @@ function formatCreatedAt(createdAt: Date) {
 
 export default function DeckCard({ deck }: { deck: DeckListItem }) {
   const { templateName, createdAt } = deck;
+  const getDownloadUrl = useMutation(orpc.deck.getDownloadUrl.mutationOptions());
+
+  async function handleDownload() {
+    try {
+      const { url } = await getDownloadUrl.mutateAsync({ deckId: deck.id });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to download deck";
+      toast.error(message);
+    }
+  }
 
   return (
     <Card size="sm" className="flex flex-col">
@@ -44,9 +58,16 @@ export default function DeckCard({ deck }: { deck: DeckListItem }) {
       </CardContent>
 
       <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t px-3 py-2">
-        <Button size="sm" className="gap-1.5" type="button">
+        <Button
+          size="sm"
+          className="gap-1.5"
+          type="button"
+          disabled={getDownloadUrl.isPending}
+          aria-busy={getDownloadUrl.isPending}
+          onClick={() => void handleDownload()}
+        >
           <Download className="size-3" />
-          Download
+          {getDownloadUrl.isPending ? "Preparing..." : "Download"}
         </Button>
       </CardFooter>
     </Card>

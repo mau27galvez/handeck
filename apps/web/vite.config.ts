@@ -31,9 +31,6 @@ export default defineConfig({
     nitro({
       preset: "vercel",
       traceDeps: ["react", "@aws-sdk/client-s3", "@aws-sdk/s3-request-presigner"],
-      rolldownConfig: {
-        external: awsSdkExternals,
-      },
     }),
     viteReact(),
   ],

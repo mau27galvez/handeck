@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 
 export type SqliteBinding = string | number | bigint | Uint8Array | null;
 
@@ -19,7 +19,7 @@ export type PackageDatabase = {
 };
 
 export function openPackageDatabase(file: string): PackageDatabase {
-  const db = new Database(file);
+  const db = new DatabaseSync(file);
 
   return {
     exec(sql) {

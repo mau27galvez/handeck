@@ -378,7 +378,7 @@ Internally:
 
 The implementation uses:
 
-- `better-sqlite3` for `collection.anki2`.
+- `node:sqlite` (`DatabaseSync`) for `collection.anki2`.
 - `fflate` for ZIP creation.
 - `mustache` only to approximate Anki's template rules when deciding whether a note should generate a card for a template.
 

@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -57,7 +57,7 @@ test("writes a structurally valid apkg archive", async () => {
     const dbPath = join(tempDir, "collection.anki2");
     await writeFile(dbPath, archive["collection.anki2"]!);
 
-    const db = new Database(dbPath);
+    const db = new DatabaseSync(dbPath);
     try {
       const deckRow = db.prepare("SELECT decks FROM col").get() as { decks: string };
       const decks = JSON.parse(deckRow.decks);
@@ -119,7 +119,7 @@ test("writes valid cards for multi-template notes", async () => {
     const dbPath = join(tempDir, "collection.anki2");
     await writeFile(dbPath, archive["collection.anki2"]!);
 
-    const db = new Database(dbPath);
+    const db = new DatabaseSync(dbPath);
     try {
       const cards = db.prepare("SELECT nid, ord FROM cards ORDER BY id").all();
       expect(cards).toEqual([
@@ -152,7 +152,7 @@ test("writes suspended cards and due values", async () => {
     const dbPath = join(tempDir, "collection.anki2");
     await writeFile(dbPath, archive["collection.anki2"]!);
 
-    const db = new Database(dbPath);
+    const db = new DatabaseSync(dbPath);
     try {
       const cards = db.prepare("SELECT ord, due, queue FROM cards ORDER BY id").all();
       expect(cards).toEqual([

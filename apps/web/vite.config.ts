@@ -4,6 +4,9 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nitro } from "nitro/vite";
 
+// We may need to add other aws sdk packages
+const awsSdkExternals = ["@aws-sdk/client-s3"];
+
 export default defineConfig({
   server: {
     // Keep in sync with `DEFAULT_DEV_APP_ORIGIN` in `src/lib/auth-app-origin.ts` (SSR auth baseURL fallback).
@@ -12,11 +15,20 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  ssr: {
+    external: awsSdkExternals,
+  },
   plugins: [
     tailwindcss(),
     tanstackStart(),
     // We add `react` to fix an issue with Vercel bundle. We may be able to remove this in the future.
-    nitro({ preset: "vercel", traceDeps: ["react"] }),
+    nitro({
+      preset: "vercel",
+      traceDeps: ["react"],
+      rolldownConfig: {
+        external: awsSdkExternals,
+      },
+    }),
     viteReact(),
   ],
 });

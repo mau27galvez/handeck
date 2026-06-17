@@ -4,6 +4,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { nitro } from "nitro/vite";
 
+// We may need to add other aws sdk packages
 const awsSdkExternals = ["@aws-sdk/client-s3"];
 
 export default defineConfig({
@@ -23,7 +24,7 @@ export default defineConfig({
     // We add `react` to fix an issue with Vercel bundle. We may be able to remove this in the future.
     nitro({
       preset: "vercel",
-      // traceDeps: ["react"],
+      traceDeps: ["react"],
       rolldownConfig: {
         external: awsSdkExternals,
       },

@@ -110,8 +110,8 @@
       "version": "1.0.0",
       "dependencies": {
         "@handeck/api": "workspace:*",
+        "@handeck/env": "workspace:*",
         "@orpc/client": "catalog:",
-        "dotenv": "catalog:",
       },
       "devDependencies": {
         "@handeck/config": "workspace:*",

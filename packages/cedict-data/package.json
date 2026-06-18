@@ -5,14 +5,14 @@
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun run seed.ts",
+    "seed": "bun --env-file ../../apps/web/.env --env-file .env.local run seed.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@handeck/api": "workspace:*",
-    "@orpc/client": "catalog:",
-    "dotenv": "catalog:"
+    "@handeck/env": "workspace:*",
+    "@orpc/client": "catalog:"
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",

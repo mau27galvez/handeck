@@ -1,7 +1,9 @@
 import { db } from "@handeck/db";
 import { decks, notes } from "@handeck/db/schema";
+import { env } from "@handeck/env/server";
 import { v4 } from "uuid";
 import { writeDeckPackageToS3 } from "./deckPackage";
+import { OpenRouter } from "@openrouter/sdk";
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -11,6 +13,10 @@ type TemplateWord = {
   diacriticPinyin: string;
   meaning: string;
 };
+
+const client = new OpenRouter({
+  apiKey: env.OPENROUTER_API_KEY,
+});
 
 export async function buildDeckFromTemplate({
   deckId,

@@ -1,9 +1,5 @@
-import dotenv from "dotenv";
+import { env } from "@handeck/env/server";
 import { defineConfig } from "drizzle-kit";
-
-dotenv.config({
-  path: "../../apps/web/.env",
-});
 
 export default defineConfig({
   schema: "./src/schema",
@@ -11,6 +7,6 @@ export default defineConfig({
   dialect: "postgresql",
   casing: "snake_case",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "",
+    url: env.DATABASE_URL,
   },
 });

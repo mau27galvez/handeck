@@ -14,6 +14,9 @@ type TemplateWord = {
   meaning: string;
 };
 
+const SENTENCE_GENERATION_PROMPT_BATCH_SIZE = 10;
+const OPENROUTER_MODEL = "deepseek/deepseek-v4-flash";
+
 const client = new OpenRouter({
   apiKey: env.OPENROUTER_API_KEY,
 });
@@ -30,24 +33,41 @@ export async function buildDeckFromTemplate({
   const now = new Date();
 
   return db.transaction(async (tx) => {
-    const { template, templateWords } = await getTemplateAndWords(tx, templateId);
+    const template = await getTemplateWithWords(tx, templateId);
 
-    if (templateWords.length === 0) throw new Error("Add words before generating a deck");
+    if (template.templateWords.length === 0) throw new Error("Add words before generating a deck");
 
-    await insertDeck(tx, { deckId, userId, templateId, now });
-    await insertNotes(tx, { deckId, templateWords, now });
-
-    const result = {
+    const notesToInsert = template.templateWords.map((word) => ({
+      id: v4(),
       deckId,
-      templateName: template.name,
-      notes: templateWords,
-    };
+      wordId: word.wordId,
+      simplifiedHanzi: word.word.simplifiedHanzi,
+      diacriticPinyin: word.word.diacriticPinyin,
+      meaning: word.word.meaning,
+      createdAt: now,
+      updatedAt: now,
+    }));
 
-    await writeDeckPackageToS3({ ...result, userId });
+    await tx.insert(decks).values({
+      id: deckId,
+      userId,
+      templateId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await tx.insert(notes).values(notesToInsert);
+
+    await writeDeckPackageToS3({
+      deckId,
+      userId,
+      templateName: template.name,
+      notes: notesToInsert,
+    });
   });
 }
 
-async function getTemplateAndWords(tx: DbTx, templateId: string) {
+async function getTemplateWithWords(tx: DbTx, templateId: string) {
   const template = await tx.query.templates.findFirst({
     where: (template, { eq }) => eq(template.id, templateId),
     with: {
@@ -60,53 +80,5 @@ async function getTemplateAndWords(tx: DbTx, templateId: string) {
   });
   if (!template) throw new Error("Template not found");
 
-  const templateWordsForDeck: TemplateWord[] = template.templateWords.map(({ word }) => word);
-
-  return { template, templateWords: templateWordsForDeck };
-}
-
-async function insertDeck(
-  tx: DbTx,
-  {
-    deckId,
-    userId,
-    templateId,
-    now,
-  }: {
-    deckId: string;
-    userId: string;
-    templateId: string;
-    now: Date;
-  },
-) {
-  await tx.insert(decks).values({
-    id: deckId,
-    userId,
-    templateId,
-    createdAt: now,
-    updatedAt: now,
-  });
-}
-
-async function insertNotes(
-  tx: DbTx,
-  {
-    deckId,
-    templateWords,
-    now,
-  }: {
-    deckId: string;
-    templateWords: TemplateWord[];
-    now: Date;
-  },
-) {
-  await tx.insert(notes).values(
-    templateWords.map((word) => ({
-      id: v4(),
-      deckId,
-      wordId: word.id,
-      createdAt: now,
-      updatedAt: now,
-    })),
-  );
+  return template;
 }

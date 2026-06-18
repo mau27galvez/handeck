@@ -20,6 +20,7 @@
     "@handeck/db": "workspace:*",
     "@handeck/env": "workspace:*",
     "@handeck/genanki-ts": "workspace:*",
+    "@openrouter/sdk": "^0.13.7",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",

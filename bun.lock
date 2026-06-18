@@ -72,6 +72,7 @@
         "@handeck/db": "workspace:*",
         "@handeck/env": "workspace:*",
         "@handeck/genanki-ts": "workspace:*",
+        "@openrouter/sdk": "^0.13.7",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
@@ -541,6 +542,8 @@
     "@oozcitak/url": ["@oozcitak/url@3.0.0", "", { "dependencies": { "@oozcitak/infra": "^2.0.2", "@oozcitak/util": "^10.0.0" } }, "sha512-ZKfET8Ak1wsLAiLWNfFkZc/BraDccuTJKR6svTYc7sVjbR+Iu0vtXdiDMY4o6jaFl5TW2TlS7jbLl4VovtAJWQ=="],
 
     "@oozcitak/util": ["@oozcitak/util@10.0.0", "", {}, "sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA=="],
+
+    "@openrouter/sdk": ["@openrouter/sdk@0.13.7", "", { "dependencies": { "zod": "^3.25.0 || ^4.0.0" } }, "sha512-/QGoYdbFC2lqnVoCwtBX1+3Z5v6SF5hS1/dQisY0so3DzNAIQLHShA0OQVeAg20X0RG3CSKSCK0Ijnkt2rHDXA=="],
 
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.41.1", "", {}, "sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA=="],
 

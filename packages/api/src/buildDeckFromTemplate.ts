@@ -91,11 +91,16 @@ export async function buildDeckFromTemplate({
 
     await tx.insert(sentenceNotes).values(sentenceNotesToInsert);
 
+    const notesWithSentences = notesToInsert.map((note) => ({
+      ...note,
+      sentence: sentences.get(note.simplifiedHanzi),
+    }));
+
     await writeDeckPackageToS3({
       deckId,
       userId,
       templateName: template.name,
-      notes: notesToInsert,
+      notes: notesWithSentences,
     });
   });
 }

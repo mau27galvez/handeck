@@ -89,6 +89,22 @@ export const notes = pgTable(
   ],
 );
 
+export const sentences = pgTable("sentences", {
+  id: uuid().primaryKey(),
+  text: text().notNull(),
+  ...timestamps,
+});
+
+export const sentenceNotes = pgTable("sentence_notes", {
+  id: uuid().primaryKey(),
+  sentenceId: uuid()
+    .notNull()
+    .references(() => sentences.id),
+  noteId: uuid()
+    .notNull()
+    .references(() => notes.id),
+});
+
 export const decks = pgTable(
   "decks",
   {

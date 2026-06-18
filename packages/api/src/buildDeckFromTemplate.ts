@@ -93,7 +93,7 @@ export async function buildDeckFromTemplate({
 
     const notesWithSentences = notesToInsert.map((note) => ({
       ...note,
-      sentence: sentences.get(note.simplifiedHanzi),
+      sentence: sentences.get(note.simplifiedHanzi)!,
     }));
 
     await writeDeckPackageToS3({

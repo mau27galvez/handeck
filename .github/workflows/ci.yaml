@@ -49,7 +49,7 @@ jobs:
         run: bun run lint
 
       - name: Check formatting
-        run: bun run format --check
+        run: bun run fmt --check
 
       - name: Typecheck
         run: bun run typecheck

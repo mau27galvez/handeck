@@ -1,22 +1,24 @@
 {
-  "name": "@handeck/cedict-data",
+  "name": "data-backoffice-cli",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun --env-file ../../apps/web/.env --env-file .env run seed.ts",
+    "seed": "bun run seed.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@handeck/api": "workspace:*",
-    "@handeck/env": "workspace:*",
-    "@orpc/client": "catalog:"
+    "@orpc/client": "catalog:",
+    "@t3-oss/env-core": "^0.13.1",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/bun": "^1.3.14",
     "typescript": "catalog:"
   }
 }

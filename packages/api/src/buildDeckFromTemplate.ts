@@ -70,14 +70,11 @@ export async function buildDeckFromTemplate({
       }
     }
 
-    const sentencesToInsert = sentences
-      .values()
-      .map((sentence) => ({
-        id: v4(),
-        simplifiedHanzi: sentence,
-        createdAt: now,
-      }))
-      .toArray();
+    const sentencesToInsert = Array.from(sentences.values()).map((sentence) => ({
+      id: v4(),
+      simplifiedHanzi: sentence,
+      createdAt: now,
+    }));
 
     await tx.insert(sentencesTable).values(sentencesToInsert);
 

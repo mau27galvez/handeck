@@ -21,8 +21,10 @@
       "version": "1.0.0",
       "dependencies": {
         "@handeck/api": "workspace:*",
-        "@handeck/env": "workspace:*",
         "@orpc/client": "catalog:",
+        "@t3-oss/env-core": "^0.13.1",
+        "dotenv": "catalog:",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@handeck/config": "workspace:*",

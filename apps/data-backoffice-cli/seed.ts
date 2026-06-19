@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { RPC_PATH } from "@handeck/api/rpc-paths";
 import type { AppRouterClient } from "@handeck/api/routers/index";
-import { env, getAppOrigin } from "@handeck/env/server";
+import { env } from "./env";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 
@@ -25,7 +25,7 @@ const limit = getFlagValue("--limit");
 const maxEntries = limit ? Number.parseInt(limit, 10) : undefined;
 const shouldClear = flags.has("--clear");
 const dryRun = flags.has("--dry-run");
-const appOrigin = getAppOrigin();
+const appOrigin = env.APP_ORIGIN;
 const importToken = env.CEDICT_IMPORT_TOKEN;
 
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 500) {

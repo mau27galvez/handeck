@@ -4,14 +4,14 @@
 
 **Handeck** is a Chinese language learning app built as a Bun monorepo (Turborepo). It helps users look up words in a CC-CEDICT dictionary, build study templates, and generate flashcard decks from vocabulary and example sentences.
 
-| Area            | Location               | Stack                                                |
-| --------------- | ---------------------- | ---------------------------------------------------- |
-| Web app         | `apps/web`             | React, TanStack Start, TanStack Router, Tailwind CSS |
-| Shared UI       | `packages/ui`          | shadcn/ui components and design tokens               |
-| API             | `packages/api`         | oRPC procedures for app and external integrations    |
-| Database        | `packages/db`          | Drizzle ORM + PostgreSQL schema/client               |
-| Dictionary data | `packages/cedict-data` | CC-CEDICT seeding and parsing                        |
-| Auth            | `packages/auth`        | Better Auth with Drizzle adapter                     |
+| Area            | Location                   | Stack                                                |
+| --------------- | -------------------------- | ---------------------------------------------------- |
+| Web app         | `apps/web`                 | React, TanStack Start, TanStack Router, Tailwind CSS |
+| Shared UI       | `packages/ui`              | shadcn/ui components and design tokens               |
+| API             | `packages/api`             | oRPC procedures for app and external integrations    |
+| Database        | `packages/db`              | Drizzle ORM + PostgreSQL schema/client               |
+| Data backoffice | `apps/data-backoffice-cli` | CC-CEDICT seeding and parsing                        |
+| Auth            | `packages/auth`            | Better Auth with Drizzle adapter                     |
 
 ## Package manager: Bun, not npm
 

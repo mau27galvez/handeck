@@ -16,6 +16,20 @@
         "typescript": "catalog:",
       },
     },
+    "apps/data-backoffice-cli": {
+      "name": "data-backoffice-cli",
+      "version": "1.0.0",
+      "dependencies": {
+        "@handeck/api": "workspace:*",
+        "@handeck/env": "workspace:*",
+        "@orpc/client": "catalog:",
+      },
+      "devDependencies": {
+        "@handeck/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "apps/web": {
       "name": "web",
       "dependencies": {
@@ -102,20 +116,6 @@
       "devDependencies": {
         "@handeck/config": "workspace:*",
         "@types/node": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "packages/cedict-data": {
-      "name": "@handeck/cedict-data",
-      "version": "1.0.0",
-      "dependencies": {
-        "@handeck/api": "workspace:*",
-        "@handeck/env": "workspace:*",
-        "@orpc/client": "catalog:",
-      },
-      "devDependencies": {
-        "@handeck/config": "workspace:*",
-        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -488,8 +488,6 @@
     "@handeck/api": ["@handeck/api@workspace:packages/api"],
 
     "@handeck/auth": ["@handeck/auth@workspace:packages/auth"],
-
-    "@handeck/cedict-data": ["@handeck/cedict-data@workspace:packages/cedict-data"],
 
     "@handeck/config": ["@handeck/config@workspace:packages/config"],
 
@@ -1118,6 +1116,8 @@
     "cssesc": ["cssesc@3.0.0", "", { "bin": { "cssesc": "bin/cssesc" } }, "sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg=="],
 
     "csstype": ["csstype@3.2.3", "", {}, "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ=="],
+
+    "data-backoffice-cli": ["data-backoffice-cli@workspace:apps/data-backoffice-cli"],
 
     "data-uri-to-buffer": ["data-uri-to-buffer@4.0.1", "", {}, "sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A=="],
 

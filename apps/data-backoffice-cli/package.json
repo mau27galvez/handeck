@@ -1,11 +1,11 @@
 {
-  "name": "@handeck/cedict-data",
+  "name": "data-backoffice-cli",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun --env-file ../../apps/web/.env --env-file .env run seed.ts",
+    "seed": "bun run seed.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

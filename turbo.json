@@ -6,16 +6,7 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".vercel/output/**"],
-      "env": [
-        "VITE_APP_ORIGIN",
-        "DATABASE_URL",
-        "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL",
-        "CORS_ORIGIN",
-        "VERCEL_URL",
-        "VERCEL_BRANCH_URL",
-        "VERCEL_PROJECT_PRODUCTION_URL"
-      ]
+      "env": ["VITE_APP_ORIGIN", "NODE_ENV"]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -36,6 +27,7 @@
     },
     "db:push": {
       "cache": false,
+      "interactive": true,
       "env": ["DATABASE_URL"]
     }
   }

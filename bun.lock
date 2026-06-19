@@ -28,7 +28,7 @@
       },
       "devDependencies": {
         "@handeck/config": "workspace:*",
-        "@types/bun": "catalog:",
+        "@types/bun": "^1.3.14",
         "typescript": "catalog:",
       },
     },
@@ -100,9 +100,9 @@
       },
       "devDependencies": {
         "@handeck/config": "workspace:*",
-        "@types/bun": "catalog:",
         "@types/node": "catalog:",
         "typescript": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "packages/auth": {
@@ -167,7 +167,7 @@
         "@types/mustache": "^4.2.6",
         "@types/node": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^3.2.4",
+        "vitest": "catalog:",
       },
     },
     "packages/ui": {
@@ -223,7 +223,6 @@
     "@orpc/tanstack-query": "^1.14.5",
     "@orpc/zod": "^1.14.5",
     "@tanstack/react-query": "^5.101.0",
-    "@types/bun": "^1.3.14",
     "@types/node": "^24.13.0",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
@@ -238,6 +237,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.3",
     "uuid": "^14.0.0",
+    "vitest": "^3.2.4",
     "zod": "^4.1.13",
   },
   "packages": {

@@ -55,8 +55,8 @@
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
-    "oxfmt": "^0.53.0",
-    "oxlint": "^1.67.0",
+    "oxfmt": "^0.55.0",
+    "oxlint": "^1.70.0",
     "turbo": "^2.9.16",
     "typescript": "catalog:"
   },

@@ -20,6 +20,6 @@
     "@types/mustache": "^4.2.6",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": ":catalog"
+    "vitest": "catalog:"
   }
 }

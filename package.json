@@ -45,7 +45,7 @@
     "db:migrate": "turbo -F @handeck/db db:migrate",
     "lint": "oxlint --report-unused-disable-directives",
     "typecheck": "turbo typecheck",
-    "format": "oxfmt",
+    "fmt": "oxfmt",
     "test": "turbo test",
     "check": "bun run lint && bun run format --check && bun run typecheck && bun run test"
   },

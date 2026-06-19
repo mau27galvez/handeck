@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parseDictionarySearchQuery } from "./src/dictionarySearch";
+import { parseDictionarySearchQuery } from "../src/dictionarySearch";
 
 describe("parseDictionarySearchQuery", () => {
   test("keeps regular u and umlaut v distinct in pinyin input", () => {

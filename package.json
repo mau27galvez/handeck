@@ -47,7 +47,7 @@
     "typecheck": "turbo typecheck",
     "fmt": "oxfmt",
     "test": "turbo test",
-    "check": "bun run lint && bun run format --check && bun run typecheck && bun run test"
+    "check": "bun run lint && bun run fmt --check && bun run typecheck && bun run test"
   },
   "dependencies": {
     "dotenv": "catalog:",

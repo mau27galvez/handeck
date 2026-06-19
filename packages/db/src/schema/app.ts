@@ -8,12 +8,12 @@ const timestamps = {
   updatedAt: timestamp({ withTimezone: true }),
 };
 
-export const baseTemplates = pgTable("base_templates", {
+export const baseTemplatesTable = pgTable("base_templates", {
   id: uuid().primaryKey(),
   name: text().notNull(),
 });
 
-export const templates = pgTable(
+export const templatesTable = pgTable(
   "templates",
   {
     id: uuid().primaryKey(),
@@ -21,13 +21,13 @@ export const templates = pgTable(
       .notNull()
       .references(() => user.id),
     name: text().notNull(),
-    baseTemplateId: uuid().references(() => baseTemplates.id),
+    baseTemplateId: uuid().references(() => baseTemplatesTable.id),
     ...timestamps,
   },
   (table) => [index("templates_user_id_idx").on(table.userId)],
 );
 
-export const words = pgTable(
+export const wordsTable = pgTable(
   "words",
   {
     id: uuid().primaryKey(),
@@ -53,15 +53,15 @@ export const words = pgTable(
   ],
 );
 
-export const templateWords = pgTable(
+export const templateWordsTable = pgTable(
   "template_words",
   {
     templateId: uuid()
       .notNull()
-      .references(() => templates.id),
+      .references(() => templatesTable.id),
     wordId: uuid()
       .notNull()
-      .references(() => words.id),
+      .references(() => wordsTable.id),
     ...timestamps,
   },
   (table) => [
@@ -70,16 +70,16 @@ export const templateWords = pgTable(
   ],
 );
 
-export const notes = pgTable(
+export const notesTable = pgTable(
   "notes",
   {
     id: uuid().primaryKey(),
     deckId: uuid()
       .notNull()
-      .references(() => decks.id),
+      .references(() => decksTable.id),
     wordId: uuid()
       .notNull()
-      .references(() => words.id),
+      .references(() => wordsTable.id),
     ...timestamps,
   },
   (table) => [
@@ -89,23 +89,23 @@ export const notes = pgTable(
   ],
 );
 
-export const sentences = pgTable("sentences", {
+export const sentencesTable = pgTable("sentences", {
   id: uuid().primaryKey(),
   simplifiedHanzi: text().notNull(),
   ...timestamps,
 });
 
-export const sentenceNotes = pgTable("sentence_notes", {
+export const sentenceNotesTable = pgTable("sentence_notes", {
   id: uuid().primaryKey(),
   sentenceId: uuid()
     .notNull()
-    .references(() => sentences.id),
+    .references(() => sentencesTable.id),
   noteId: uuid()
     .notNull()
-    .references(() => notes.id),
+    .references(() => notesTable.id),
 });
 
-export const decks = pgTable(
+export const decksTable = pgTable(
   "decks",
   {
     id: uuid().primaryKey(),
@@ -114,7 +114,7 @@ export const decks = pgTable(
       .references(() => user.id),
     templateId: uuid()
       .notNull()
-      .references(() => templates.id),
+      .references(() => templatesTable.id),
     ...timestamps,
   },
   (table) => [
@@ -123,58 +123,58 @@ export const decks = pgTable(
   ],
 );
 
-export const baseTemplateRelations = relations(baseTemplates, ({ many }) => ({
-  templates: many(templates),
+export const baseTemplateRelations = relations(baseTemplatesTable, ({ many }) => ({
+  templates: many(templatesTable),
 }));
 
-export const templateRelations = relations(templates, ({ one, many }) => ({
+export const templateRelations = relations(templatesTable, ({ one, many }) => ({
   user: one(user, {
-    fields: [templates.userId],
+    fields: [templatesTable.userId],
     references: [user.id],
   }),
-  baseTemplate: one(baseTemplates, {
-    fields: [templates.baseTemplateId],
-    references: [baseTemplates.id],
+  baseTemplate: one(baseTemplatesTable, {
+    fields: [templatesTable.baseTemplateId],
+    references: [baseTemplatesTable.id],
   }),
-  templateWords: many(templateWords),
-  decks: many(decks),
+  templateWords: many(templateWordsTable),
+  decks: many(decksTable),
 }));
 
-export const wordRelations = relations(words, ({ many }) => ({
-  templateWords: many(templateWords),
-  notes: many(notes),
+export const wordRelations = relations(wordsTable, ({ many }) => ({
+  templateWords: many(templateWordsTable),
+  notes: many(notesTable),
 }));
 
-export const templateWordRelations = relations(templateWords, ({ one }) => ({
-  template: one(templates, {
-    fields: [templateWords.templateId],
-    references: [templates.id],
+export const templateWordRelations = relations(templateWordsTable, ({ one }) => ({
+  template: one(templatesTable, {
+    fields: [templateWordsTable.templateId],
+    references: [templatesTable.id],
   }),
-  word: one(words, {
-    fields: [templateWords.wordId],
-    references: [words.id],
-  }),
-}));
-
-export const noteRelations = relations(notes, ({ one }) => ({
-  deck: one(decks, {
-    fields: [notes.deckId],
-    references: [decks.id],
-  }),
-  word: one(words, {
-    fields: [notes.wordId],
-    references: [words.id],
+  word: one(wordsTable, {
+    fields: [templateWordsTable.wordId],
+    references: [wordsTable.id],
   }),
 }));
 
-export const deckRelations = relations(decks, ({ one, many }) => ({
+export const noteRelations = relations(notesTable, ({ one }) => ({
+  deck: one(decksTable, {
+    fields: [notesTable.deckId],
+    references: [decksTable.id],
+  }),
+  word: one(wordsTable, {
+    fields: [notesTable.wordId],
+    references: [wordsTable.id],
+  }),
+}));
+
+export const deckRelations = relations(decksTable, ({ one, many }) => ({
   user: one(user, {
-    fields: [decks.userId],
+    fields: [decksTable.userId],
     references: [user.id],
   }),
-  template: one(templates, {
-    fields: [decks.templateId],
-    references: [templates.id],
+  template: one(templatesTable, {
+    fields: [decksTable.templateId],
+    references: [templatesTable.id],
   }),
-  notes: many(notes),
+  notes: many(notesTable),
 }));

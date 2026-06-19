@@ -1,5 +1,5 @@
 import { db } from "@handeck/db";
-import { templates } from "@handeck/db/schema";
+import { templatesTable } from "@handeck/db/schema";
 import { and, eq } from "drizzle-orm";
 
 export async function getOwnedTemplate(templateId: string, userId: string) {
@@ -10,8 +10,8 @@ export async function getOwnedTemplate(templateId: string, userId: string) {
 }
 
 export async function getOwnedTemplateOrNull(templateId: string, userId: string) {
-  const template = await db.query.templates.findFirst({
-    where: and(eq(templates.id, templateId), eq(templates.userId, userId)),
+  const template = await db.query.templatesTable.findFirst({
+    where: and(eq(templatesTable.id, templateId), eq(templatesTable.userId, userId)),
   });
 
   return template ?? null;

@@ -1,5 +1,5 @@
 import { db } from "@handeck/db";
-import { baseTemplates, decks, templates, words } from "@handeck/db/schema";
+import { baseTemplatesTable, decksTable, templatesTable, wordsTable } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
 import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
@@ -29,7 +29,7 @@ const wordFieldsSchema = z.object({
   meaning: z.string(),
 });
 
-type Word = typeof words.$inferSelect;
+type Word = typeof wordsTable.$inferSelect;
 type WordSearchResult = Word & {
   searchMatchType: "english" | "mixed" | "pinyin" | "simplified";
 };
@@ -51,7 +51,7 @@ export const appRouter = {
 
   baseTemplate: {
     list: publicProcedure.handler(async () => {
-      return await db.select().from(baseTemplates);
+      return await db.select().from(baseTemplatesTable);
     }),
   },
 
@@ -59,15 +59,15 @@ export const appRouter = {
     listForCurrentUser: protectedProcedure.handler(async ({ context }) => {
       return await db
         .select({
-          id: decks.id,
-          templateId: decks.templateId,
-          templateName: templates.name,
-          createdAt: decks.createdAt,
+          id: decksTable.id,
+          templateId: decksTable.templateId,
+          templateName: templatesTable.name,
+          createdAt: decksTable.createdAt,
         })
-        .from(decks)
-        .innerJoin(templates, eq(decks.templateId, templates.id))
-        .where(eq(decks.userId, context.session.user.id))
-        .orderBy(desc(decks.createdAt));
+        .from(decksTable)
+        .innerJoin(templatesTable, eq(decksTable.templateId, templatesTable.id))
+        .where(eq(decksTable.userId, context.session.user.id))
+        .orderBy(desc(decksTable.createdAt));
     }),
 
     buildFromTemplate: protectedProcedure
@@ -86,8 +86,8 @@ export const appRouter = {
       .input(z.object({ deckId: z.uuid() }))
       .handler(async ({ input, context }) => {
         const userId = context.session.user.id;
-        const deck = await db.query.decks.findFirst({
-          where: and(eq(decks.id, input.deckId), eq(decks.userId, userId)),
+        const deck = await db.query.decksTable.findFirst({
+          where: and(eq(decksTable.id, input.deckId), eq(decksTable.userId, userId)),
           with: {
             template: true,
           },
@@ -146,7 +146,7 @@ export const appRouter = {
         }
 
         const now = new Date();
-        await db.insert(words).values(
+        await db.insert(wordsTable).values(
           input.entries.map((entry) => ({
             id: v4(),
             ...entry,
@@ -170,11 +170,14 @@ export const appRouter = {
         validateImportToken(input.importToken);
 
         const limit = Math.min(Math.max(Math.trunc(input.limit ?? 200), 1), MAX_IMPORT_BATCH_SIZE);
-        const existingEntries = await db.select({ id: words.id }).from(words).limit(limit);
+        const existingEntries = await db
+          .select({ id: wordsTable.id })
+          .from(wordsTable)
+          .limit(limit);
         if (existingEntries.length > 0) {
-          await db.delete(words).where(
+          await db.delete(wordsTable).where(
             inArray(
-              words.id,
+              wordsTable.id,
               existingEntries.map((entry) => entry.id),
             ),
           );
@@ -197,11 +200,11 @@ async function searchSimplified(simplifiedPrefix: string, limit: number) {
 async function querySimplifiedPrefix(simplifiedPrefix: string, limit: number) {
   return await db
     .select()
-    .from(words)
+    .from(wordsTable)
     .where(
       and(
-        gte(words.simplifiedHanzi, simplifiedPrefix),
-        lt(words.simplifiedHanzi, `${simplifiedPrefix}\uffff`),
+        gte(wordsTable.simplifiedHanzi, simplifiedPrefix),
+        lt(wordsTable.simplifiedHanzi, `${simplifiedPrefix}\uffff`),
       ),
     )
     .limit(limit);
@@ -217,8 +220,8 @@ async function searchLatin(pinyin: PinyinSearch | null, englishQuery: string, li
   if (results.length < limit) {
     const englishResults = await db
       .select()
-      .from(words)
-      .where(ilike(words.meaning, `%${englishQuery}%`))
+      .from(wordsTable)
+      .where(ilike(wordsTable.meaning, `%${englishQuery}%`))
       .limit(limit);
     appendUnique(results, withSearchMatch(englishResults, "english"), limit);
   }
@@ -230,11 +233,11 @@ async function queryPinyinPrefix(pinyin: PinyinSearch, limit: number) {
   if (pinyin.hasToneNumbers) {
     return await db
       .select()
-      .from(words)
+      .from(wordsTable)
       .where(
         and(
-          gte(words.numberedPinyinSearch, pinyin.numberedPinyinSearch),
-          lt(words.numberedPinyinSearch, `${pinyin.numberedPinyinSearch}\uffff`),
+          gte(wordsTable.numberedPinyinSearch, pinyin.numberedPinyinSearch),
+          lt(wordsTable.numberedPinyinSearch, `${pinyin.numberedPinyinSearch}\uffff`),
         ),
       )
       .limit(limit);
@@ -242,11 +245,11 @@ async function queryPinyinPrefix(pinyin: PinyinSearch, limit: number) {
 
   return await db
     .select()
-    .from(words)
+    .from(wordsTable)
     .where(
       and(
-        gte(words.normalizedPinyin, pinyin.normalizedPinyin),
-        lt(words.normalizedPinyin, `${pinyin.normalizedPinyin}\uffff`),
+        gte(wordsTable.normalizedPinyin, pinyin.normalizedPinyin),
+        lt(wordsTable.normalizedPinyin, `${pinyin.normalizedPinyin}\uffff`),
       ),
     )
     .limit(limit);

@@ -1,5 +1,10 @@
 import { db } from "@handeck/db";
-import { baseTemplates, templates, templateWords, words } from "@handeck/db/schema";
+import {
+  baseTemplatesTable,
+  templatesTable,
+  templateWordsTable,
+  wordsTable,
+} from "@handeck/db/schema";
 import { eq, and, desc, inArray, count } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure } from "../../index";
@@ -26,15 +31,15 @@ export const templateRouter = {
       if (!trimmed) throw new Error("Name is required");
 
       if (input.baseTemplateId != null) {
-        const baseTemplate = await db.query.baseTemplates.findFirst({
-          where: eq(baseTemplates.id, input.baseTemplateId),
+        const baseTemplate = await db.query.baseTemplatesTable.findFirst({
+          where: eq(baseTemplatesTable.id, input.baseTemplateId),
         });
 
         if (!baseTemplate) throw new Error("Base template not found");
       }
 
       const now = new Date();
-      await db.insert(templates).values({
+      await db.insert(templatesTable).values({
         id: input.id,
         userId: context.session.user.id,
         name: trimmed,
@@ -47,10 +52,10 @@ export const templateRouter = {
   getById: protectedProcedure
     .input(z.object({ templateId: z.uuid() }))
     .handler(async ({ input, context }) => {
-      const template = await db.query.templates.findFirst({
+      const template = await db.query.templatesTable.findFirst({
         where: and(
-          eq(templates.id, input.templateId),
-          eq(templates.userId, context.session.user.id),
+          eq(templatesTable.id, input.templateId),
+          eq(templatesTable.userId, context.session.user.id),
         ),
       });
 
@@ -60,25 +65,25 @@ export const templateRouter = {
   listForCurrentUser: protectedProcedure.handler(async ({ context }) => {
     const rows = await db
       .select({
-        id: templates.id,
-        name: templates.name,
-        baseTemplateId: templates.baseTemplateId,
-        baseTemplate: baseTemplates.name,
-        updatedAt: templates.updatedAt,
-        wordCount: count(templateWords.wordId),
+        id: templatesTable.id,
+        name: templatesTable.name,
+        baseTemplateId: templatesTable.baseTemplateId,
+        baseTemplate: baseTemplatesTable.name,
+        updatedAt: templatesTable.updatedAt,
+        wordCount: count(templateWordsTable.wordId),
       })
-      .from(templates)
-      .leftJoin(baseTemplates, eq(templates.baseTemplateId, baseTemplates.id))
-      .leftJoin(templateWords, eq(templateWords.templateId, templates.id))
-      .where(eq(templates.userId, context.session.user.id))
+      .from(templatesTable)
+      .leftJoin(baseTemplatesTable, eq(templatesTable.baseTemplateId, baseTemplatesTable.id))
+      .leftJoin(templateWordsTable, eq(templateWordsTable.templateId, templatesTable.id))
+      .where(eq(templatesTable.userId, context.session.user.id))
       .groupBy(
-        templates.id,
-        templates.name,
-        templates.baseTemplateId,
-        templates.updatedAt,
-        baseTemplates.name,
+        templatesTable.id,
+        templatesTable.name,
+        templatesTable.baseTemplateId,
+        templatesTable.updatedAt,
+        baseTemplatesTable.name,
       )
-      .orderBy(desc(templates.updatedAt));
+      .orderBy(desc(templatesTable.updatedAt));
 
     return rows.map((template) => ({
       ...template,
@@ -91,13 +96,18 @@ export const templateRouter = {
     .input(z.object({ templateId: z.uuid() }))
     .handler(async ({ input, context }) => {
       await db.transaction(async (tx) => {
-        await tx.delete(templateWords).where(eq(templateWords.templateId, input.templateId));
+        await tx
+          .delete(templateWordsTable)
+          .where(eq(templateWordsTable.templateId, input.templateId));
 
         // this ensure that we only delete if the auth user own the template
         await tx
-          .delete(templates)
+          .delete(templatesTable)
           .where(
-            and(eq(templates.id, input.templateId), eq(templates.userId, context.session.user.id)),
+            and(
+              eq(templatesTable.id, input.templateId),
+              eq(templatesTable.userId, context.session.user.id),
+            ),
           );
       });
     }),
@@ -109,8 +119,8 @@ export const templateRouter = {
       await getOwnedTemplate(input.templateId, context.session.user.id);
 
       return (
-        await db.query.templateWords.findMany({
-          where: eq(templateWords.templateId, input.templateId),
+        await db.query.templateWordsTable.findMany({
+          where: eq(templateWordsTable.templateId, input.templateId),
           with: {
             word: true,
           },
@@ -123,18 +133,21 @@ export const templateRouter = {
     .handler(async ({ input, context }) => {
       const rows = await db
         .select({
-          templateId: templates.id,
-          name: templates.name,
-          includedWordId: templateWords.wordId,
+          templateId: templatesTable.id,
+          name: templatesTable.name,
+          includedWordId: templateWordsTable.wordId,
         })
-        .from(templates)
-        .innerJoin(words, eq(words.id, input.wordId))
+        .from(templatesTable)
+        .innerJoin(wordsTable, eq(wordsTable.id, input.wordId))
         .leftJoin(
-          templateWords,
-          and(eq(templateWords.templateId, templates.id), eq(templateWords.wordId, words.id)),
+          templateWordsTable,
+          and(
+            eq(templateWordsTable.templateId, templatesTable.id),
+            eq(templateWordsTable.wordId, wordsTable.id),
+          ),
         )
-        .where(eq(templates.userId, context.session.user.id))
-        .orderBy(desc(templates.createdAt));
+        .where(eq(templatesTable.userId, context.session.user.id))
+        .orderBy(desc(templatesTable.createdAt));
 
       return rows.map((template) => ({
         templateId: template.templateId,
@@ -151,8 +164,8 @@ export const templateRouter = {
 
       await getOwnedTemplate(input.templateId, context.session.user.id);
 
-      const existingWords = await db.query.words.findMany({
-        where: inArray(words.id, uniqueWordIds),
+      const existingWords = await db.query.wordsTable.findMany({
+        where: inArray(wordsTable.id, uniqueWordIds),
       });
       if (existingWords.length !== uniqueWordIds.length) {
         throw new Error("Word not found");
@@ -160,7 +173,7 @@ export const templateRouter = {
 
       const now = new Date();
       const addedRows = await db
-        .insert(templateWords)
+        .insert(templateWordsTable)
         .values(
           uniqueWordIds.map((wordId) => ({
             templateId: input.templateId,
@@ -169,13 +182,13 @@ export const templateRouter = {
           })),
         )
         .onConflictDoNothing()
-        .returning({ wordId: templateWords.wordId });
+        .returning({ wordId: templateWordsTable.wordId });
 
       if (addedRows.length > 0) {
         await db
-          .update(templates)
+          .update(templatesTable)
           .set({ updatedAt: now })
-          .where(eq(templates.id, input.templateId));
+          .where(eq(templatesTable.id, input.templateId));
       }
 
       return {
@@ -194,23 +207,23 @@ export const templateRouter = {
       await getOwnedTemplate(input.templateId, context.session.user.id);
 
       const removedRows = await db
-        .delete(templateWords)
+        .delete(templateWordsTable)
         .where(
           and(
-            eq(templateWords.templateId, input.templateId),
-            inArray(templateWords.wordId, uniqueWordIds),
+            eq(templateWordsTable.templateId, input.templateId),
+            inArray(templateWordsTable.wordId, uniqueWordIds),
           ),
         )
-        .returning({ wordId: templateWords.wordId });
+        .returning({ wordId: templateWordsTable.wordId });
 
       const removed = removedRows.length;
       const skipped = requestedRemovalsCount - removed;
 
       if (removed > 0) {
         await db
-          .update(templates)
+          .update(templatesTable)
           .set({ updatedAt: new Date() })
-          .where(eq(templates.id, input.templateId));
+          .where(eq(templatesTable.id, input.templateId));
       }
 
       return {
@@ -229,36 +242,39 @@ export const templateRouter = {
     )
     .handler(async ({ input, context }) => {
       await getOwnedTemplate(input.templateId, context.session.user.id);
-      const word = await db.query.words.findFirst({
-        where: eq(words.id, input.wordId),
+      const word = await db.query.wordsTable.findFirst({
+        where: eq(wordsTable.id, input.wordId),
       });
       if (!word) throw new Error("Word not found");
 
-      const doesExist = await db.query.templateWords.findFirst({
+      const doesExist = await db.query.templateWordsTable.findFirst({
         where: and(
-          eq(templateWords.templateId, input.templateId),
-          eq(templateWords.wordId, input.wordId),
+          eq(templateWordsTable.templateId, input.templateId),
+          eq(templateWordsTable.wordId, input.wordId),
         ),
       });
       const now = new Date();
 
       if (doesExist) {
         await db
-          .delete(templateWords)
+          .delete(templateWordsTable)
           .where(
             and(
-              eq(templateWords.templateId, input.templateId),
-              eq(templateWords.wordId, input.wordId),
+              eq(templateWordsTable.templateId, input.templateId),
+              eq(templateWordsTable.wordId, input.wordId),
             ),
           );
       } else {
-        await db.insert(templateWords).values({
+        await db.insert(templateWordsTable).values({
           templateId: input.templateId,
           wordId: input.wordId,
           createdAt: now,
         });
       }
 
-      await db.update(templates).set({ updatedAt: now }).where(eq(templates.id, input.templateId));
+      await db
+        .update(templatesTable)
+        .set({ updatedAt: now })
+        .where(eq(templatesTable.id, input.templateId));
     }),
 };

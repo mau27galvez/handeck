@@ -1,5 +1,5 @@
 import { db } from "@handeck/db";
-import { decks, notes, sentenceNotes, sentences as sentencesTable } from "@handeck/db/schema";
+import { decksTable, notesTable, sentenceNotesTable, sentencesTable } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import { v4 } from "uuid";
 import { writeDeckPackageToS3 } from "./deckPackage";
@@ -35,7 +35,7 @@ export async function buildDeckFromTemplate({
       updatedAt: now,
     }));
 
-    await tx.insert(decks).values({
+    await tx.insert(decksTable).values({
       id: deckId,
       userId,
       templateId,
@@ -43,7 +43,7 @@ export async function buildDeckFromTemplate({
       updatedAt: now,
     });
 
-    await tx.insert(notes).values(notesToInsert);
+    await tx.insert(notesTable).values(notesToInsert);
 
     const notesBySimplifiedHanzi = new Map(
       notesToInsert.map((note) => [note.simplifiedHanzi, note]),
@@ -86,7 +86,7 @@ export async function buildDeckFromTemplate({
       updatedAt: now,
     }));
 
-    await tx.insert(sentenceNotes).values(sentenceNotesToInsert);
+    await tx.insert(sentenceNotesTable).values(sentenceNotesToInsert);
 
     const notesWithSentences = notesToInsert.map((note) => ({
       ...note,
@@ -103,7 +103,7 @@ export async function buildDeckFromTemplate({
 }
 
 async function getTemplateWithWords(tx: DbTx, templateId: string) {
-  const template = await tx.query.templates.findFirst({
+  const template = await tx.query.templatesTable.findFirst({
     where: (template, { eq }) => eq(template.id, templateId),
     with: {
       templateWords: {

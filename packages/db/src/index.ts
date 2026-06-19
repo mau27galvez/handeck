@@ -14,7 +14,7 @@ const client =
     max: 5,
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   globalForDb.dbClient = client;
 }
 
@@ -22,7 +22,7 @@ export function createDb() {
   return drizzle(client, {
     schema,
     casing: "snake_case",
-    logger: process.env.NODE_ENV !== "production",
+    logger: env.NODE_ENV !== "production",
   });
 }
 

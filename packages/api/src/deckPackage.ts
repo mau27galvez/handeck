@@ -1,15 +1,42 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BASIC_MODEL, Deck, Note, Package } from "@handeck/genanki-ts";
+import { Deck, Model, Note, Package } from "@handeck/genanki-ts";
 
 import { getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
+
+const HANDECK_VOCAB_MODEL = new Model({
+  id: 1760000000,
+  name: "Handeck Vocabulary (genanki)",
+  fields: [
+    { name: "Hanzi", font: "Arial" },
+    { name: "Pinyin", font: "Arial" },
+    { name: "Meaning", font: "Arial" },
+    { name: "Sentence", font: "Arial" },
+  ],
+  templates: [
+    {
+      name: "Card 1",
+      qfmt: "{{Hanzi}}",
+      afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Pinyin}}\n\n{{Meaning}}\n\n{{#Sentence}}{{Sentence}}{{/Sentence}}",
+    },
+  ],
+  css: `.card {
+  font-family: arial;
+  font-size: 20px;
+  text-align: center;
+  color: black;
+  background-color: white;
+}
+`,
+});
 
 type NoteData = {
   id: string;
   simplifiedHanzi: string;
   diacriticPinyin: string;
   meaning: string;
+  sentence: string;
 };
 
 type DeckPackageInput = {
@@ -34,11 +61,8 @@ export async function writeDeckPackageToS3({
   for (const note of notes) {
     deck.addNote(
       new Note({
-        model: BASIC_MODEL,
-        fields: [
-          note.simplifiedHanzi,
-          [note.diacriticPinyin, note.meaning].filter(Boolean).join("\n\n"),
-        ],
+        model: HANDECK_VOCAB_MODEL,
+        fields: [note.simplifiedHanzi, note.diacriticPinyin, note.meaning, note.sentence],
         tags: ["handeck"],
         // we may want to review this in the future
         guid: `handeck:${note.id}`,

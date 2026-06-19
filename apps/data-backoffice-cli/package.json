@@ -1,5 +1,5 @@
 {
-  "name": "@handeck/cedict-data",
+  "name": "data-backoffice-cli",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
@@ -12,11 +12,13 @@
   "dependencies": {
     "@handeck/api": "workspace:*",
     "@orpc/client": "catalog:",
-    "dotenv": "catalog:"
+    "@t3-oss/env-core": "^0.13.1",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@handeck/config": "workspace:*",
-    "@types/bun": "catalog:",
+    "@types/bun": "^1.3.14",
     "typescript": "catalog:"
   }
 }

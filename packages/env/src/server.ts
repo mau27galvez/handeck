@@ -9,6 +9,7 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url().optional(),
     CORS_ORIGIN: z.string().min(1).optional(),
     CEDICT_IMPORT_TOKEN: z.string().min(1).optional(),
+    OPENROUTER_API_KEY: z.string().min(1),
     S3_BUCKET: z.string().min(1),
     S3_KEY_PREFIX: z
       .string()

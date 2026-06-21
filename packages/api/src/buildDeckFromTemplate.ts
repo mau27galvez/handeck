@@ -7,7 +7,16 @@ import { OpenRouter } from "@openrouter/sdk";
 import z from "zod";
 import { getTemplateWithWords } from "./modules/templates/template-use-cases";
 import { chunk } from "./utils";
-import { segment, OutputFormat } from "pinyin-pro";
+import { segment, OutputFormat, addDict } from "pinyin-pro";
+import CompleteDict from "@pinyin-pro/data/complete";
+
+/**
+ * IMPORTANT
+ * This must be called before every call to the pinyin-pro library.
+ * If we ever use it outside of this file, we have to add this there too.
+ * Or centralize the call to addDict and run it before any call to pinyin-pro.
+ */
+addDict(CompleteDict);
 
 export async function buildDeckFromTemplate({
   deckId,

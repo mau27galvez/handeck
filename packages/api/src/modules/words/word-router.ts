@@ -59,8 +59,7 @@ export const wordRouter = {
 
       if (input.entries.length > MAX_IMPORT_BATCH_SIZE) {
         throw new Error(
-          `Import batches cannot contain more than $
-        {MAX_IMPORT_BATCH_SIZE} entries.`,
+          `Import batches cannot contain more than ${MAX_IMPORT_BATCH_SIZE} entries.`,
         );
       }
 

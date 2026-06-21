@@ -1,5 +1,5 @@
 import { db } from "@handeck/db";
-import { baseTemplatesTable, decksTable, templatesTable, wordsTable } from "@handeck/db/schema";
+import { decksTable, templatesTable, wordsTable } from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import type { RouterClient } from "@orpc/server";
 import { and, desc, eq, gte, ilike, inArray, lt } from "drizzle-orm";
@@ -11,6 +11,7 @@ import { getDeckDownloadFilename, getDeckDownloadUrl, getDeckObjectKey } from ".
 import { protectedProcedure, publicProcedure } from "../index";
 import type { MixedSearchToken, PinyinSearch } from "../dictionarySearch";
 import { parseDictionarySearchQuery } from "../dictionarySearch";
+import { baseTemplateRouter } from "../modules/base-templates/base-template-router";
 import { templateRouter } from "../modules/templates/template-router";
 import { getOwnedTemplate } from "../modules/templates/template-use-cases";
 
@@ -49,11 +50,7 @@ export const appRouter = {
     }),
   },
 
-  baseTemplate: {
-    list: publicProcedure.handler(async () => {
-      return await db.select().from(baseTemplatesTable);
-    }),
-  },
+  baseTemplate: baseTemplateRouter,
 
   deck: {
     listForCurrentUser: protectedProcedure.handler(async ({ context }) => {

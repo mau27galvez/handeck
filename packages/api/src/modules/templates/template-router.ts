@@ -8,6 +8,7 @@ import {
 import { eq, and, desc, inArray, count } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure } from "../../index";
+import { getBaseTemplate } from "../base-templates/base-template-use-cases";
 import { getOwnedTemplate } from "./template-use-cases";
 
 const MAX_TEMPLATE_WORD_BATCH_SIZE = 500;
@@ -31,11 +32,7 @@ export const templateRouter = {
       if (!trimmed) throw new Error("Name is required");
 
       if (input.baseTemplateId != null) {
-        const baseTemplate = await db.query.baseTemplatesTable.findFirst({
-          where: eq(baseTemplatesTable.id, input.baseTemplateId),
-        });
-
-        if (!baseTemplate) throw new Error("Base template not found");
+        await getBaseTemplate(input.baseTemplateId);
       }
 
       const now = new Date();

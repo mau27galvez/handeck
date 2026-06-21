@@ -7,6 +7,7 @@ import { OpenRouter } from "@openrouter/sdk";
 import z from "zod";
 import { getTemplateWithWords } from "./modules/templates/template-use-cases";
 import { chunk } from "./utils";
+import { segment, OutputFormat } from "pinyin-pro";
 
 export async function buildDeckFromTemplate({
   deckId,
@@ -70,9 +71,13 @@ export async function buildDeckFromTemplate({
       }
     }
 
-    const sentencesToInsert = Array.from(sentences.values()).map((sentence) => ({
+    const sentencesToInsert = Array.from(sentences.entries()).map(([wordHanzi, sentence]) => ({
       id: v4(),
+      wordHanzi,
       simplifiedHanzi: sentence,
+      diacriticPinyin: segment(sentence, {
+        format: OutputFormat.PinyinString,
+      }),
       createdAt: now,
     }));
 
@@ -81,7 +86,7 @@ export async function buildDeckFromTemplate({
     const sentenceNotesToInsert = sentencesToInsert.map((sentence) => ({
       id: v4(),
       sentenceId: sentence.id,
-      noteId: notesBySimplifiedHanzi.get(sentence.simplifiedHanzi)!.id,
+      noteId: notesBySimplifiedHanzi.get(sentence.wordHanzi)!.id,
       createdAt: now,
       updatedAt: now,
     }));

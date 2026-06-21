@@ -92,6 +92,7 @@ export const notesTable = pgTable(
 export const sentencesTable = pgTable("sentences", {
   id: uuid().primaryKey(),
   simplifiedHanzi: text().notNull(),
+  diacriticPinyin: text().notNull(),
   ...timestamps,
 });
 

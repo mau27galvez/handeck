@@ -5,8 +5,8 @@ import { v4 } from "uuid";
 import { writeDeckPackageToS3 } from "./deckPackage";
 import { OpenRouter } from "@openrouter/sdk";
 import z from "zod";
-
-type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+import { getTemplateWithWords } from "./modules/templates/template-use-cases";
+import { chunk } from "./utils";
 
 export async function buildDeckFromTemplate({
   deckId,
@@ -102,22 +102,6 @@ export async function buildDeckFromTemplate({
   });
 }
 
-async function getTemplateWithWords(tx: DbTx, templateId: string) {
-  const template = await tx.query.templatesTable.findFirst({
-    where: (template, { eq }) => eq(template.id, templateId),
-    with: {
-      templateWords: {
-        with: {
-          word: true,
-        },
-      },
-    },
-  });
-  if (!template) throw new Error("Template not found");
-
-  return template;
-}
-
 const SENTENCE_GENERATION_PROMPT_BATCH_SIZE = 10;
 const MAX_CONCURRENT_SENTENCE_GENERATION_REQUESTS = 10;
 const OPENROUTER_MODEL = "deepseek/deepseek-v4-flash";
@@ -165,14 +149,4 @@ async function generateSentences(words: string[]) {
   const cleanResponse = new Map(parsed.words.map((word) => [word.word, word.sentence]));
 
   return cleanResponse;
-}
-
-function chunk<T>(items: T[], size: number) {
-  const batches: T[][] = [];
-
-  for (let i = 0; i < items.length; i += size) {
-    batches.push(items.slice(i, i + size));
-  }
-
-  return batches;
 }

@@ -22,11 +22,8 @@ export const appRouter = {
   },
 
   baseTemplate: baseTemplateRouter,
-
   deck: deckRouter,
-
   word: wordRouter,
-
   template: templateRouter,
 };
 

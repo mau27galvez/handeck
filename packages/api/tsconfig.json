@@ -4,6 +4,6 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "*.test.ts"],
+  "include": ["src/**/*.ts", "*.test.ts", "tests/dictionarySearch.test.ts"],
   "exclude": ["node_modules"]
 }

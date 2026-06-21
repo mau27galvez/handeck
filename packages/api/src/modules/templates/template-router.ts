@@ -9,6 +9,7 @@ import { eq, and, desc, inArray, count } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure } from "../../index";
 import { getBaseTemplate } from "../base-templates/base-template-use-cases";
+import { getWord, getWordsByIds } from "../words/word-use-cases";
 import { getOwnedTemplate } from "./template-use-cases";
 
 const MAX_TEMPLATE_WORD_BATCH_SIZE = 500;
@@ -161,12 +162,7 @@ export const templateRouter = {
 
       await getOwnedTemplate(input.templateId, context.session.user.id);
 
-      const existingWords = await db.query.wordsTable.findMany({
-        where: inArray(wordsTable.id, uniqueWordIds),
-      });
-      if (existingWords.length !== uniqueWordIds.length) {
-        throw new Error("Word not found");
-      }
+      await getWordsByIds(uniqueWordIds);
 
       const now = new Date();
       const addedRows = await db
@@ -239,10 +235,7 @@ export const templateRouter = {
     )
     .handler(async ({ input, context }) => {
       await getOwnedTemplate(input.templateId, context.session.user.id);
-      const word = await db.query.wordsTable.findFirst({
-        where: eq(wordsTable.id, input.wordId),
-      });
-      if (!word) throw new Error("Word not found");
+      await getWord(input.wordId);
 
       const doesExist = await db.query.templateWordsTable.findFirst({
         where: and(

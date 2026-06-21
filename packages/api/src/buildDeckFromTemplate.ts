@@ -5,8 +5,18 @@ import { v4 } from "uuid";
 import { writeDeckPackageToS3 } from "./deckPackage";
 import { OpenRouter } from "@openrouter/sdk";
 import z from "zod";
+import { getTemplateWithWords } from "./modules/templates/template-use-cases";
+import { chunk } from "./utils";
+import { segment, OutputFormat, addDict } from "pinyin-pro";
+import CompleteDict from "@pinyin-pro/data/complete";
 
-type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+/**
+ * IMPORTANT
+ * This must be called before every call to the pinyin-pro library.
+ * If we ever use it outside of this file, we have to add this there too.
+ * Or centralize the call to addDict and run it before any call to pinyin-pro.
+ */
+addDict(CompleteDict);
 
 export async function buildDeckFromTemplate({
   deckId,
@@ -70,9 +80,13 @@ export async function buildDeckFromTemplate({
       }
     }
 
-    const sentencesToInsert = Array.from(sentences.values()).map((sentence) => ({
+    const sentencesToInsert = Array.from(sentences.entries()).map(([wordHanzi, sentence]) => ({
       id: v4(),
+      wordHanzi,
       simplifiedHanzi: sentence,
+      diacriticPinyin: segment(sentence, {
+        format: OutputFormat.PinyinString,
+      }),
       createdAt: now,
     }));
 
@@ -81,7 +95,7 @@ export async function buildDeckFromTemplate({
     const sentenceNotesToInsert = sentencesToInsert.map((sentence) => ({
       id: v4(),
       sentenceId: sentence.id,
-      noteId: notesBySimplifiedHanzi.get(sentence.simplifiedHanzi)!.id,
+      noteId: notesBySimplifiedHanzi.get(sentence.wordHanzi)!.id,
       createdAt: now,
       updatedAt: now,
     }));
@@ -100,22 +114,6 @@ export async function buildDeckFromTemplate({
       notes: notesWithSentences,
     });
   });
-}
-
-async function getTemplateWithWords(tx: DbTx, templateId: string) {
-  const template = await tx.query.templatesTable.findFirst({
-    where: (template, { eq }) => eq(template.id, templateId),
-    with: {
-      templateWords: {
-        with: {
-          word: true,
-        },
-      },
-    },
-  });
-  if (!template) throw new Error("Template not found");
-
-  return template;
 }
 
 const SENTENCE_GENERATION_PROMPT_BATCH_SIZE = 10;
@@ -165,14 +163,4 @@ async function generateSentences(words: string[]) {
   const cleanResponse = new Map(parsed.words.map((word) => [word.word, word.sentence]));
 
   return cleanResponse;
-}
-
-function chunk<T>(items: T[], size: number) {
-  const batches: T[][] = [];
-
-  for (let i = 0; i < items.length; i += size) {
-    batches.push(items.slice(i, i + size));
-  }
-
-  return batches;
 }

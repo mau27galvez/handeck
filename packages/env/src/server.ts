@@ -23,6 +23,7 @@ export const env = createEnv({
     S3_FORCE_PATH_STYLE: z.coerce.boolean().optional().default(false),
     AWS_ACCESS_KEY_ID: z.string().min(1),
     AWS_SECRET_ACCESS_KEY: z.string().min(1),
+    GEMINI_API_KEY: z.string().min(1),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     VERCEL_URL: z.string().min(1).optional(),
     VERCEL_BRANCH_URL: z.string().min(1).optional(),

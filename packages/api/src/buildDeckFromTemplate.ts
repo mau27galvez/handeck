@@ -1,14 +1,23 @@
 import { db } from "@handeck/db";
-import { decksTable, notesTable, sentenceNotesTable, sentencesTable } from "@handeck/db/schema";
+import {
+  decksTable,
+  notesTable,
+  sentenceNotesTable,
+  sentencesTable,
+  wordsTable,
+} from "@handeck/db/schema";
 import { env } from "@handeck/env/server";
 import { v4 } from "uuid";
 import { writeDeckPackageToS3 } from "./deckPackage";
 import { OpenRouter } from "@openrouter/sdk";
 import z from "zod";
 import { getTemplateWithWords } from "./modules/templates/template-use-cases";
-import { chunk } from "./utils";
+import { chunk, pcmToWav } from "./utils";
 import { segment, OutputFormat, addDict } from "pinyin-pro";
 import CompleteDict from "@pinyin-pro/data/complete";
+import { GoogleGenAI } from "@google/genai";
+import { getWordAudioObjectKey, uploadAudioFile } from "./deckStorage";
+import { sql } from "drizzle-orm";
 
 /**
  * IMPORTANT
@@ -54,6 +63,78 @@ export async function buildDeckFromTemplate({
     });
 
     await tx.insert(notesTable).values(notesToInsert);
+
+    const wordsWithoutAudio = template.templateWords
+      .map((word) => word.word)
+      .filter((word) => word.audioUrl == null);
+
+    const client = new GoogleGenAI({
+      apiKey: env.GEMINI_API_KEY,
+    });
+
+    const wordAudioMap = await Promise.all(
+      wordsWithoutAudio.map(async (word) => {
+        const interaction = await client.interactions.create({
+          model: "gemini-3.1-flash-tts-preview",
+          input: `
+          ## Sample Context:
+          Add some space at the beggining and at the end. So the pronunciation can be clearly be ear from start to finish.
+
+          As in xing1
+
+          ## Transcript:
+          行
+          `,
+          response_format: { type: "audio" },
+          generation_config: {
+            speech_config: [{ voice: "Kore" }],
+          },
+        });
+
+        const audioData = interaction.output_audio?.data;
+        if (!audioData) {
+          throw new Error("No audio data from Gemini");
+        }
+
+        return {
+          wordId: word.id,
+          audioBuffer: Buffer.from(audioData, "base64"),
+        };
+      }),
+    );
+
+    const audioBuffers = new Map(
+      wordAudioMap.map((wordAudio) => [wordAudio.wordId, wordAudio.audioBuffer]),
+    );
+
+    const audioFiles = new Map(
+      audioBuffers.entries().map(([wordId, audioBuffer]) => [wordId, pcmToWav(audioBuffer)]),
+    );
+
+    await Promise.all(
+      audioFiles
+        .entries()
+        .map(([wordId, audioBuffer]) =>
+          uploadAudioFile(getWordAudioObjectKey(wordId), audioBuffer),
+        ),
+    );
+
+    if (audioFiles.size > 0) {
+      const valueRows = Array.from(audioFiles.keys()).map(
+        (wordId) => sql`(${wordId}, ${getWordAudioObjectKey(wordId)})`,
+      );
+
+      await tx.execute(sql`
+        UPDATE ${wordsTable} AS w
+        SET
+          audio_url = updates.audio_url,
+          updated_at = ${now}
+        FROM (
+          VALUES ${sql.join(valueRows, sql`, `)}
+        ) AS updates(id, audio_url)
+        WHERE w.id = updates.id::uuid
+      `);
+    }
 
     const notesBySimplifiedHanzi = new Map(
       notesToInsert.map((note) => [note.simplifiedHanzi, note]),

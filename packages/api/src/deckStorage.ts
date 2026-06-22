@@ -58,3 +58,20 @@ export async function uploadDeckPackage(objectKey: string, body: Buffer) {
     }),
   );
 }
+
+export function getWordAudioObjectKey(wordId: string) {
+  return `${env.S3_KEY_PREFIX}/word-audios/${wordId}.wav`;
+}
+
+export async function uploadAudioFile(objectKey: string, body: Buffer) {
+  const s3Client = createS3Client();
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: env.S3_BUCKET,
+      Key: objectKey,
+      Body: body,
+      ContentType: "audio/wav",
+    }),
+  );
+}

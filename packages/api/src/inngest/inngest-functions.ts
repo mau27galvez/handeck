@@ -1,4 +1,5 @@
 import { env } from "@handeck/env/server";
+import { NonRetriableError } from "inngest";
 import { z } from "zod";
 import {
   ensureAndPersistWordAudio,
@@ -6,10 +7,13 @@ import {
   generateAndPersistSentenceBatch,
   getDeckGenerationProgress,
   getDeckGenerationTotals,
+  getDeckStatus,
   getSentenceBatchEvents,
   getWordAudioEvents,
   markDeckGenerationFailed,
   markDeckGenerationStarted,
+  markSentenceBatchFailed,
+  markWordAudioFailed,
 } from "../buildDeckFromTemplate";
 import {
   DECK_GENERATE_REQUESTED_EVENT,
@@ -41,6 +45,10 @@ export const generateDeck = inngest.createFunction(
     id: "generate-deck",
     retries: 3,
     triggers: [{ event: DECK_GENERATE_REQUESTED_EVENT }],
+    onFailure: async ({ error, event, step }) => {
+      const { deckId } = generateDeckEventSchema.parse(event.data.event.data);
+      await step.run("mark-deck-generation-failed", () => markDeckGenerationFailed(deckId, error));
+    },
   },
   async ({ event, step }) => {
     const { deckId } = generateDeckEventSchema.parse(event.data);
@@ -62,7 +70,7 @@ export const generateDeck = inngest.createFunction(
         );
 
         if (progress[failedField] > 0) {
-          throw new Error(`Deck generation failed during ${label}`);
+          throw new NonRetriableError(`Deck generation failed during ${label}`);
         }
 
         if (progress[completedField] >= targetCompleted) {
@@ -75,98 +83,95 @@ export const generateDeck = inngest.createFunction(
       throw new Error(`Timed out waiting for ${label}`);
     }
 
-    try {
-      await step.run("mark-deck-generation-started", () => markDeckGenerationStarted(deckId));
+    const status = await step.run("load-deck-status", () => getDeckStatus(deckId));
+    if (status === "completed" || status === "failed") {
+      return;
+    }
 
-      const totals = await step.run("load-deck-generation-totals", () =>
-        getDeckGenerationTotals(deckId),
+    await step.run("mark-deck-generation-started", () => markDeckGenerationStarted(deckId));
+
+    const totals = await step.run("load-deck-generation-totals", () =>
+      getDeckGenerationTotals(deckId),
+    );
+
+    /**
+     * Here we capping the generations that I deck can enqueue at a time.
+     * We do this to avoid one large deck from delaying smaller decks.
+     * All of them have small windows, so they can't hog the queue.
+     * Similar to a OS scheduler.
+     *
+     * This is not perfect round-robin fairness.
+     * If Deck A starts much earlier, it still gets the first window.
+     * But windowing caps how much queue space one deck can occupy at a time.
+     *
+     * Smaller windows mean more fairness, but more orchestration overhead.
+     * Larger windows mean faster single-deck throughput, but more chance one large deck delays smaller decks.
+     */
+    for (
+      let start = 0;
+      start < totals.sentenceBatchTotal;
+      start += env.DECK_SENTENCE_BATCH_WINDOW_SIZE
+    ) {
+      const end = Math.min(start + env.DECK_SENTENCE_BATCH_WINDOW_SIZE, totals.sentenceBatchTotal);
+      const batches = await step.run(`load-sentence-window-${start}-${end}`, () =>
+        getSentenceBatchEvents({
+          deckId,
+          start,
+          limit: end - start,
+        }),
       );
 
-      /**
-       * Here we capping the generations that I deck can enqueue at a time.
-       * We do this to avoid one large deck from delaying smaller decks.
-       * All of them have small windows, so they can't hog the queue.
-       * Similar to a OS scheduler.
-       *
-       * This is not perfect round-robin fairness.
-       * If Deck A starts much earlier, it still gets the first window.
-       * But windowing caps how much queue space one deck can occupy at a time.
-       *
-       * Smaller windows mean more fairness, but more orchestration overhead.
-       * Larger windows mean faster single-deck throughput, but more chance one large deck delays smaller decks.
-       */
-      for (
-        let start = 0;
-        start < totals.sentenceBatchTotal;
-        start += env.DECK_SENTENCE_BATCH_WINDOW_SIZE
-      ) {
-        const end = Math.min(
-          start + env.DECK_SENTENCE_BATCH_WINDOW_SIZE,
-          totals.sentenceBatchTotal,
-        );
-        const batches = await step.run(`load-sentence-window-${start}-${end}`, () =>
-          getSentenceBatchEvents({
+      await step.sendEvent(
+        `send-sentence-window-${start}-${end}`,
+        batches.map((batch) => ({
+          id: `deck:${deckId}:sentence-batch:${batch.batchIndex}`,
+          name: DECK_SENTENCE_BATCH_GENERATE_EVENT,
+          data: {
             deckId,
-            start,
-            limit: end - start,
-          }),
-        );
+            batchIndex: batch.batchIndex,
+          },
+        })),
+      );
 
-        await step.sendEvent(
-          `send-sentence-window-${start}-${end}`,
-          batches.map((batch) => ({
-            id: `deck:${deckId}:sentence-batch:${batch.batchIndex}`,
-            name: DECK_SENTENCE_BATCH_GENERATE_EVENT,
-            data: {
-              deckId,
-              batchIndex: batch.batchIndex,
-            },
-          })),
-        );
-
-        await waitForWindowCompletion({
-          label: `sentence-window-${start}-${end}`,
-          targetCompleted: end,
-          completedField: "sentenceBatchCompleted",
-          failedField: "failedSentenceBatches",
-        });
-      }
-
-      for (let start = 0; start < totals.wordAudioTotal; start += env.DECK_WORD_AUDIO_WINDOW_SIZE) {
-        const end = Math.min(start + env.DECK_WORD_AUDIO_WINDOW_SIZE, totals.wordAudioTotal);
-        const wordAudios = await step.run(`load-word-audio-window-${start}-${end}`, () =>
-          getWordAudioEvents({
-            deckId,
-            start,
-            limit: end - start,
-          }),
-        );
-
-        await step.sendEvent(
-          `send-word-audio-window-${start}-${end}`,
-          wordAudios.map((wordAudio) => ({
-            id: `deck:${deckId}:word-audio:${wordAudio.wordId}`,
-            name: DECK_WORD_AUDIO_ENSURE_EVENT,
-            data: {
-              deckId,
-              wordId: wordAudio.wordId,
-            },
-          })),
-        );
-
-        await waitForWindowCompletion({
-          label: `word-audio-window-${start}-${end}`,
-          targetCompleted: end,
-          completedField: "wordAudioCompleted",
-          failedField: "failedWordAudios",
-        });
-      }
-
-      await step.run("finalize-deck-package", () => finalizeDeckGeneration(deckId));
-    } catch (error) {
-      await step.run("mark-deck-generation-failed", () => markDeckGenerationFailed(deckId, error));
-      throw error;
+      await waitForWindowCompletion({
+        label: `sentence-window-${start}-${end}`,
+        targetCompleted: end,
+        completedField: "sentenceBatchCompleted",
+        failedField: "failedSentenceBatches",
+      });
     }
+
+    for (let start = 0; start < totals.wordAudioTotal; start += env.DECK_WORD_AUDIO_WINDOW_SIZE) {
+      const end = Math.min(start + env.DECK_WORD_AUDIO_WINDOW_SIZE, totals.wordAudioTotal);
+      const wordAudios = await step.run(`load-word-audio-window-${start}-${end}`, () =>
+        getWordAudioEvents({
+          deckId,
+          start,
+          limit: end - start,
+        }),
+      );
+
+      await step.sendEvent(
+        `send-word-audio-window-${start}-${end}`,
+        wordAudios.map((wordAudio) => ({
+          id: `deck:${deckId}:word-audio:${wordAudio.wordId}`,
+          name: DECK_WORD_AUDIO_ENSURE_EVENT,
+          data: {
+            deckId,
+            wordId: wordAudio.wordId,
+          },
+        })),
+      );
+
+      await waitForWindowCompletion({
+        label: `word-audio-window-${start}-${end}`,
+        targetCompleted: end,
+        completedField: "wordAudioCompleted",
+        failedField: "failedWordAudios",
+      });
+    }
+
+    await step.run("finalize-deck-package", () => finalizeDeckGeneration(deckId));
   },
 );
 
@@ -182,6 +187,16 @@ export const generateSentenceBatch = inngest.createFunction(
       limit: env.OPENROUTER_SENTENCE_BATCH_CONCURRENCY,
     },
     triggers: [{ event: DECK_SENTENCE_BATCH_GENERATE_EVENT }],
+    onFailure: async ({ error, event, step }) => {
+      const data = sentenceBatchEventSchema.parse(event.data.event.data);
+      await step.run("mark-sentence-batch-failed", () =>
+        markSentenceBatchFailed({
+          deckId: data.deckId,
+          batchIndex: data.batchIndex,
+          error,
+        }),
+      );
+    },
   },
   async ({ event, step }) => {
     const data = sentenceBatchEventSchema.parse(event.data);
@@ -213,6 +228,16 @@ export const ensureWordAudio = inngest.createFunction(
       limit: env.GEMINI_WORD_AUDIO_CONCURRENCY,
     },
     triggers: [{ event: DECK_WORD_AUDIO_ENSURE_EVENT }],
+    onFailure: async ({ error, event, step }) => {
+      const data = wordAudioEventSchema.parse(event.data.event.data);
+      await step.run("mark-word-audio-failed", () =>
+        markWordAudioFailed({
+          deckId: data.deckId,
+          wordId: data.wordId,
+          error,
+        }),
+      );
+    },
   },
   async ({ event, step }) => {
     const data = wordAudioEventSchema.parse(event.data);

@@ -162,6 +162,17 @@ export async function getDeckGenerationTotals(deckId: string) {
   };
 }
 
+export async function getDeckStatus(deckId: string) {
+  const deck = await db.query.decksTable.findFirst({
+    where: eq(decksTable.id, deckId),
+    columns: { status: true },
+  });
+
+  if (!deck) throw new Error("Deck not found");
+
+  return deck.status;
+}
+
 export async function markDeckGenerationStarted(deckId: string) {
   const now = new Date();
 
@@ -554,7 +565,7 @@ export async function markDeckGenerationFailed(deckId: string, error: unknown) {
         failedAt: now,
         updatedAt: now,
       })
-      .where(eq(decksTable.id, deckId));
+      .where(and(eq(decksTable.id, deckId), ne(decksTable.status, "completed")));
 
     await tx
       .update(deckGenerationJobsTable)
@@ -564,7 +575,12 @@ export async function markDeckGenerationFailed(deckId: string, error: unknown) {
         failedAt: now,
         updatedAt: now,
       })
-      .where(eq(deckGenerationJobsTable.deckId, deckId));
+      .where(
+        and(
+          eq(deckGenerationJobsTable.deckId, deckId),
+          ne(deckGenerationJobsTable.status, "completed"),
+        ),
+      );
   });
 }
 

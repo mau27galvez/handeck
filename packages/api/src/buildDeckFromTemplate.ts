@@ -416,6 +416,13 @@ export async function ensureAndPersistWordAudio({
   });
 
   if (!word) throw new Error("Word not found");
+
+  // Gemini + S3 run before the DB transaction inside one Inngest step. On retry after a
+  // successful upload, the whole step re-runs (extra Gemini cost). If retries or transaction
+  // errors become frequent, split generate/upload and persist into separate step.run calls so
+  // the expensive work is memoized and only the DB step retries (+1 execution per word on success).
+  // We are not expecting this to happen often, so we keep one step for now.
+  // It is cheaper on the happy path because Inngest bills by step/execution.
   const objectKey =
     word.audioUrl ?? (await generateAndUploadWordAudio(word.simplifiedHanzi, wordId));
   const now = new Date();

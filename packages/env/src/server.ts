@@ -24,6 +24,10 @@ export const env = createEnv({
     AWS_ACCESS_KEY_ID: z.string().min(1),
     AWS_SECRET_ACCESS_KEY: z.string().min(1),
     GEMINI_API_KEY: z.string().min(1),
+    INNGEST_DEV: z
+      .enum(["1", "0"])
+      .default("0")
+      .transform((value) => value === "1"),
     INNGEST_EVENT_KEY: z.string().min(1).optional(),
     INNGEST_SIGNING_KEY: z.string().min(1).optional(),
     OPENROUTER_SENTENCE_BATCH_RPM: z.coerce.number().int().positive().default(60),

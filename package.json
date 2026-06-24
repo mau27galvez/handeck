@@ -36,10 +36,11 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "INNGEST_DEV=1 turbo dev",
     "build": "turbo build",
     "build:web": "turbo -F web build",
-    "dev:web": "turbo -F web dev",
+    "dev:web": "INNGEST_DEV=1 turbo -F web dev",
+    "dev:inngest": "npx --ignore-scripts=false inngest-cli@latest dev -u http://localhost:3001/api/inngest",
     "db:push": "turbo -F @handeck/db db:push",
     "db:studio": "turbo -F @handeck/db db:studio",
     "db:generate": "turbo -F @handeck/db db:generate",

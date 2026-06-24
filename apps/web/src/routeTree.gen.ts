@@ -18,6 +18,7 @@ import { Route as SettingsPathRouteImport } from './routes/settings/$path'
 import { Route as AuthPathRouteImport } from './routes/auth/$path'
 import { Route as TemplatesIdIndexRouteImport } from './routes/templates/$id/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc/$'
+import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInngestRoute = ApiInngestRouteImport.update({
+  id: '/api/inngest',
+  path: '/api/inngest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dictionary/': typeof DictionaryIndexRoute
   '/templates/': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/templates/$id/': typeof TemplatesIdIndexRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/dictionary': typeof DictionaryIndexRoute
   '/templates': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/templates/$id': typeof TemplatesIdIndexRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/dictionary/': typeof DictionaryIndexRoute
   '/templates/': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/inngest': typeof ApiInngestRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/templates/$id/': typeof TemplatesIdIndexRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/dictionary/'
     | '/templates/'
     | '/api/auth/$'
+    | '/api/inngest'
     | '/api/rpc/$'
     | '/templates/$id/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/dictionary'
     | '/templates'
     | '/api/auth/$'
+    | '/api/inngest'
     | '/api/rpc/$'
     | '/templates/$id'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/dictionary/'
     | '/templates/'
     | '/api/auth/$'
+    | '/api/inngest'
     | '/api/rpc/$'
     | '/templates/$id/'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   DictionaryIndexRoute: typeof DictionaryIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiInngestRoute: typeof ApiInngestRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   TemplatesIdIndexRoute: typeof TemplatesIdIndexRoute
 }
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/inngest': {
+      id: '/api/inngest'
+      path: '/api/inngest'
+      fullPath: '/api/inngest'
+      preLoaderRoute: typeof ApiInngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   DictionaryIndexRoute: DictionaryIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiInngestRoute: ApiInngestRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   TemplatesIdIndexRoute: TemplatesIdIndexRoute,
 }

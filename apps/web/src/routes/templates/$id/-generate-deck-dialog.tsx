@@ -43,7 +43,7 @@ export default function GenerateDeckDialog({
       await buildDeck.mutateAsync({ deckId, templateId });
       void queryClient.invalidateQueries(orpc.deck.listForCurrentUser.queryOptions());
       onOpenChange(false);
-      toast.success(`Generated deck with template ${templateName}`);
+      toast.success(`Started generating deck with template ${templateName}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to generate deck";
       toast.error(message);
@@ -66,7 +66,7 @@ export default function GenerateDeckDialog({
           <div>
             <p className="font-medium">{templateName}</p>
             <p className="text-xs text-muted-foreground">
-              Sentences, audio, and generation configs will be added later.
+              Generation will continue in the background after this dialog closes.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -101,7 +101,7 @@ export default function GenerateDeckDialog({
             aria-busy={pending}
             onClick={() => void handleGenerate()}
           >
-            {pending ? "Generating..." : "Generate"}
+            {pending ? "Starting..." : "Generate"}
           </Button>
         </DialogFooter>
       </DialogContent>

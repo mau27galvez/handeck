@@ -26,6 +26,7 @@
       "@orpc/server": "^1.14.5",
       "@orpc/zod": "^1.14.5",
       "drizzle-orm": "^0.45.1",
+      "inngest": "^4.11.0",
       "uuid": "^14.0.1",
       "better-auth": "1.6.20",
       "@types/node": "^24.13.0",

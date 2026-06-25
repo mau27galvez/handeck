@@ -20,7 +20,7 @@ import { segment, OutputFormat, addDict } from "pinyin-pro";
 import CompleteDict from "@pinyin-pro/data/complete";
 import { GoogleGenAI } from "@google/genai";
 import { getWordAudioObjectKey, uploadAudioFile } from "./deckStorage";
-import { and, asc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gte, lt, ne, sql } from "drizzle-orm";
 import { DECK_GENERATE_REQUESTED_EVENT } from "./inngest/events";
 import { inngest } from "./inngest/inngest-client";
 
@@ -272,6 +272,114 @@ export async function getWordAudioEvents({
     .offset(start);
 
   return rows;
+}
+
+export async function getSentenceWindowSettlement(
+  deckId: string,
+  windowStart: number,
+  windowEnd: number,
+) {
+  const [result] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      completedCount: sql<number>`count(*) filter (where ${deckGenerationSentenceBatchesTable.status} = 'completed')::int`,
+      failedCount: sql<number>`count(*) filter (where ${deckGenerationSentenceBatchesTable.status} = 'failed')::int`,
+    })
+    .from(deckGenerationSentenceBatchesTable)
+    .where(
+      and(
+        eq(deckGenerationSentenceBatchesTable.deckId, deckId),
+        gte(deckGenerationSentenceBatchesTable.batchIndex, windowStart),
+        lt(deckGenerationSentenceBatchesTable.batchIndex, windowEnd),
+      ),
+    );
+
+  return windowSettlement(result);
+}
+
+export async function getWordAudioWindowSettlement(
+  deckId: string,
+  windowStart: number,
+  windowEnd: number,
+) {
+  const windowWordAudios = db
+    .select({
+      status: deckGenerationWordAudiosTable.status,
+    })
+    .from(deckGenerationWordAudiosTable)
+    .where(eq(deckGenerationWordAudiosTable.deckId, deckId))
+    .orderBy(asc(deckGenerationWordAudiosTable.wordId))
+    .limit(windowEnd - windowStart)
+    .offset(windowStart)
+    .as("window_word_audios");
+
+  const [result] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      completedCount: sql<number>`count(*) filter (where ${windowWordAudios.status} = 'completed')::int`,
+      failedCount: sql<number>`count(*) filter (where ${windowWordAudios.status} = 'failed')::int`,
+    })
+    .from(windowWordAudios);
+
+  return windowSettlement(result);
+}
+
+export async function getNextDeckGenerationAction(deckId: string) {
+  const status = await getDeckStatus(deckId);
+  if (status === "completed" || status === "failed") {
+    return { type: "noop" as const };
+  }
+
+  const progress = await getDeckGenerationProgress(deckId);
+  if (progress.failedSentenceBatches > 0 || progress.failedWordAudios > 0) {
+    return { type: "fail" as const };
+  }
+
+  if (progress.sentenceBatchCompleted < progress.sentenceBatchTotal) {
+    const windowStart =
+      Math.floor(progress.sentenceBatchCompleted / env.DECK_SENTENCE_BATCH_WINDOW_SIZE) *
+      env.DECK_SENTENCE_BATCH_WINDOW_SIZE;
+    const windowEnd = Math.min(
+      windowStart + env.DECK_SENTENCE_BATCH_WINDOW_SIZE,
+      progress.sentenceBatchTotal,
+    );
+    const settlement = await getSentenceWindowSettlement(deckId, windowStart, windowEnd);
+
+    if (settlement.failed) return { type: "fail" as const };
+    if (settlement.completedCount > 0 && !settlement.settled) {
+      return { type: "wait" as const };
+    }
+
+    return {
+      type: "dispatch-sentence-window" as const,
+      windowStart,
+      windowEnd,
+    };
+  }
+
+  if (progress.wordAudioCompleted < progress.wordAudioTotal) {
+    const windowStart =
+      Math.floor(progress.wordAudioCompleted / env.DECK_WORD_AUDIO_WINDOW_SIZE) *
+      env.DECK_WORD_AUDIO_WINDOW_SIZE;
+    const windowEnd = Math.min(
+      windowStart + env.DECK_WORD_AUDIO_WINDOW_SIZE,
+      progress.wordAudioTotal,
+    );
+    const settlement = await getWordAudioWindowSettlement(deckId, windowStart, windowEnd);
+
+    if (settlement.failed) return { type: "fail" as const };
+    if (settlement.completedCount > 0 && !settlement.settled) {
+      return { type: "wait" as const };
+    }
+
+    return {
+      type: "dispatch-word-audio-window" as const,
+      windowStart,
+      windowEnd,
+    };
+  }
+
+  return { type: "finalize" as const };
 }
 
 export async function generateAndPersistSentenceBatch({
@@ -672,6 +780,29 @@ async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
 // Cringe function
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown deck generation error";
+}
+
+function windowSettlement(
+  result:
+    | {
+        completedCount: number;
+        failedCount: number;
+        total: number;
+      }
+    | undefined,
+) {
+  const completedCount = result?.completedCount ?? 0;
+  const failedCount = result?.failedCount ?? 0;
+  const total = result?.total ?? 0;
+  const failed = failedCount > 0;
+
+  return {
+    completedCount,
+    failedCount,
+    total,
+    failed,
+    settled: total === 0 || failed || completedCount === total,
+  };
 }
 
 const SENTENCE_GENERATION_PROMPT_BATCH_SIZE = 10;

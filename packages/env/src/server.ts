@@ -28,12 +28,24 @@ export const env = createEnv({
       .enum(["1", "0"])
       .default("0")
       .transform((value) => value === "1"),
-    INNGEST_EVENT_KEY: z.string().min(1).optional(),
-    INNGEST_SIGNING_KEY: z.string().min(1).optional(),
-    OPENROUTER_SENTENCE_BATCH_RPM: z.coerce.number().int().positive().default(60),
-    OPENROUTER_SENTENCE_BATCH_CONCURRENCY: z.coerce.number().int().positive().default(10),
-    GEMINI_WORD_AUDIO_RPM: z.coerce.number().int().positive().default(120),
-    GEMINI_WORD_AUDIO_CONCURRENCY: z.coerce.number().int().positive().default(20),
+    INNGEST_EVENT_KEY: z
+      .string()
+      .min(1)
+      .optional()
+      .refine((value) => process.env.INNGEST_DEV === "1" || value !== undefined, {
+        message: "INNGEST_EVENT_KEY is required when INNGEST_DEV=0",
+      }),
+    INNGEST_SIGNING_KEY: z
+      .string()
+      .min(1)
+      .optional()
+      .refine((value) => process.env.INNGEST_DEV === "1" || value !== undefined, {
+        message: "INNGEST_SIGNING_KEY is required when INNGEST_DEV=0",
+      }),
+    OPENROUTER_SENTENCE_BATCH_RPM: z.coerce.number().int().positive(),
+    OPENROUTER_SENTENCE_BATCH_CONCURRENCY: z.coerce.number().int().positive(),
+    GEMINI_WORD_AUDIO_RPM: z.coerce.number().int().positive(),
+    GEMINI_WORD_AUDIO_CONCURRENCY: z.coerce.number().int().positive(),
     DECK_SENTENCE_BATCH_WINDOW_SIZE: z.coerce.number().int().positive().default(100),
     DECK_WORD_AUDIO_WINDOW_SIZE: z.coerce.number().int().positive().default(500),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),

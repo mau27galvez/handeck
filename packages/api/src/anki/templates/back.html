@@ -4,9 +4,7 @@
 
 <div class="handeck-answer">
   <p class="answer-pinyin">{{Word Pinyin}}</p>
-  {{#Word Translations}}
   <p class="answer-meaning">{{Word Translations}}</p>
-  {{/Word Translations}} {{#Sentence Hanzi}}
   <section class="answer-sentence">
     <p class="answer-sentence-hanzi">{{Sentence Hanzi}}</p>
     {{#Sentence Pinyin}}
@@ -15,7 +13,6 @@
     <p class="answer-sentence-translation">{{Sentence Translation}}</p>
     {{/Sentence Translation}}
   </section>
-  {{/Sentence Hanzi}}
 
   <!-- Reserved for word + sentence audio controls -->
   <div class="audio-controls" hidden aria-hidden="true"></div>

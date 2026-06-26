@@ -3,15 +3,20 @@
   --pinyin-color: #2d8a5e;
   --meaning-color: #4a5568;
   --divider-color: #cbd5e0;
-  --hanzi-font-word: clamp(2.5rem, 8vw, 4rem);
-  --hanzi-font-sentence: clamp(1.25rem, 4vw, 1.75rem);
+  --space-block: 0.75rem;
+  --space-section: 1.25rem;
+  --space-answer: 1rem;
+  --hanzi-font-word: clamp(3.25rem, 11vw, 5.5rem);
+  --hanzi-font-sentence: clamp(1.5rem, 4.5vw, 2.25rem);
   --pinyin-font: clamp(0.95rem, 3vw, 1.25rem);
   --meaning-font: clamp(0.95rem, 3vw, 1.125rem);
+  --answer-pinyin-font: clamp(1.15rem, 3.5vw, 1.5rem);
+  --answer-meaning-font: clamp(1.05rem, 3.25vw, 1.375rem);
 
   font-family: "Noto Sans SC", "PingFang SC", "KaiTi", "STKaiti", sans-serif;
   font-size: 20px;
   line-height: 1.5;
-  text-align: center;
+  text-align: left;
   color: var(--hanzi-color);
   background-color: white;
 }
@@ -24,32 +29,54 @@
   background-color: #2d2d2d;
 }
 
-.handeck-card,
+.handeck-card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 2rem 2.5rem;
+}
+
+.handeck-card--front {
+  display: flex;
+  flex-direction: column;
+  min-height: max(55vh, 20rem);
+}
+
 .handeck-answer {
   box-sizing: border-box;
   width: 100%;
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 0 2.5rem 2rem;
 }
 
 .handeck-divider {
   border: none;
   border-top: 1px solid var(--divider-color);
-  margin: 1.5rem auto;
-  width: min(100%, 24rem);
-}
-
-.handeck-divider--back {
-  margin-top: 1.25rem;
+  margin: var(--space-section) 0;
+  width: 100%;
 }
 
 .hanzi-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
+  align-items: flex-start;
   cursor: default;
+}
+
+.handeck-card--front .word-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.handeck-card--front .sentence-block {
+  flex: 1;
+  padding-top: var(--space-block);
+}
+
+.hanzi-line {
+  position: relative;
+  display: inline-block;
 }
 
 .word-block .hanzi {
@@ -67,76 +94,65 @@
 }
 
 .hanzi-block .pinyin {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 0.25rem;
   font-size: var(--pinyin-font);
   color: var(--pinyin-color);
   opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition:
-    opacity 0.15s ease,
-    max-height 0.15s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
 }
 
 .hanzi-block:hover .pinyin,
 .hanzi-block:focus-within .pinyin {
   opacity: 1;
-  max-height: 3rem;
 }
 
 .mobile .hanzi-block:active .pinyin,
 .mobile .hanzi-block:focus-within .pinyin {
   opacity: 1;
-  max-height: 3rem;
-}
-
-.handeck-answer {
-  text-align: left;
-  padding-top: 0.5rem;
 }
 
 .answer-pinyin {
-  margin: 0 0 0.75rem;
+  margin: var(--space-section) 0 var(--space-block);
   padding-left: 0.75rem;
   border-left: 4px solid var(--pinyin-color);
-  font-size: var(--pinyin-font);
+  font-size: var(--answer-pinyin-font);
+  font-weight: 500;
   color: var(--pinyin-color);
   line-height: 1.4;
 }
 
 .answer-meaning {
-  margin: 0 0 1.25rem;
-  font-size: var(--meaning-font);
-  color: var(--meaning-color);
-  line-height: 1.5;
+  margin: 0;
+  font-size: var(--answer-meaning-font);
+  color: var(--hanzi-color);
+  line-height: 1.55;
 }
 
 .answer-sentence {
   margin: 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--divider-color);
-}
-
-.answer-sentence-hanzi {
-  margin: 1rem 0 0.35rem;
-  font-size: var(--hanzi-font-sentence);
-  color: var(--hanzi-color);
-  line-height: 1.35;
+  padding-top: var(--space-section);
 }
 
 .answer-sentence-pinyin {
-  margin: 0 0 0.35rem;
+  margin: 0 0 var(--space-block);
   padding-left: 0.75rem;
   border-left: 4px solid var(--pinyin-color);
-  font-size: var(--pinyin-font);
+  font-size: var(--answer-pinyin-font);
+  font-weight: 500;
   color: var(--pinyin-color);
   line-height: 1.4;
 }
 
 .answer-sentence-translation {
   margin: 0;
-  font-size: var(--meaning-font);
-  color: var(--meaning-color);
-  line-height: 1.5;
+  font-size: var(--answer-meaning-font);
+  color: var(--hanzi-color);
+  line-height: 1.55;
 }
 
 .audio-controls {

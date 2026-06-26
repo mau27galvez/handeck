@@ -1,0 +1,19 @@
+<div class="handeck-card">
+  <section class="word-block hanzi-block">
+    <span class="hanzi">{{Word Hanzi}}</span>
+    {{#Word Pinyin}}
+    <span class="pinyin">{{Word Pinyin}}</span>
+    {{/Word Pinyin}}
+  </section>
+
+  <hr class="handeck-divider" />
+
+  {{#Sentence Hanzi}}
+  <section class="sentence-block hanzi-block">
+    <span class="hanzi">{{Sentence Hanzi}}</span>
+    {{#Sentence Pinyin}}
+    <span class="pinyin">{{Sentence Pinyin}}</span>
+    {{/Sentence Pinyin}}
+  </section>
+  {{/Sentence Hanzi}}
+</div>

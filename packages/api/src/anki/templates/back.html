@@ -1,0 +1,23 @@
+{{FrontSide}}
+
+<hr class="handeck-divider handeck-divider--back" />
+
+<div class="handeck-answer">
+  {{#Word Pinyin}}
+  <p class="answer-pinyin">{{Word Pinyin}}</p>
+  {{/Word Pinyin}} {{#Word Translations}}
+  <p class="answer-meaning">{{Word Translations}}</p>
+  {{/Word Translations}} {{#Sentence Hanzi}}
+  <section class="answer-sentence">
+    <p class="answer-sentence-hanzi">{{Sentence Hanzi}}</p>
+    {{#Sentence Pinyin}}
+    <p class="answer-sentence-pinyin">{{Sentence Pinyin}}</p>
+    {{/Sentence Pinyin}} {{#Sentence Translation}}
+    <p class="answer-sentence-translation">{{Sentence Translation}}</p>
+    {{/Sentence Translation}}
+  </section>
+  {{/Sentence Hanzi}}
+
+  <!-- Reserved for word + sentence audio controls (HAN-39 follow-up) -->
+  <div class="audio-controls" hidden aria-hidden="true"></div>
+</div>

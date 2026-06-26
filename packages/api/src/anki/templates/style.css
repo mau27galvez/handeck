@@ -1,0 +1,144 @@
+.card {
+  --hanzi-color: #1a1a1a;
+  --pinyin-color: #2d8a5e;
+  --meaning-color: #4a5568;
+  --divider-color: #cbd5e0;
+  --hanzi-font-word: clamp(2.5rem, 8vw, 4rem);
+  --hanzi-font-sentence: clamp(1.25rem, 4vw, 1.75rem);
+  --pinyin-font: clamp(0.95rem, 3vw, 1.25rem);
+  --meaning-font: clamp(0.95rem, 3vw, 1.125rem);
+
+  font-family: "Noto Sans SC", "PingFang SC", "KaiTi", "STKaiti", sans-serif;
+  font-size: 20px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--hanzi-color);
+  background-color: white;
+}
+
+.nightMode.card {
+  --hanzi-color: #f0f0f0;
+  --pinyin-color: #6ee7a0;
+  --meaning-color: #a0aec0;
+  --divider-color: #4a5568;
+  background-color: #2d2d2d;
+}
+
+.handeck-card,
+.handeck-answer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+
+.handeck-divider {
+  border: none;
+  border-top: 1px solid var(--divider-color);
+  margin: 1.5rem auto;
+  width: min(100%, 24rem);
+}
+
+.handeck-divider--back {
+  margin-top: 1.25rem;
+}
+
+.hanzi-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: default;
+}
+
+.word-block .hanzi {
+  font-size: var(--hanzi-font-word);
+  font-weight: 500;
+  color: var(--hanzi-color);
+  line-height: 1.2;
+}
+
+.sentence-block .hanzi {
+  font-size: var(--hanzi-font-sentence);
+  font-weight: 400;
+  color: var(--hanzi-color);
+  line-height: 1.35;
+}
+
+.hanzi-block .pinyin {
+  font-size: var(--pinyin-font);
+  color: var(--pinyin-color);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.15s ease,
+    max-height 0.15s ease;
+}
+
+.hanzi-block:hover .pinyin,
+.hanzi-block:focus-within .pinyin {
+  opacity: 1;
+  max-height: 3rem;
+}
+
+.mobile .hanzi-block:active .pinyin,
+.mobile .hanzi-block:focus-within .pinyin {
+  opacity: 1;
+  max-height: 3rem;
+}
+
+.handeck-answer {
+  text-align: left;
+  padding-top: 0.5rem;
+}
+
+.answer-pinyin {
+  margin: 0 0 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--pinyin-color);
+  font-size: var(--pinyin-font);
+  color: var(--pinyin-color);
+  line-height: 1.4;
+}
+
+.answer-meaning {
+  margin: 0 0 1.25rem;
+  font-size: var(--meaning-font);
+  color: var(--meaning-color);
+  line-height: 1.5;
+}
+
+.answer-sentence {
+  margin: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--divider-color);
+}
+
+.answer-sentence-hanzi {
+  margin: 1rem 0 0.35rem;
+  font-size: var(--hanzi-font-sentence);
+  color: var(--hanzi-color);
+  line-height: 1.35;
+}
+
+.answer-sentence-pinyin {
+  margin: 0 0 0.35rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--pinyin-color);
+  font-size: var(--pinyin-font);
+  color: var(--pinyin-color);
+  line-height: 1.4;
+}
+
+.answer-sentence-translation {
+  margin: 0;
+  font-size: var(--meaning-font);
+  color: var(--meaning-color);
+  line-height: 1.5;
+}
+
+.audio-controls {
+  display: none;
+}

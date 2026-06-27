@@ -1,4 +1,5 @@
 import { orpc } from "@/utils/orpc";
+import { Badge } from "@handeck/ui/components/badge";
 import { Button } from "@handeck/ui/components/button";
 import {
   Card,
@@ -17,6 +18,9 @@ export type DeckListItem = {
   templateId: string;
   templateName: string;
   createdAt: Date;
+  status: "queued" | "generating" | "completed" | "failed";
+  error: string | null;
+  progress: number;
 };
 
 function formatCreatedAt(createdAt: Date) {
@@ -27,8 +31,10 @@ function formatCreatedAt(createdAt: Date) {
 }
 
 export default function DeckCard({ deck }: { deck: DeckListItem }) {
-  const { templateName, createdAt } = deck;
+  const { templateName, createdAt, status } = deck;
   const getDownloadUrl = useMutation(orpc.deck.getDownloadUrl.mutationOptions());
+  const isDownloadable = status === "completed";
+  const progressPercent = Math.round(deck.progress * 100);
 
   async function handleDownload() {
     try {
@@ -51,10 +57,19 @@ export default function DeckCard({ deck }: { deck: DeckListItem }) {
       </CardHeader>
 
       <CardContent className="mt-auto pt-0">
-        <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-          <Calendar className="size-3" />
-          {formatCreatedAt(createdAt)}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            <Calendar className="size-3" />
+            {formatCreatedAt(createdAt)}
+          </span>
+          <DeckStatusBadge status={status} />
+        </div>
+        {status === "generating" && (
+          <p className="mt-2 text-xs text-muted-foreground">{progressPercent}% complete</p>
+        )}
+        {status === "failed" && deck.error && (
+          <p className="mt-2 line-clamp-2 text-xs text-destructive">{deck.error}</p>
+        )}
       </CardContent>
 
       <CardFooter className="mt-auto flex flex-row items-center justify-end gap-2 border-t px-3 py-2">
@@ -62,14 +77,22 @@ export default function DeckCard({ deck }: { deck: DeckListItem }) {
           size="sm"
           className="gap-1.5"
           type="button"
-          disabled={getDownloadUrl.isPending}
+          disabled={!isDownloadable || getDownloadUrl.isPending}
           aria-busy={getDownloadUrl.isPending}
           onClick={() => void handleDownload()}
         >
           <Download className="size-3" />
-          {getDownloadUrl.isPending ? "Preparing..." : "Download"}
+          {getDownloadUrl.isPending ? "Preparing..." : isDownloadable ? "Download" : "Not ready"}
         </Button>
       </CardFooter>
     </Card>
   );
+}
+
+function DeckStatusBadge({ status }: { status: DeckListItem["status"] }) {
+  if (status === "completed") return <Badge variant="secondary">Ready</Badge>;
+  if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
+  if (status === "queued") return <Badge variant="outline">Queued</Badge>;
+
+  return <Badge variant="outline">Generating</Badge>;
 }

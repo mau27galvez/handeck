@@ -1,5 +1,14 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
@@ -7,6 +16,10 @@ const timestamps = {
   createdAt: timestamp({ withTimezone: true }).notNull(),
   updatedAt: timestamp({ withTimezone: true }),
 };
+
+export const deckGenerationStatuses = ["queued", "generating", "completed", "failed"] as const;
+
+export const deckGenerationItemStatuses = ["queued", "completed", "failed"] as const;
 
 export const baseTemplatesTable = pgTable("base_templates", {
   id: uuid().primaryKey(),
@@ -96,15 +109,34 @@ export const sentencesTable = pgTable("sentences", {
   ...timestamps,
 });
 
-export const sentenceNotesTable = pgTable("sentence_notes", {
-  id: uuid().primaryKey(),
-  sentenceId: uuid()
-    .notNull()
-    .references(() => sentencesTable.id),
-  noteId: uuid()
-    .notNull()
-    .references(() => notesTable.id),
-});
+/**
+ * This whole table is still in "trial" state.
+ * If all of the following are true, it should be removed:
+ *
+ * 1) We don't allow multiple sentences per note.
+ * That might be the case if we can not randomly display one of n sentences per note review in Anki.
+ *
+ * 2) We won't reuse sentences for multiple notes. For the same deck or others.
+ */
+export const sentenceNotesTable = pgTable(
+  "sentence_notes",
+  {
+    id: uuid().primaryKey(),
+    sentenceId: uuid()
+      .notNull()
+      .references(() => sentencesTable.id),
+    noteId: uuid()
+      .notNull()
+      .references(() => notesTable.id),
+  },
+  (table) => [
+    index("sentence_notes_sentence_id_idx").on(table.sentenceId),
+    // This is true, since this is a one-to-one relationship.
+    // But it's not true if we allow multiple sentences per note.
+    // So this will: 1) likely be removed and 2) not required since there is no code path that could add a duplicate.
+    unique("sentence_notes_unique_note_id_idx").on(table.noteId),
+  ],
+);
 
 export const decksTable = pgTable(
   "decks",
@@ -116,11 +148,70 @@ export const decksTable = pgTable(
     templateId: uuid()
       .notNull()
       .references(() => templatesTable.id),
+    status: text({ enum: deckGenerationStatuses }).notNull().default("queued"),
+    error: text(),
+    startedAt: timestamp({ withTimezone: true }),
+    completedAt: timestamp({ withTimezone: true }),
+    failedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
   (table) => [
     index("decks_user_id_idx").on(table.userId),
     index("decks_template_id_idx").on(table.templateId),
+  ],
+);
+
+export const deckGenerationJobsTable = pgTable("deck_generation_jobs", {
+  deckId: uuid()
+    .primaryKey()
+    .references(() => decksTable.id),
+  status: text({ enum: deckGenerationStatuses }).notNull().default("queued"),
+  sentenceBatchTotal: integer().notNull().default(0),
+  sentenceBatchCompleted: integer().notNull().default(0),
+  wordAudioTotal: integer().notNull().default(0),
+  wordAudioCompleted: integer().notNull().default(0),
+  error: text(),
+  startedAt: timestamp({ withTimezone: true }),
+  completedAt: timestamp({ withTimezone: true }),
+  failedAt: timestamp({ withTimezone: true }),
+  ...timestamps,
+});
+
+export const deckGenerationSentenceBatchesTable = pgTable(
+  "deck_generation_sentence_batches",
+  {
+    deckId: uuid()
+      .notNull()
+      .references(() => decksTable.id),
+    batchIndex: integer().notNull(),
+    status: text({ enum: deckGenerationItemStatuses }).notNull().default("queued"),
+    error: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull(),
+    updatedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.deckId, table.batchIndex] }),
+    index("deck_generation_sentence_batches_status_idx").on(table.status),
+  ],
+);
+
+export const deckGenerationWordAudiosTable = pgTable(
+  "deck_generation_word_audios",
+  {
+    deckId: uuid()
+      .notNull()
+      .references(() => decksTable.id),
+    wordId: uuid()
+      .notNull()
+      .references(() => wordsTable.id),
+    status: text({ enum: deckGenerationItemStatuses }).notNull().default("queued"),
+    error: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull(),
+    updatedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.deckId, table.wordId] }),
+    index("deck_generation_word_audios_status_idx").on(table.status),
   ],
 );
 
@@ -166,6 +257,10 @@ export const noteRelations = relations(notesTable, ({ one }) => ({
     fields: [notesTable.wordId],
     references: [wordsTable.id],
   }),
+  sentenceNote: one(sentenceNotesTable, {
+    fields: [notesTable.id],
+    references: [sentenceNotesTable.noteId],
+  }),
 }));
 
 export const deckRelations = relations(decksTable, ({ one, many }) => ({
@@ -177,5 +272,31 @@ export const deckRelations = relations(decksTable, ({ one, many }) => ({
     fields: [decksTable.templateId],
     references: [templatesTable.id],
   }),
+  generationJob: one(deckGenerationJobsTable, {
+    fields: [decksTable.id],
+    references: [deckGenerationJobsTable.deckId],
+  }),
   notes: many(notesTable),
+}));
+
+export const sentenceRelations = relations(sentencesTable, ({ many }) => ({
+  sentenceNotes: many(sentenceNotesTable),
+}));
+
+export const sentenceNoteRelations = relations(sentenceNotesTable, ({ one }) => ({
+  sentence: one(sentencesTable, {
+    fields: [sentenceNotesTable.sentenceId],
+    references: [sentencesTable.id],
+  }),
+  note: one(notesTable, {
+    fields: [sentenceNotesTable.noteId],
+    references: [notesTable.id],
+  }),
+}));
+
+export const deckGenerationJobRelations = relations(deckGenerationJobsTable, ({ one }) => ({
+  deck: one(decksTable, {
+    fields: [deckGenerationJobsTable.deckId],
+    references: [decksTable.id],
+  }),
 }));

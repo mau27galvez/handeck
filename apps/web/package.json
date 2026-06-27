@@ -30,6 +30,7 @@
     "@tanstack/start-server-core": "1.169.15",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "inngest": "catalog:",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
     "nitro": "^3.0.260610-beta",

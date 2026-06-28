@@ -44,29 +44,33 @@ export async function buildDeckFromTemplate({
   await getOwnedTemplate(templateId, userId);
   await prepareDeckGeneration({ deckId, templateId, userId });
 
-  /**
-   * IMPORTANT
-   *
-   * What if the event fails to send?
-   * Or what if after `prepareDeckGeneration`, something goes wrong and
-   * `inngest.send` never runs?
-   *
-   * We end up with a deck that is in a "queued" state, but is in no queue.
-   *
-   * I guess we have the following options:
-   * - Put the sending of the event into the transaction (not so sure)
-   * - Make the `prepareDeckGeneration` function idempotent
-   * - try catch the `send` call and mark the deck as failed or just rollback the transaction (delete all the rows we inserted)
-   */
+  try {
+    await inngest.send({
+      id: `deck:${deckId}:generate`,
+      name: DECK_GENERATE_REQUESTED_EVENT,
+      data: {
+        deckId,
+        templateId,
+        userId,
+      },
+    });
+  } catch (error) {
+    await abortDeckGeneration(deckId);
+    throw error;
+  }
+}
 
-  await inngest.send({
-    id: `deck:${deckId}:generate`,
-    name: DECK_GENERATE_REQUESTED_EVENT,
-    data: {
-      deckId,
-      templateId,
-      userId,
-    },
+async function abortDeckGeneration(deckId: string) {
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(deckGenerationSentenceBatchesTable)
+      .where(eq(deckGenerationSentenceBatchesTable.deckId, deckId));
+    await tx
+      .delete(deckGenerationWordAudiosTable)
+      .where(eq(deckGenerationWordAudiosTable.deckId, deckId));
+    await tx.delete(deckGenerationJobsTable).where(eq(deckGenerationJobsTable.deckId, deckId));
+    await tx.delete(notesTable).where(eq(notesTable.deckId, deckId));
+    await tx.delete(decksTable).where(eq(decksTable.id, deckId));
   });
 }
 

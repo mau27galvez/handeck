@@ -47,6 +47,7 @@ export const env = createEnv({
     GEMINI_WORD_AUDIO_RPM: z.coerce.number().int().positive(),
     GEMINI_WORD_AUDIO_CONCURRENCY: z.coerce.number().int().positive(),
     DECK_SENTENCE_BATCH_WINDOW_SIZE: z.coerce.number().int().positive().default(100),
+    DECK_SENTENCE_AUDIO_WINDOW_SIZE: z.coerce.number().int().positive().default(500),
     DECK_WORD_AUDIO_WINDOW_SIZE: z.coerce.number().int().positive().default(500),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     VERCEL_URL: z.string().min(1).optional(),

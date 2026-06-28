@@ -2,22 +2,28 @@ import { env } from "@handeck/env/server";
 import { NonRetriableError } from "inngest";
 import { z } from "zod";
 import {
+  ensureAndPersistSentenceAudio,
   ensureAndPersistWordAudio,
   finalizeDeckGeneration,
   generateAndPersistSentenceBatch,
   getDeckStatus,
   getNextDeckGenerationAction,
+  getSentenceAudioEvents,
+  getSentenceAudioWindowSettlement,
   getSentenceBatchEvents,
   getSentenceWindowSettlement,
   getWordAudioEvents,
   getWordAudioWindowSettlement,
   markDeckGenerationFailed,
+  markSentenceAudioFailed,
   markDeckGenerationStarted,
   markSentenceBatchFailed,
   markWordAudioFailed,
 } from "../buildDeckFromTemplate";
 import {
   DECK_GENERATE_REQUESTED_EVENT,
+  DECK_SENTENCE_AUDIO_ENSURE_EVENT,
+  DECK_SENTENCE_AUDIO_WINDOW_SETTLED_EVENT,
   DECK_SENTENCE_BATCH_GENERATE_EVENT,
   DECK_SENTENCE_WINDOW_SETTLED_EVENT,
   DECK_WORD_AUDIO_ENSURE_EVENT,
@@ -31,6 +37,12 @@ const deckCoordinatorEventSchema = z.object({
 const sentenceBatchEventSchema = z.object({
   deckId: z.string(),
   batchIndex: z.number(),
+  windowStart: z.number(),
+  windowEnd: z.number(),
+});
+const sentenceAudioEventSchema = z.object({
+  deckId: z.string(),
+  sentenceId: z.string(),
   windowStart: z.number(),
   windowEnd: z.number(),
 });
@@ -48,6 +60,7 @@ export const generateDeck = inngest.createFunction(
     triggers: [
       { event: DECK_GENERATE_REQUESTED_EVENT },
       { event: DECK_SENTENCE_WINDOW_SETTLED_EVENT },
+      { event: DECK_SENTENCE_AUDIO_WINDOW_SETTLED_EVENT },
       { event: DECK_WORD_AUDIO_WINDOW_SETTLED_EVENT },
     ],
     onFailure: async ({ error, event, step }) => {
@@ -112,6 +125,34 @@ export const generateDeck = inngest.createFunction(
           data: {
             deckId,
             batchIndex: batch.batchIndex,
+            windowStart: action.windowStart,
+            windowEnd: action.windowEnd,
+          },
+        })),
+      );
+
+      return;
+    }
+
+    if (action.type === "dispatch-sentence-audio-window") {
+      const sentenceAudios = await step.run(
+        `load-sentence-audio-window-${action.windowStart}-${action.windowEnd}`,
+        () =>
+          getSentenceAudioEvents({
+            deckId,
+            start: action.windowStart,
+            limit: action.windowEnd - action.windowStart,
+          }),
+      );
+
+      await step.sendEvent(
+        `send-sentence-audio-window-${action.windowStart}-${action.windowEnd}`,
+        sentenceAudios.map((sentenceAudio) => ({
+          id: `deck:${deckId}:sentence-audio:${sentenceAudio.sentenceId}`,
+          name: DECK_SENTENCE_AUDIO_ENSURE_EVENT,
+          data: {
+            deckId,
+            sentenceId: sentenceAudio.sentenceId,
             windowStart: action.windowStart,
             windowEnd: action.windowEnd,
           },
@@ -232,6 +273,68 @@ export const generateSentenceBatch = inngest.createFunction(
   },
 );
 
+export const ensureSentenceAudio = inngest.createFunction(
+  {
+    id: "ensure-sentence-audio",
+    retries: 8,
+    throttle: {
+      limit: env.GEMINI_WORD_AUDIO_RPM,
+      period: "1m",
+    },
+    concurrency: [
+      {
+        limit: env.GEMINI_WORD_AUDIO_CONCURRENCY,
+      },
+      {
+        key: "event.data.deckId",
+        limit: Math.max(1, Math.ceil(env.GEMINI_WORD_AUDIO_CONCURRENCY / 2)),
+      },
+    ],
+    triggers: [{ event: DECK_SENTENCE_AUDIO_ENSURE_EVENT }],
+    onFailure: async ({ error, event, step }) => {
+      const data = sentenceAudioEventSchema.parse(event.data.event.data);
+      await step.run("mark-sentence-audio-failed", () =>
+        markSentenceAudioFailed({
+          deckId: data.deckId,
+          sentenceId: data.sentenceId,
+          error,
+        }),
+      );
+
+      await step.sendEvent("send-sentence-audio-window-failed", {
+        id: sentenceAudioWindowSettledEventId(data),
+        name: DECK_SENTENCE_AUDIO_WINDOW_SETTLED_EVENT,
+        data: {
+          deckId: data.deckId,
+          windowStart: data.windowStart,
+          windowEnd: data.windowEnd,
+          status: "failed",
+        },
+      });
+    },
+  },
+  async ({ event, step }) => {
+    const data = sentenceAudioEventSchema.parse(event.data);
+    const settlement = await step.run("ensure-and-persist-sentence-audio", async () => {
+      await ensureAndPersistSentenceAudio(data);
+      return await getSentenceAudioWindowSettlement(data.deckId, data.windowStart, data.windowEnd);
+    });
+
+    if (settlement.settled && !settlement.failed) {
+      await step.sendEvent("send-sentence-audio-window-completed", {
+        id: sentenceAudioWindowSettledEventId(data),
+        name: DECK_SENTENCE_AUDIO_WINDOW_SETTLED_EVENT,
+        data: {
+          deckId: data.deckId,
+          windowStart: data.windowStart,
+          windowEnd: data.windowEnd,
+          status: "completed",
+        },
+      });
+    }
+  },
+);
+
 export const ensureWordAudio = inngest.createFunction(
   {
     id: "ensure-word-audio",
@@ -313,7 +416,12 @@ export const ensureWordAudio = inngest.createFunction(
   },
 );
 
-export const inngestFunctions = [generateDeck, generateSentenceBatch, ensureWordAudio];
+export const inngestFunctions = [
+  generateDeck,
+  generateSentenceBatch,
+  ensureSentenceAudio,
+  ensureWordAudio,
+];
 
 function sentenceWindowSettledEventId({
   deckId,
@@ -337,4 +445,16 @@ function wordAudioWindowSettledEventId({
   windowEnd: number;
 }) {
   return `deck:${deckId}:word-audio-window:${windowStart}:${windowEnd}:settled`;
+}
+
+function sentenceAudioWindowSettledEventId({
+  deckId,
+  windowStart,
+  windowEnd,
+}: {
+  deckId: string;
+  windowStart: number;
+  windowEnd: number;
+}) {
+  return `deck:${deckId}:sentence-audio-window:${windowStart}:${windowEnd}:settled`;
 }

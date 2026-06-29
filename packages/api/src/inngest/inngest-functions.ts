@@ -53,6 +53,44 @@ const wordAudioEventSchema = z.object({
   windowEnd: z.number(),
 });
 
+const GEMINI_AUDIO_FLOW_CONTROL_KEY = `"gemini-audio"`;
+const GEMINI_AUDIO_PER_DECK_CONCURRENCY = Math.max(1, Math.ceil(env.GEMINI_AUDIO_CONCURRENCY / 2));
+
+/**
+ * Word and sentence audio share one Gemini API key. The env-scoped flow-control
+ * key makes both functions consume the same provider quota while keeping per-deck
+ * concurrency below the full shared pool.
+ */
+const GEMINI_AUDIO_FLOW_CONTROL = {
+  throttle: {
+    limit: env.GEMINI_AUDIO_RPM,
+    period: "1m" as const,
+    key: GEMINI_AUDIO_FLOW_CONTROL_KEY,
+    scope: "env" as const,
+  },
+  concurrency: [
+    {
+      scope: "env" as const,
+      key: GEMINI_AUDIO_FLOW_CONTROL_KEY,
+      limit: env.GEMINI_AUDIO_CONCURRENCY,
+    },
+    {
+      key: "event.data.deckId",
+      limit: GEMINI_AUDIO_PER_DECK_CONCURRENCY,
+    },
+  ] as [
+    {
+      scope: "env";
+      key: string;
+      limit: number;
+    },
+    {
+      key: string;
+      limit: number;
+    },
+  ],
+};
+
 export const generateDeck = inngest.createFunction(
   {
     id: "generate-deck",
@@ -277,19 +315,7 @@ export const ensureSentenceAudio = inngest.createFunction(
   {
     id: "ensure-sentence-audio",
     retries: 8,
-    throttle: {
-      limit: env.GEMINI_WORD_AUDIO_RPM,
-      period: "1m",
-    },
-    concurrency: [
-      {
-        limit: env.GEMINI_WORD_AUDIO_CONCURRENCY,
-      },
-      {
-        key: "event.data.deckId",
-        limit: Math.max(1, Math.ceil(env.GEMINI_WORD_AUDIO_CONCURRENCY / 2)),
-      },
-    ],
+    ...GEMINI_AUDIO_FLOW_CONTROL,
     triggers: [{ event: DECK_SENTENCE_AUDIO_ENSURE_EVENT }],
     onFailure: async ({ error, event, step }) => {
       const data = sentenceAudioEventSchema.parse(event.data.event.data);
@@ -339,38 +365,7 @@ export const ensureWordAudio = inngest.createFunction(
   {
     id: "ensure-word-audio",
     retries: 8,
-    /**
-     * This throttle config limits the global provider/resource cap:
-     * only GEMINI_WORD_AUDIO_CONCURRENCY word-audio runs can execute at once across all decks.
-     */
-    throttle: {
-      limit: env.GEMINI_WORD_AUDIO_RPM,
-      period: "1m",
-    },
-    /**
-     * This concurrency config limits the noisy-neighbor problem: each deckId can
-     * use up to about half of GEMINI_WORD_AUDIO_CONCURRENCY active slots.
-     * So if Deck A has a large window queued, it cannot occupy all global
-     * word-audio slots by itself. Other decks can still get scheduled into the
-     * remaining global capacity.
-     *
-     * Example with global concurrency 5:
-     * Before: Deck A could use all 5 active word-audio slots.
-     * After: Deck A can use up to 3 slots, leaving room for other decks.
-     *
-     * So this favors fairness over single-deck throughput.
-     * A large deck may finish slower, but it is much less likely to monopolize
-     * the shared AI generation capacity.
-     */
-    concurrency: [
-      {
-        limit: env.GEMINI_WORD_AUDIO_CONCURRENCY,
-      },
-      {
-        key: "event.data.deckId",
-        limit: Math.max(1, Math.ceil(env.GEMINI_WORD_AUDIO_CONCURRENCY / 2)),
-      },
-    ],
+    ...GEMINI_AUDIO_FLOW_CONTROL,
     triggers: [{ event: DECK_WORD_AUDIO_ENSURE_EVENT }],
     onFailure: async ({ error, event, step }) => {
       const data = wordAudioEventSchema.parse(event.data.event.data);

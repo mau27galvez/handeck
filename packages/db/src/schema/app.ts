@@ -106,6 +106,7 @@ export const sentencesTable = pgTable("sentences", {
   id: uuid().primaryKey(),
   simplifiedHanzi: text().notNull(),
   diacriticPinyin: text().notNull(),
+  audioUrl: text(),
   ...timestamps,
 });
 
@@ -168,6 +169,8 @@ export const deckGenerationJobsTable = pgTable("deck_generation_jobs", {
   status: text({ enum: deckGenerationStatuses }).notNull().default("queued"),
   sentenceBatchTotal: integer().notNull().default(0),
   sentenceBatchCompleted: integer().notNull().default(0),
+  sentenceAudioTotal: integer().notNull().default(0),
+  sentenceAudioCompleted: integer().notNull().default(0),
   wordAudioTotal: integer().notNull().default(0),
   wordAudioCompleted: integer().notNull().default(0),
   error: text(),
@@ -192,6 +195,26 @@ export const deckGenerationSentenceBatchesTable = pgTable(
   (table) => [
     primaryKey({ columns: [table.deckId, table.batchIndex] }),
     index("deck_generation_sentence_batches_status_idx").on(table.status),
+  ],
+);
+
+export const deckGenerationSentenceAudiosTable = pgTable(
+  "deck_generation_sentence_audios",
+  {
+    deckId: uuid()
+      .notNull()
+      .references(() => decksTable.id),
+    sentenceId: uuid()
+      .notNull()
+      .references(() => sentencesTable.id),
+    status: text({ enum: deckGenerationItemStatuses }).notNull().default("queued"),
+    error: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull(),
+    updatedAt: timestamp({ withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.deckId, table.sentenceId] }),
+    index("deck_generation_sentence_audios_status_idx").on(table.status),
   ],
 );
 

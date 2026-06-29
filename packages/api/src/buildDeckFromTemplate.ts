@@ -1,6 +1,7 @@
 import { db } from "@handeck/db";
 import {
   deckGenerationJobsTable,
+  deckGenerationSentenceAudiosTable,
   deckGenerationSentenceBatchesTable,
   deckGenerationWordAudiosTable,
   decksTable,
@@ -19,7 +20,7 @@ import { pcmToWav } from "./utils";
 import { segment, OutputFormat, addDict } from "pinyin-pro";
 import CompleteDict from "@pinyin-pro/data/complete";
 import { GoogleGenAI } from "@google/genai";
-import { getWordAudioObjectKey, uploadAudioFile } from "./deckStorage";
+import { getSentenceAudioObjectKey, getWordAudioObjectKey, uploadAudioFile } from "./deckStorage";
 import { and, asc, eq, gte, lt, ne, sql } from "drizzle-orm";
 import { DECK_GENERATE_REQUESTED_EVENT } from "./inngest/events";
 import { inngest } from "./inngest/inngest-client";
@@ -65,6 +66,9 @@ async function abortDeckGeneration(deckId: string) {
     await tx
       .delete(deckGenerationSentenceBatchesTable)
       .where(eq(deckGenerationSentenceBatchesTable.deckId, deckId));
+    await tx
+      .delete(deckGenerationSentenceAudiosTable)
+      .where(eq(deckGenerationSentenceAudiosTable.deckId, deckId));
     await tx
       .delete(deckGenerationWordAudiosTable)
       .where(eq(deckGenerationWordAudiosTable.deckId, deckId));
@@ -162,6 +166,7 @@ export async function getDeckGenerationTotals(deckId: string) {
 
   return {
     sentenceBatchTotal: job.sentenceBatchTotal,
+    sentenceAudioTotal: job.sentenceAudioTotal,
     wordAudioTotal: job.wordAudioTotal,
   };
 }
@@ -226,10 +231,20 @@ export async function getDeckGenerationProgress(deckId: string) {
         eq(deckGenerationWordAudiosTable.status, "failed"),
       ),
     );
+  const [failedSentenceAudioResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(deckGenerationSentenceAudiosTable)
+    .where(
+      and(
+        eq(deckGenerationSentenceAudiosTable.deckId, deckId),
+        eq(deckGenerationSentenceAudiosTable.status, "failed"),
+      ),
+    );
 
   return {
     ...job,
     failedSentenceBatches: failedSentenceBatchResult?.count ?? 0,
+    failedSentenceAudios: failedSentenceAudioResult?.count ?? 0,
     failedWordAudios: failedWordAudioResult?.count ?? 0,
   };
 }
@@ -278,6 +293,28 @@ export async function getWordAudioEvents({
   return rows;
 }
 
+export async function getSentenceAudioEvents({
+  deckId,
+  start,
+  limit,
+}: {
+  deckId: string;
+  start: number;
+  limit: number;
+}) {
+  const rows = await db
+    .select({
+      sentenceId: deckGenerationSentenceAudiosTable.sentenceId,
+    })
+    .from(deckGenerationSentenceAudiosTable)
+    .where(eq(deckGenerationSentenceAudiosTable.deckId, deckId))
+    .orderBy(asc(deckGenerationSentenceAudiosTable.sentenceId))
+    .limit(limit)
+    .offset(start);
+
+  return rows;
+}
+
 export async function getSentenceWindowSettlement(
   deckId: string,
   windowStart: number,
@@ -297,6 +334,33 @@ export async function getSentenceWindowSettlement(
         lt(deckGenerationSentenceBatchesTable.batchIndex, windowEnd),
       ),
     );
+
+  return windowSettlement(result);
+}
+
+export async function getSentenceAudioWindowSettlement(
+  deckId: string,
+  windowStart: number,
+  windowEnd: number,
+) {
+  const windowSentenceAudios = db
+    .select({
+      status: deckGenerationSentenceAudiosTable.status,
+    })
+    .from(deckGenerationSentenceAudiosTable)
+    .where(eq(deckGenerationSentenceAudiosTable.deckId, deckId))
+    .orderBy(asc(deckGenerationSentenceAudiosTable.sentenceId))
+    .limit(windowEnd - windowStart)
+    .offset(windowStart)
+    .as("window_sentence_audios");
+
+  const [result] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      completedCount: sql<number>`count(*) filter (where ${windowSentenceAudios.status} = 'completed')::int`,
+      failedCount: sql<number>`count(*) filter (where ${windowSentenceAudios.status} = 'failed')::int`,
+    })
+    .from(windowSentenceAudios);
 
   return windowSettlement(result);
 }
@@ -335,7 +399,11 @@ export async function getNextDeckGenerationAction(deckId: string) {
   }
 
   const progress = await getDeckGenerationProgress(deckId);
-  if (progress.failedSentenceBatches > 0 || progress.failedWordAudios > 0) {
+  if (
+    progress.failedSentenceBatches > 0 ||
+    progress.failedSentenceAudios > 0 ||
+    progress.failedWordAudios > 0
+  ) {
     return { type: "fail" as const };
   }
 
@@ -356,6 +424,28 @@ export async function getNextDeckGenerationAction(deckId: string) {
 
     return {
       type: "dispatch-sentence-window" as const,
+      windowStart,
+      windowEnd,
+    };
+  }
+
+  if (progress.sentenceAudioCompleted < progress.sentenceAudioTotal) {
+    const windowStart =
+      Math.floor(progress.sentenceAudioCompleted / env.DECK_SENTENCE_AUDIO_WINDOW_SIZE) *
+      env.DECK_SENTENCE_AUDIO_WINDOW_SIZE;
+    const windowEnd = Math.min(
+      windowStart + env.DECK_SENTENCE_AUDIO_WINDOW_SIZE,
+      progress.sentenceAudioTotal,
+    );
+    const settlement = await getSentenceAudioWindowSettlement(deckId, windowStart, windowEnd);
+
+    if (settlement.failed) return { type: "fail" as const };
+    if (settlement.completedCount > 0 && !settlement.settled) {
+      return { type: "wait" as const };
+    }
+
+    return {
+      type: "dispatch-sentence-audio-window" as const,
       windowStart,
       windowEnd,
     };
@@ -428,6 +518,7 @@ export async function generateAndPersistSentenceBatch({
     if (latestBatch?.status === "completed") return;
 
     // It fells weird doing all this queries. We could just do bulk, right?
+    let createdSentenceAudioJobs = 0;
     for (const note of batchNotes) {
       const existingSentenceNote = await tx.query.sentenceNotesTable.findFirst({
         where: eq(sentenceNotesTable.noteId, note.noteId),
@@ -457,6 +548,13 @@ export async function generateAndPersistSentenceBatch({
         sentenceId,
         noteId: note.noteId,
       });
+      await tx.insert(deckGenerationSentenceAudiosTable).values({
+        deckId,
+        sentenceId,
+        status: "queued",
+        createdAt: now,
+      });
+      createdSentenceAudioJobs += 1;
     }
 
     const completedRows = await tx
@@ -482,6 +580,7 @@ export async function generateAndPersistSentenceBatch({
         .update(deckGenerationJobsTable)
         .set({
           sentenceBatchCompleted: sql`${deckGenerationJobsTable.sentenceBatchCompleted} + 1`,
+          sentenceAudioTotal: sql`${deckGenerationJobsTable.sentenceAudioTotal} + ${createdSentenceAudioJobs}`,
           updatedAt: now,
         })
         .where(eq(deckGenerationJobsTable.deckId, deckId));
@@ -513,6 +612,101 @@ export async function markSentenceBatchFailed({
         eq(deckGenerationSentenceBatchesTable.deckId, deckId),
         eq(deckGenerationSentenceBatchesTable.batchIndex, batchIndex),
         ne(deckGenerationSentenceBatchesTable.status, "completed"),
+      ),
+    );
+}
+
+export async function ensureAndPersistSentenceAudio({
+  deckId,
+  sentenceId,
+}: {
+  deckId: string;
+  sentenceId: string;
+}) {
+  const existingSentenceAudio = await db.query.deckGenerationSentenceAudiosTable.findFirst({
+    where: and(
+      eq(deckGenerationSentenceAudiosTable.deckId, deckId),
+      eq(deckGenerationSentenceAudiosTable.sentenceId, sentenceId),
+    ),
+  });
+
+  if (!existingSentenceAudio) throw new Error("Sentence audio job not found");
+  if (existingSentenceAudio.status === "completed") return await getDeckGenerationProgress(deckId);
+
+  const sentence = await db.query.sentencesTable.findFirst({
+    where: eq(sentencesTable.id, sentenceId),
+  });
+
+  if (!sentence) throw new Error("Sentence not found");
+
+  const objectKey =
+    sentence.audioUrl ??
+    (await generateAndUploadSentenceAudio(sentence.simplifiedHanzi, sentenceId));
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    if (!sentence.audioUrl) {
+      await tx
+        .update(sentencesTable)
+        .set({
+          audioUrl: objectKey,
+          updatedAt: now,
+        })
+        .where(eq(sentencesTable.id, sentenceId));
+    }
+
+    const completedRows = await tx
+      .update(deckGenerationSentenceAudiosTable)
+      .set({
+        status: "completed",
+        error: null,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(deckGenerationSentenceAudiosTable.deckId, deckId),
+          eq(deckGenerationSentenceAudiosTable.sentenceId, sentenceId),
+          ne(deckGenerationSentenceAudiosTable.status, "completed"),
+        ),
+      )
+      .returning({ sentenceId: deckGenerationSentenceAudiosTable.sentenceId });
+
+    if (completedRows.length > 0) {
+      await tx
+        .update(deckGenerationJobsTable)
+        .set({
+          sentenceAudioCompleted: sql`${deckGenerationJobsTable.sentenceAudioCompleted} + 1`,
+          updatedAt: now,
+        })
+        .where(eq(deckGenerationJobsTable.deckId, deckId));
+    }
+  });
+
+  return await getDeckGenerationProgress(deckId);
+}
+
+// Death code
+export async function markSentenceAudioFailed({
+  deckId,
+  sentenceId,
+  error,
+}: {
+  deckId: string;
+  sentenceId: string;
+  error: unknown;
+}) {
+  await db
+    .update(deckGenerationSentenceAudiosTable)
+    .set({
+      status: "failed",
+      error: errorMessage(error),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(deckGenerationSentenceAudiosTable.deckId, deckId),
+        eq(deckGenerationSentenceAudiosTable.sentenceId, sentenceId),
+        ne(deckGenerationSentenceAudiosTable.status, "completed"),
       ),
     );
 }
@@ -727,6 +921,7 @@ async function getDeckPackageNotes(deckId: string) {
       diacriticPinyin: wordsTable.diacriticPinyin,
       meaning: wordsTable.meaning,
       sentence: sentencesTable.simplifiedHanzi,
+      sentenceAudioUrl: sentencesTable.audioUrl,
     })
     .from(notesTable)
     .innerJoin(wordsTable, eq(notesTable.wordId, wordsTable.id))
@@ -743,6 +938,9 @@ async function getDeckPackageNotes(deckId: string) {
 
   if (rows.length !== noteCount) {
     throw new Error("Deck has incomplete sentence generation");
+  }
+  if (rows.some((row) => row.sentenceAudioUrl == null)) {
+    throw new Error("Deck has incomplete sentence audio generation");
   }
 
   return rows;
@@ -776,6 +974,38 @@ async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
   }
 
   const objectKey = getWordAudioObjectKey(wordId);
+  await uploadAudioFile(objectKey, pcmToWav(Buffer.from(audioData, "base64")));
+
+  return objectKey;
+}
+
+async function generateAndUploadSentenceAudio(sentenceHanzi: string, sentenceId: string) {
+  const client = new GoogleGenAI({
+    apiKey: env.GEMINI_API_KEY,
+  });
+
+  const interaction = await client.interactions.create({
+    model: "gemini-3.1-flash-tts-preview",
+    input: `
+    ## Sample Context:
+    Add a short pause at the beginning and end so the sentence pronunciation is clear.
+    Read the full Mandarin sentence naturally and evenly for a language learner.
+
+    ## Transcript:
+    ${sentenceHanzi}
+    `,
+    response_format: { type: "audio" },
+    generation_config: {
+      speech_config: [{ voice: "Kore" }],
+    },
+  });
+
+  const audioData = interaction.output_audio?.data;
+  if (!audioData) {
+    throw new Error("No audio data from Gemini");
+  }
+
+  const objectKey = getSentenceAudioObjectKey(sentenceId);
   await uploadAudioFile(objectKey, pcmToWav(Buffer.from(audioData, "base64")));
 
   return objectKey;

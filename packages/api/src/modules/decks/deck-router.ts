@@ -32,6 +32,8 @@ export const deckRouter = {
           status: deck.status,
           sentenceBatchTotal: deck.generationJob?.sentenceBatchTotal ?? 0,
           sentenceBatchCompleted: deck.generationJob?.sentenceBatchCompleted ?? 0,
+          sentenceAudioTotal: deck.generationJob?.sentenceAudioTotal ?? 0,
+          sentenceAudioCompleted: deck.generationJob?.sentenceAudioCompleted ?? 0,
           wordAudioTotal: deck.generationJob?.wordAudioTotal ?? 0,
           wordAudioCompleted: deck.generationJob?.wordAudioCompleted ?? 0,
         }),

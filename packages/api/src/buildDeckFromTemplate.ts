@@ -723,6 +723,7 @@ async function getDeckPackageNotes(deckId: string) {
       diacriticPinyin: wordsTable.diacriticPinyin,
       meaning: wordsTable.meaning,
       sentence: sentencesTable.simplifiedHanzi,
+      sentencePinyin: sentencesTable.diacriticPinyin,
     })
     .from(notesTable)
     .innerJoin(wordsTable, eq(notesTable.wordId, wordsTable.id))

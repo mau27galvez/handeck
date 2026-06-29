@@ -7,6 +7,7 @@ const links = [
   { to: "/templates", label: "Templates" },
   { to: "/decks", label: "Decks" },
   { to: "/dictionary", label: "Dictionary" },
+  { to: "/store", label: "Store" },
 ] as const;
 
 export default function Header() {

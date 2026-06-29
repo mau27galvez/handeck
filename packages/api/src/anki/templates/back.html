@@ -1,16 +1,12 @@
-{{FrontSide}}
+<div class="handeck-card-back">
+  {{FrontSide}}
 
-<div class="handeck-answer">
-  <p class="answer-pinyin">{{Word Pinyin}}</p>
-  <p class="answer-meaning">{{Word Translations}}</p>
-  <section class="answer-sentence">
-    {{#Sentence Pinyin}}
-    <p class="answer-sentence-pinyin">{{Sentence Pinyin}}</p>
-    {{/Sentence Pinyin}} {{#Sentence Translation}}
+  <div class="handeck-answer">
+    {{#Sentence Translation}}
     <p class="answer-sentence-translation">{{Sentence Translation}}</p>
     {{/Sentence Translation}}
-  </section>
 
-  <!-- Reserved for word + sentence audio controls -->
-  <div class="audio-controls" hidden aria-hidden="true"></div>
+    <!-- Reserved for word + sentence audio controls -->
+    <div class="audio-controls" hidden aria-hidden="true"></div>
+  </div>
 </div>

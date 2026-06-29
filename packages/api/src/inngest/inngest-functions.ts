@@ -6,6 +6,7 @@ import {
   ensureAndPersistWordAudio,
   finalizeDeckGeneration,
   generateAndPersistSentenceBatch,
+  getDeckGenerationProgress,
   getDeckStatus,
   getNextDeckGenerationAction,
   getSentenceAudioEvents,
@@ -20,6 +21,8 @@ import {
   markSentenceBatchFailed,
   markWordAudioFailed,
 } from "../buildDeckFromTemplate";
+import { toDeckGenerationProgressPayload } from "../modules/decks/deck-progress";
+import { deckGenerationChannel } from "./channels";
 import {
   DECK_GENERATE_REQUESTED_EVENT,
   DECK_SENTENCE_AUDIO_ENSURE_EVENT,
@@ -52,6 +55,9 @@ const wordAudioEventSchema = z.object({
   windowStart: z.number(),
   windowEnd: z.number(),
 });
+
+type DeckGenerationProgress = Parameters<typeof toDeckGenerationProgressPayload>[0];
+type DeckGenerationProgressOverrides = Parameters<typeof toDeckGenerationProgressPayload>[1];
 
 const GEMINI_AUDIO_FLOW_CONTROL_KEY = `"gemini-audio"`;
 const GEMINI_AUDIO_PER_DECK_CONCURRENCY = Math.max(1, Math.ceil(env.GEMINI_AUDIO_CONCURRENCY / 2));
@@ -104,6 +110,14 @@ export const generateDeck = inngest.createFunction(
     onFailure: async ({ error, event, step }) => {
       const { deckId } = deckCoordinatorEventSchema.parse(event.data.event.data);
       await step.run("mark-deck-generation-failed", () => markDeckGenerationFailed(deckId, error));
+      const progress = await step.run("load-failed-deck-generation-progress", () =>
+        getDeckGenerationProgress(deckId),
+      );
+      await step.realtime.publish(
+        "publish-failed-deck-generation-progress",
+        deckGenerationChannel(deckId).progress,
+        deckGenerationProgressPayload(progress),
+      );
     },
   },
   async ({ event, step }) => {
@@ -116,6 +130,14 @@ export const generateDeck = inngest.createFunction(
 
     if (status === "queued") {
       await step.run("mark-deck-generation-started", () => markDeckGenerationStarted(deckId));
+      const progress = await step.run("load-started-deck-generation-progress", () =>
+        getDeckGenerationProgress(deckId),
+      );
+      await step.realtime.publish(
+        "publish-started-deck-generation-progress",
+        deckGenerationChannel(deckId).progress,
+        deckGenerationProgressPayload(progress),
+      );
     }
 
     const action = await step.run("load-next-deck-generation-action", () =>
@@ -128,6 +150,14 @@ export const generateDeck = inngest.createFunction(
 
     if (action.type === "finalize") {
       await step.run("finalize-deck-package", () => finalizeDeckGeneration(deckId));
+      const progress = await step.run("load-completed-deck-generation-progress", () =>
+        getDeckGenerationProgress(deckId),
+      );
+      await step.realtime.publish(
+        "publish-completed-deck-generation-progress",
+        deckGenerationChannel(deckId).progress,
+        deckGenerationProgressPayload(progress),
+      );
       return;
     }
 
@@ -276,6 +306,17 @@ export const generateSentenceBatch = inngest.createFunction(
           error,
         }),
       );
+      const progress = await step.run("load-failed-sentence-batch-progress", () =>
+        getDeckGenerationProgress(data.deckId),
+      );
+      await step.realtime.publish(
+        `publish-failed-sentence-batch-progress-${data.batchIndex}`,
+        deckGenerationChannel(data.deckId).progress,
+        deckGenerationProgressPayload(progress, {
+          status: "failed",
+          error: errorMessage(error),
+        }),
+      );
 
       await step.sendEvent("send-sentence-window-failed", {
         id: sentenceWindowSettledEventId(data),
@@ -291,12 +332,23 @@ export const generateSentenceBatch = inngest.createFunction(
   },
   async ({ event, step }) => {
     const data = sentenceBatchEventSchema.parse(event.data);
-    const settlement = await step.run("generate-and-persist-sentence-batch", async () => {
-      await generateAndPersistSentenceBatch(data);
-      return await getSentenceWindowSettlement(data.deckId, data.windowStart, data.windowEnd);
-    });
+    const result = await step.run("generate-and-persist-sentence-batch", async () => {
+      const progress = await generateAndPersistSentenceBatch(data);
+      const settlement = await getSentenceWindowSettlement(
+        data.deckId,
+        data.windowStart,
+        data.windowEnd,
+      );
 
-    if (settlement.settled && !settlement.failed) {
+      return { progress, settlement };
+    });
+    await step.realtime.publish(
+      `publish-sentence-batch-progress-${data.batchIndex}`,
+      deckGenerationChannel(data.deckId).progress,
+      deckGenerationProgressPayload(result.progress),
+    );
+
+    if (result.settlement.settled && !result.settlement.failed) {
       await step.sendEvent("send-sentence-window-completed", {
         id: sentenceWindowSettledEventId(data),
         name: DECK_SENTENCE_WINDOW_SETTLED_EVENT,
@@ -326,6 +378,17 @@ export const ensureSentenceAudio = inngest.createFunction(
           error,
         }),
       );
+      const progress = await step.run("load-failed-sentence-audio-progress", () =>
+        getDeckGenerationProgress(data.deckId),
+      );
+      await step.realtime.publish(
+        `publish-failed-sentence-audio-progress-${data.sentenceId}`,
+        deckGenerationChannel(data.deckId).progress,
+        deckGenerationProgressPayload(progress, {
+          status: "failed",
+          error: errorMessage(error),
+        }),
+      );
 
       await step.sendEvent("send-sentence-audio-window-failed", {
         id: sentenceAudioWindowSettledEventId(data),
@@ -341,12 +404,23 @@ export const ensureSentenceAudio = inngest.createFunction(
   },
   async ({ event, step }) => {
     const data = sentenceAudioEventSchema.parse(event.data);
-    const settlement = await step.run("ensure-and-persist-sentence-audio", async () => {
-      await ensureAndPersistSentenceAudio(data);
-      return await getSentenceAudioWindowSettlement(data.deckId, data.windowStart, data.windowEnd);
-    });
+    const result = await step.run("ensure-and-persist-sentence-audio", async () => {
+      const progress = await ensureAndPersistSentenceAudio(data);
+      const settlement = await getSentenceAudioWindowSettlement(
+        data.deckId,
+        data.windowStart,
+        data.windowEnd,
+      );
 
-    if (settlement.settled && !settlement.failed) {
+      return { progress, settlement };
+    });
+    await step.realtime.publish(
+      `publish-sentence-audio-progress-${data.sentenceId}`,
+      deckGenerationChannel(data.deckId).progress,
+      deckGenerationProgressPayload(result.progress),
+    );
+
+    if (result.settlement.settled && !result.settlement.failed) {
       await step.sendEvent("send-sentence-audio-window-completed", {
         id: sentenceAudioWindowSettledEventId(data),
         name: DECK_SENTENCE_AUDIO_WINDOW_SETTLED_EVENT,
@@ -376,6 +450,17 @@ export const ensureWordAudio = inngest.createFunction(
           error,
         }),
       );
+      const progress = await step.run("load-failed-word-audio-progress", () =>
+        getDeckGenerationProgress(data.deckId),
+      );
+      await step.realtime.publish(
+        `publish-failed-word-audio-progress-${data.wordId}`,
+        deckGenerationChannel(data.deckId).progress,
+        deckGenerationProgressPayload(progress, {
+          status: "failed",
+          error: errorMessage(error),
+        }),
+      );
 
       await step.sendEvent("send-word-audio-window-failed", {
         id: wordAudioWindowSettledEventId(data),
@@ -391,12 +476,23 @@ export const ensureWordAudio = inngest.createFunction(
   },
   async ({ event, step }) => {
     const data = wordAudioEventSchema.parse(event.data);
-    const settlement = await step.run("ensure-and-persist-word-audio", async () => {
-      await ensureAndPersistWordAudio(data);
-      return await getWordAudioWindowSettlement(data.deckId, data.windowStart, data.windowEnd);
-    });
+    const result = await step.run("ensure-and-persist-word-audio", async () => {
+      const progress = await ensureAndPersistWordAudio(data);
+      const settlement = await getWordAudioWindowSettlement(
+        data.deckId,
+        data.windowStart,
+        data.windowEnd,
+      );
 
-    if (settlement.settled && !settlement.failed) {
+      return { progress, settlement };
+    });
+    await step.realtime.publish(
+      `publish-word-audio-progress-${data.wordId}`,
+      deckGenerationChannel(data.deckId).progress,
+      deckGenerationProgressPayload(result.progress),
+    );
+
+    if (result.settlement.settled && !result.settlement.failed) {
       await step.sendEvent("send-word-audio-window-completed", {
         id: wordAudioWindowSettledEventId(data),
         name: DECK_WORD_AUDIO_WINDOW_SETTLED_EVENT,
@@ -452,4 +548,17 @@ function sentenceAudioWindowSettledEventId({
   windowEnd: number;
 }) {
   return `deck:${deckId}:sentence-audio-window:${windowStart}:${windowEnd}:settled`;
+}
+
+function deckGenerationProgressPayload(
+  progress: DeckGenerationProgress,
+  overrides?: DeckGenerationProgressOverrides,
+) {
+  return toDeckGenerationProgressPayload(progress, overrides);
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Deck generation failed";
 }

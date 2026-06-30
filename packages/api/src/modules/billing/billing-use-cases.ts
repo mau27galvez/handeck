@@ -50,6 +50,29 @@ export async function getKuaiBalance(customerId: string) {
   };
 }
 
+export async function assertEnoughKuais({
+  amount,
+  userEmail,
+  userName,
+}: {
+  amount: number;
+  userEmail: string;
+  userName: string;
+}) {
+  if (amount <= 0) return await getOrCreateDodoCustomer({ email: userEmail, name: userName });
+
+  const customer = await getOrCreateDodoCustomer({ email: userEmail, name: userName });
+  const balance = await getKuaiBalance(customer.customer_id);
+
+  if (balance.balance < amount) {
+    throw new ORPCError("PAYMENT_REQUIRED", {
+      message: `Not enough Kuais. This generation costs ${amount} Kuais, but you have ${balance.balance}.`,
+    });
+  }
+
+  return customer;
+}
+
 export async function debitKuais({
   amount,
   idempotencyKey,
@@ -65,14 +88,7 @@ export async function debitKuais({
 }) {
   if (amount <= 0) return;
 
-  const customer = await getOrCreateDodoCustomer({ email: userEmail, name: userName });
-  const balance = await getKuaiBalance(customer.customer_id);
-
-  if (balance.balance < amount) {
-    throw new ORPCError("PAYMENT_REQUIRED", {
-      message: `Not enough Kuais. This generation costs ${amount} Kuais, but you have ${balance.balance}.`,
-    });
-  }
+  const customer = await assertEnoughKuais({ amount, userEmail, userName });
 
   await dodoPayments.creditEntitlements.balances.createLedgerEntry(customer.customer_id, {
     credit_entitlement_id: env.DODO_PAYMENTS_KUAI_CREDIT_ENTITLEMENT_ID,

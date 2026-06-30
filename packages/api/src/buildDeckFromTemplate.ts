@@ -24,6 +24,7 @@ import { getSentenceAudioObjectKey, getWordAudioObjectKey, uploadAudioFile } fro
 import { and, asc, eq, gte, lt, ne, sql } from "drizzle-orm";
 import { DECK_GENERATE_REQUESTED_EVENT } from "./inngest/events";
 import { inngest } from "./inngest/inngest-client";
+import { assertEnoughKuais, debitKuais } from "./modules/billing/billing-use-cases";
 
 /**
  * IMPORTANT
@@ -37,12 +38,22 @@ export async function buildDeckFromTemplate({
   deckId,
   templateId,
   userId,
+  userEmail,
+  userName,
 }: {
   deckId: string;
   templateId: string;
   userId: string;
+  userEmail: string;
+  userName: string;
 }) {
   await getOwnedTemplate(templateId, userId);
+  const cost = await calculateDeckGenerationCost(templateId);
+  await assertEnoughKuais({
+    amount: cost.total,
+    userEmail,
+    userName,
+  });
   await prepareDeckGeneration({ deckId, templateId, userId });
 
   try {
@@ -59,6 +70,28 @@ export async function buildDeckFromTemplate({
     await abortDeckGeneration(deckId);
     throw error;
   }
+}
+
+export async function calculateDeckGenerationCost(templateId: string) {
+  const template = await db.transaction((tx) => getTemplateWithWords(tx, templateId));
+  if (template.templateWords.length === 0) throw new Error("Add words before generating a deck");
+
+  const uniqueWordsWithoutAudio = new Map(
+    template.templateWords
+      .map((templateWord) => templateWord.word)
+      .filter((word) => word.audioUrl == null)
+      .map((word) => [word.id, word]),
+  );
+  const sentenceCount = template.templateWords.length;
+  const sentenceAudioCount = sentenceCount;
+  const wordAudioCount = uniqueWordsWithoutAudio.size;
+
+  return {
+    sentenceCount,
+    sentenceAudioCount,
+    wordAudioCount,
+    total: sentenceCount + sentenceAudioCount + wordAudioCount,
+  };
 }
 
 async function abortDeckGeneration(deckId: string) {
@@ -745,7 +778,12 @@ export async function ensureAndPersistWordAudio({
    * It is cheaper on the happy path because Inngest bills by step/execution.
    */
   const objectKey =
-    word.audioUrl ?? (await generateAndUploadWordAudio(word.simplifiedHanzi, wordId));
+    word.audioUrl ??
+    (await generateAndUploadWordAudio({
+      wordHanzi: word.simplifiedHanzi,
+      numberedPinyin: word.numberedPinyin,
+      wordId,
+    }));
   const now = new Date();
 
   await db.transaction(async (tx) => {
@@ -820,10 +858,13 @@ export async function finalizeDeckGeneration(deckId: string) {
     where: eq(decksTable.id, deckId),
     with: {
       template: true,
+      user: true,
+      generationJob: true,
     },
   });
 
   if (!deck) throw new Error("Deck not found");
+  if (!deck.generationJob) throw new Error("Deck generation job not found");
 
   const notes = await getDeckPackageNotes(deckId);
   await writeDeckPackageToS3({
@@ -831,6 +872,23 @@ export async function finalizeDeckGeneration(deckId: string) {
     userId: deck.userId,
     templateName: deck.template.name,
     notes,
+  });
+  const cost = getCompletedDeckGenerationCost({
+    sentenceCount: notes.length,
+    sentenceAudioCount: deck.generationJob.sentenceAudioCompleted,
+    wordAudioCount: deck.generationJob.wordAudioCompleted,
+  });
+
+  // Since we only assert enough Kuais before starting the generation,
+  // we may encounter a race condition where another generation
+  // debited before and now the user does not have enough Kuais.
+  // I can't be bothered to deal with that right now 😪
+  await debitKuais({
+    amount: cost.total,
+    idempotencyKey: `deck:${deckId}:generation`,
+    reason: `Deck generation (${cost.wordAudioCount} word audios, ${cost.sentenceCount} sentences, ${cost.sentenceAudioCount} sentence audios)`,
+    userEmail: deck.user.email,
+    userName: deck.user.name,
   });
 
   const now = new Date();
@@ -856,6 +914,23 @@ export async function finalizeDeckGeneration(deckId: string) {
       })
       .where(eq(deckGenerationJobsTable.deckId, deckId));
   });
+}
+
+function getCompletedDeckGenerationCost({
+  sentenceCount,
+  sentenceAudioCount,
+  wordAudioCount,
+}: {
+  sentenceCount: number;
+  sentenceAudioCount: number;
+  wordAudioCount: number;
+}) {
+  return {
+    sentenceCount,
+    sentenceAudioCount,
+    wordAudioCount,
+    total: sentenceCount + sentenceAudioCount + wordAudioCount,
+  };
 }
 
 export async function markDeckGenerationFailed(deckId: string, error: unknown) {
@@ -946,7 +1021,15 @@ async function getDeckPackageNotes(deckId: string) {
   return rows;
 }
 
-async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
+async function generateAndUploadWordAudio({
+  wordHanzi,
+  numberedPinyin,
+  wordId,
+}: {
+  wordHanzi: string;
+  numberedPinyin: string;
+  wordId: string;
+}) {
   const client = new GoogleGenAI({
     apiKey: env.GEMINI_API_KEY,
   });
@@ -954,10 +1037,14 @@ async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
   const interaction = await client.interactions.create({
     model: "gemini-3.1-flash-tts-preview",
     input: `
-    ## Sample Context:
-    Add some space at the beggining and at the end. So the pronunciation can be clearly be ear from start to finish.
+    ## Context:
+    This is a Chinese language learning flashcard. Read the word in clear, standard Mandarin for a learner.
+    Add some space at the beginning and at the end so the pronunciation can be clearly heard from start to finish.
 
-    As in xing1
+    ## Pronunciation guide:
+    Follow this numbered pinyin exactly for tone and reading. For polyphonic characters, use this pronunciation (e.g. xing2 vs xing4), not another common reading.
+
+    ${numberedPinyin}
 
     ## Transcript:
     ${wordHanzi}
@@ -987,9 +1074,10 @@ async function generateAndUploadSentenceAudio(sentenceHanzi: string, sentenceId:
   const interaction = await client.interactions.create({
     model: "gemini-3.1-flash-tts-preview",
     input: `
-    ## Sample Context:
-    Add a short pause at the beginning and end so the sentence pronunciation is clear.
-    Read the full Mandarin sentence naturally and evenly for a language learner.
+    ## Context:
+    This is a Chinese language learning flashcard. Read the full sentence in clear, standard Mandarin for a learner.
+    Add some space at the beginning and at the end so the pronunciation can be clearly heard from start to finish.
+    Read naturally and evenly, at a pace suitable for language learners.
 
     ## Transcript:
     ${sentenceHanzi}

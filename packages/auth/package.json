@@ -13,9 +13,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dodopayments/better-auth": "^1.6.3",
     "@handeck/db": "workspace:*",
     "@handeck/env": "workspace:*",
     "better-auth": "catalog:",
+    "dodopayments": "^2.40.1",
     "dotenv": "catalog:",
     "uuid": "catalog:",
     "zod": "catalog:"

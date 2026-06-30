@@ -778,7 +778,12 @@ export async function ensureAndPersistWordAudio({
    * It is cheaper on the happy path because Inngest bills by step/execution.
    */
   const objectKey =
-    word.audioUrl ?? (await generateAndUploadWordAudio(word.simplifiedHanzi, wordId));
+    word.audioUrl ??
+    (await generateAndUploadWordAudio({
+      wordHanzi: word.simplifiedHanzi,
+      numberedPinyin: word.numberedPinyin,
+      wordId,
+    }));
   const now = new Date();
 
   await db.transaction(async (tx) => {
@@ -1016,7 +1021,15 @@ async function getDeckPackageNotes(deckId: string) {
   return rows;
 }
 
-async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
+async function generateAndUploadWordAudio({
+  wordHanzi,
+  numberedPinyin,
+  wordId,
+}: {
+  wordHanzi: string;
+  numberedPinyin: string;
+  wordId: string;
+}) {
   const client = new GoogleGenAI({
     apiKey: env.GEMINI_API_KEY,
   });
@@ -1024,10 +1037,14 @@ async function generateAndUploadWordAudio(wordHanzi: string, wordId: string) {
   const interaction = await client.interactions.create({
     model: "gemini-3.1-flash-tts-preview",
     input: `
-    ## Sample Context:
-    Add some space at the beggining and at the end. So the pronunciation can be clearly be ear from start to finish.
+    ## Context:
+    This is a Chinese language learning flashcard. Read the word in clear, standard Mandarin for a learner.
+    Add some space at the beginning and at the end so the pronunciation can be clearly heard from start to finish.
 
-    As in xing1
+    ## Pronunciation guide:
+    Follow this numbered pinyin exactly for tone and reading. For polyphonic characters, use this pronunciation (e.g. xing2 vs xing4), not another common reading.
+
+    ${numberedPinyin}
 
     ## Transcript:
     ${wordHanzi}
@@ -1057,9 +1074,10 @@ async function generateAndUploadSentenceAudio(sentenceHanzi: string, sentenceId:
   const interaction = await client.interactions.create({
     model: "gemini-3.1-flash-tts-preview",
     input: `
-    ## Sample Context:
-    Add a short pause at the beginning and end so the sentence pronunciation is clear.
-    Read the full Mandarin sentence naturally and evenly for a language learner.
+    ## Context:
+    This is a Chinese language learning flashcard. Read the full sentence in clear, standard Mandarin for a learner.
+    Add some space at the beginning and at the end so the pronunciation can be clearly heard from start to finish.
+    Read naturally and evenly, at a pace suitable for language learners.
 
     ## Transcript:
     ${sentenceHanzi}

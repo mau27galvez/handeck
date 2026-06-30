@@ -1,6 +1,10 @@
+import { KuaiBadge } from "@/components/kuai-badge";
+import { Route as rootRoute } from "@/routes/__root";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { UserButton } from "@handeck/ui/components/auth/user/user-button";
 import { cn } from "@handeck/ui/lib/utils";
+import { useRouteContext } from "@tanstack/react-router";
 
 const links = [
   { to: "/", label: "Home" },
@@ -12,6 +16,11 @@ const links = [
 
 export default function Header() {
   const { location } = useRouterState();
+  const { isAuthenticated, orpc } = useRouteContext({ from: rootRoute.id });
+  const { data: kuaiAccount } = useQuery({
+    ...orpc.billing.getKuaiAccount.queryOptions(),
+    enabled: !!isAuthenticated,
+  });
   const currentPath = location.pathname;
 
   return (
@@ -44,6 +53,15 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <Link
+              to="/store"
+              className="rounded-full outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label="View Kuai balance and store"
+            >
+              <KuaiBadge cost={kuaiAccount?.balance.balance ?? 0} />
+            </Link>
+          ) : null}
           <UserButton size="icon" visibleOptions={["sign-out", "account", "sign-in"]} />
         </div>
       </div>

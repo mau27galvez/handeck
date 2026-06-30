@@ -14,6 +14,7 @@ export const env = createEnv({
     DODO_PAYMENTS_MINI_PRODUCT_ID: z.string().min(1),
     DODO_PAYMENTS_REGULAR_PRODUCT_ID: z.string().min(1),
     DODO_PAYMENTS_IMPERIAL_PRODUCT_ID: z.string().min(1),
+    DODO_PAYMENTS_KUAI_CREDIT_ENTITLEMENT_ID: z.string().min(1),
     OPENROUTER_API_KEY: z.string().min(1),
     S3_BUCKET: z.string().min(1),
     S3_KEY_PREFIX: z

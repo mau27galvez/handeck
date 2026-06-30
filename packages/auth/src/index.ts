@@ -5,7 +5,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { v4 } from "uuid";
-import { dodopayments, checkout, portal, webhooks, usage } from "@dodopayments/better-auth";
+import { dodopayments, checkout, portal, usage } from "@dodopayments/better-auth";
 import DodoPayments from "dodopayments";
 
 const kuaiProducts = [
@@ -55,12 +55,6 @@ export function createAuth() {
             authenticatedUsersOnly: true,
           }),
           portal(),
-          webhooks({
-            webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET!,
-            onPayload: async (payload) => {
-              console.log("Received webhook:", payload.type);
-            },
-          }),
           usage(),
         ],
       }),

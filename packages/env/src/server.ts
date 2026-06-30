@@ -10,7 +10,6 @@ export const env = createEnv({
     CORS_ORIGIN: z.string().min(1).optional(),
     CEDICT_IMPORT_TOKEN: z.string().min(1).optional(),
     DODO_PAYMENTS_API_KEY: z.string().min(1),
-    DODO_PAYMENTS_WEBHOOK_SECRET: z.string().min(1),
     DODO_PAYMENTS_MINI_PRODUCT_ID: z.string().min(1),
     DODO_PAYMENTS_REGULAR_PRODUCT_ID: z.string().min(1),
     DODO_PAYMENTS_IMPERIAL_PRODUCT_ID: z.string().min(1),

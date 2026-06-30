@@ -21,11 +21,6 @@ export const deckGenerationStatuses = ["queued", "generating", "completed", "fai
 
 export const deckGenerationItemStatuses = ["queued", "completed", "failed"] as const;
 
-export const baseTemplatesTable = pgTable("base_templates", {
-  id: uuid().primaryKey(),
-  name: text().notNull(),
-});
-
 export const templatesTable = pgTable(
   "templates",
   {
@@ -34,7 +29,6 @@ export const templatesTable = pgTable(
       .notNull()
       .references(() => user.id),
     name: text().notNull(),
-    baseTemplateId: uuid().references(() => baseTemplatesTable.id),
     ...timestamps,
   },
   (table) => [index("templates_user_id_idx").on(table.userId)],
@@ -80,6 +74,30 @@ export const templateWordsTable = pgTable(
   (table) => [
     primaryKey({ columns: [table.templateId, table.wordId] }),
     index("template_words_word_id_idx").on(table.wordId),
+  ],
+);
+
+export const vocabPacksTable = pgTable("vocab_packs", {
+  id: uuid().primaryKey(),
+  name: text().notNull(),
+  description: text(),
+  ...timestamps,
+});
+
+export const vocabPackWordsTable = pgTable(
+  "vocab_pack_words",
+  {
+    vocabPackId: uuid()
+      .notNull()
+      .references(() => vocabPacksTable.id),
+    wordId: uuid()
+      .notNull()
+      .references(() => wordsTable.id),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.vocabPackId, table.wordId] }),
+    index("vocab_pack_words_word_id_idx").on(table.wordId),
   ],
 );
 
@@ -238,18 +256,10 @@ export const deckGenerationWordAudiosTable = pgTable(
   ],
 );
 
-export const baseTemplateRelations = relations(baseTemplatesTable, ({ many }) => ({
-  templates: many(templatesTable),
-}));
-
 export const templateRelations = relations(templatesTable, ({ one, many }) => ({
   user: one(user, {
     fields: [templatesTable.userId],
     references: [user.id],
-  }),
-  baseTemplate: one(baseTemplatesTable, {
-    fields: [templatesTable.baseTemplateId],
-    references: [baseTemplatesTable.id],
   }),
   templateWords: many(templateWordsTable),
   decks: many(decksTable),
@@ -257,7 +267,23 @@ export const templateRelations = relations(templatesTable, ({ one, many }) => ({
 
 export const wordRelations = relations(wordsTable, ({ many }) => ({
   templateWords: many(templateWordsTable),
+  vocabPackWords: many(vocabPackWordsTable),
   notes: many(notesTable),
+}));
+
+export const vocabPackRelations = relations(vocabPacksTable, ({ many }) => ({
+  vocabPackWords: many(vocabPackWordsTable),
+}));
+
+export const vocabPackWordRelations = relations(vocabPackWordsTable, ({ one }) => ({
+  vocabPack: one(vocabPacksTable, {
+    fields: [vocabPackWordsTable.vocabPackId],
+    references: [vocabPacksTable.id],
+  }),
+  word: one(wordsTable, {
+    fields: [vocabPackWordsTable.wordId],
+    references: [wordsTable.id],
+  }),
 }));
 
 export const templateWordRelations = relations(templateWordsTable, ({ one }) => ({

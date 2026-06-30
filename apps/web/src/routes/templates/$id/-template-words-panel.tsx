@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@handeck/ui/components/card";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Sparkles, X } from "lucide-react";
+import { Plus, Package, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ type TemplateWordsPanelProps = {
   templateId: string;
   words: TemplateWord[] | null | undefined;
   onAddWords: () => void;
+  onImportPack: () => void;
   onGenerate: () => void;
 };
 
@@ -28,6 +29,7 @@ export default function TemplateWordsPanel({
   templateId,
   words,
   onAddWords,
+  onImportPack,
   onGenerate,
 }: TemplateWordsPanelProps) {
   const queryClient = useQueryClient();
@@ -70,10 +72,22 @@ export default function TemplateWordsPanel({
             <CardTitle>Words</CardTitle>
             <CardDescription>Words included in this template.</CardDescription>
           </div>
-          <Button type="button" size="sm" className="shrink-0 gap-1.5" onClick={onAddWords}>
-            <Plus className="size-4" />
-            Add words
-          </Button>
+          <div className="flex shrink-0 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={onImportPack}
+            >
+              <Package className="size-4" />
+              Import pack
+            </Button>
+            <Button type="button" size="sm" className="gap-1.5" onClick={onAddWords}>
+              <Plus className="size-4" />
+              Add words
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-2 pt-4">

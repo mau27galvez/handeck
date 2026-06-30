@@ -1,14 +1,8 @@
 import { db } from "@handeck/db";
-import {
-  baseTemplatesTable,
-  templatesTable,
-  templateWordsTable,
-  wordsTable,
-} from "@handeck/db/schema";
+import { templatesTable, templateWordsTable, wordsTable } from "@handeck/db/schema";
 import { eq, and, desc, inArray, count } from "drizzle-orm";
 import z from "zod";
 import { protectedProcedure } from "../../index";
-import { getBaseTemplate } from "../base-templates/base-template-use-cases";
 import { getWord, getWordsByIds } from "../words/word-use-cases";
 import { getOwnedTemplate } from "./template-use-cases";
 
@@ -25,23 +19,17 @@ export const templateRouter = {
       z.object({
         id: z.uuid(),
         name: z.string(),
-        baseTemplateId: z.uuid().optional(),
       }),
     )
     .handler(async ({ input, context }) => {
       const trimmed = input.name.trim();
       if (!trimmed) throw new Error("Name is required");
 
-      if (input.baseTemplateId != null) {
-        await getBaseTemplate(input.baseTemplateId);
-      }
-
       const now = new Date();
       await db.insert(templatesTable).values({
         id: input.id,
         userId: context.session.user.id,
         name: trimmed,
-        baseTemplateId: input.baseTemplateId,
         createdAt: now,
         updatedAt: now,
       });
@@ -65,29 +53,16 @@ export const templateRouter = {
       .select({
         id: templatesTable.id,
         name: templatesTable.name,
-        baseTemplateId: templatesTable.baseTemplateId,
-        baseTemplate: baseTemplatesTable.name,
         updatedAt: templatesTable.updatedAt,
         wordCount: count(templateWordsTable.wordId),
       })
       .from(templatesTable)
-      .leftJoin(baseTemplatesTable, eq(templatesTable.baseTemplateId, baseTemplatesTable.id))
       .leftJoin(templateWordsTable, eq(templateWordsTable.templateId, templatesTable.id))
       .where(eq(templatesTable.userId, context.session.user.id))
-      .groupBy(
-        templatesTable.id,
-        templatesTable.name,
-        templatesTable.baseTemplateId,
-        templatesTable.updatedAt,
-        baseTemplatesTable.name,
-      )
+      .groupBy(templatesTable.id, templatesTable.name, templatesTable.updatedAt)
       .orderBy(desc(templatesTable.updatedAt));
 
-    return rows.map((template) => ({
-      ...template,
-      baseTemplateId: template.baseTemplateId ?? undefined,
-      baseTemplate: template.baseTemplate ?? undefined,
-    }));
+    return rows;
   }),
 
   remove: protectedProcedure

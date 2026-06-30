@@ -23,7 +23,7 @@ import { requireAuth } from "@/lib/route-auth";
 const packs = [
   {
     name: "Mini",
-    kuais: 1_600,
+    kuais: 600,
     slug: "kuai-mini",
     imageSrc: "/Mini.png",
     description: "A focused top-up for smaller deck runs.",

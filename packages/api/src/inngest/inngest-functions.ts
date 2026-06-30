@@ -63,16 +63,18 @@ const GEMINI_AUDIO_FLOW_CONTROL_KEY = `"gemini-audio"`;
 const GEMINI_AUDIO_PER_DECK_CONCURRENCY = Math.max(1, Math.ceil(env.GEMINI_AUDIO_CONCURRENCY / 2));
 
 /**
- * Word and sentence audio share one Gemini API key. The env-scoped flow-control
- * key makes both functions consume the same provider quota while keeping per-deck
- * concurrency below the full shared pool.
+ * Word and sentence audio share one Gemini API key. Env-scoped concurrency with
+ * a shared key makes both functions consume the same provider quota while keeping
+ * per-deck concurrency below the full shared pool.
+ *
+ * Throttle does not support env/account scope, so each function gets half the
+ * shared RPM budget to approximate the combined limit across both workers.
  */
 const GEMINI_AUDIO_FLOW_CONTROL = {
   throttle: {
-    limit: env.GEMINI_AUDIO_RPM,
+    limit: Math.ceil(env.GEMINI_AUDIO_RPM / 2),
     period: "1m" as const,
     key: GEMINI_AUDIO_FLOW_CONTROL_KEY,
-    scope: "env" as const,
   },
   concurrency: [
     {

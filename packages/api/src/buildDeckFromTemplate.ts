@@ -24,6 +24,7 @@ import { getSentenceAudioObjectKey, getWordAudioObjectKey, uploadAudioFile } fro
 import { and, asc, eq, gte, lt, ne, sql } from "drizzle-orm";
 import { DECK_GENERATE_REQUESTED_EVENT } from "./inngest/events";
 import { inngest } from "./inngest/inngest-client";
+import { debitKuais } from "./modules/billing/billing-use-cases";
 
 /**
  * IMPORTANT
@@ -37,12 +38,24 @@ export async function buildDeckFromTemplate({
   deckId,
   templateId,
   userId,
+  userEmail,
+  userName,
 }: {
   deckId: string;
   templateId: string;
   userId: string;
+  userEmail: string;
+  userName: string;
 }) {
   await getOwnedTemplate(templateId, userId);
+  const cost = await calculateDeckGenerationCost(templateId);
+  await debitKuais({
+    amount: cost.total,
+    idempotencyKey: `deck:${deckId}:generation`,
+    reason: `Deck generation (${cost.wordAudioCount} word audios, ${cost.sentenceCount} sentences, ${cost.sentenceAudioCount} sentence audios)`,
+    userEmail,
+    userName,
+  });
   await prepareDeckGeneration({ deckId, templateId, userId });
 
   try {
@@ -59,6 +72,28 @@ export async function buildDeckFromTemplate({
     await abortDeckGeneration(deckId);
     throw error;
   }
+}
+
+export async function calculateDeckGenerationCost(templateId: string) {
+  const template = await db.transaction((tx) => getTemplateWithWords(tx, templateId));
+  if (template.templateWords.length === 0) throw new Error("Add words before generating a deck");
+
+  const uniqueWordsWithoutAudio = new Map(
+    template.templateWords
+      .map((templateWord) => templateWord.word)
+      .filter((word) => word.audioUrl == null)
+      .map((word) => [word.id, word]),
+  );
+  const sentenceCount = template.templateWords.length;
+  const sentenceAudioCount = sentenceCount;
+  const wordAudioCount = uniqueWordsWithoutAudio.size;
+
+  return {
+    sentenceCount,
+    sentenceAudioCount,
+    wordAudioCount,
+    total: sentenceCount + sentenceAudioCount + wordAudioCount,
+  };
 }
 
 async function abortDeckGeneration(deckId: string) {

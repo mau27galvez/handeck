@@ -11,6 +11,8 @@ export const PLACEHOLDER_WORDS: PlaceholderWord[] = [
   { simplifiedHanzi: "请", pinyin: "qǐng", translation: "please" },
 ];
 
-export const KUAI_COST_PLACEHOLDER = 0;
+export function getDeckGenerationKuaiCost(wordCount: number) {
+  return wordCount * 3;
+}
 
 export const TEMPLATE_WORDS_PANEL_ID = "template-words-panel";

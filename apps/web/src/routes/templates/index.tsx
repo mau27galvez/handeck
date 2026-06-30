@@ -5,9 +5,7 @@ import { useState } from "react";
 import CreateTemplateDialog, { type CreateMode } from "./-create-template-dialog";
 import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
-
-// Placeholder kuai cost until real pricing exists
-const KUAI_COST_PLACEHOLDER = 0;
+import { getDeckGenerationKuaiCost } from "@/lib/template-placeholders";
 
 export const Route = createFileRoute("/templates/")({
   beforeLoad: requireAuth,
@@ -31,7 +29,7 @@ function toTemplateListItems(templates: TemplateListItemSource[]): TemplateListI
     _id: template.id,
     name: template.name,
     wordCount: template.wordCount,
-    creditCost: KUAI_COST_PLACEHOLDER,
+    creditCost: getDeckGenerationKuaiCost(template.wordCount),
     baseTemplate: template.baseTemplate,
   }));
 }

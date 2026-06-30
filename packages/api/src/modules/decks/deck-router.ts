@@ -56,6 +56,8 @@ export const deckRouter = {
         deckId: input.deckId,
         templateId: input.templateId,
         userId: context.session.user.id,
+        userEmail: context.session.user.email,
+        userName: context.session.user.name,
       });
     }),
 

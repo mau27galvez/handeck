@@ -2,7 +2,7 @@ import { Button } from "@handeck/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import CreateTemplateDialog, { type CreateMode } from "./-create-template-dialog";
+import CreateTemplateDialog from "./-create-template-dialog";
 import TemplateCard, { type TemplateListItem } from "./-template-card";
 import { requireAuth } from "@/lib/route-auth";
 import { getDeckGenerationKuaiCost } from "@/lib/template-placeholders";
@@ -21,7 +21,6 @@ type TemplateListItemSource = {
   id: string;
   name: string;
   wordCount: number;
-  baseTemplate?: string;
 };
 
 function toTemplateListItems(templates: TemplateListItemSource[]): TemplateListItem[] {
@@ -30,18 +29,15 @@ function toTemplateListItems(templates: TemplateListItemSource[]): TemplateListI
     name: template.name,
     wordCount: template.wordCount,
     creditCost: getDeckGenerationKuaiCost(template.wordCount),
-    baseTemplate: template.baseTemplate,
   }));
 }
 
 function TemplatesPageHeader({
-  onUseBase,
-  onCreateScratch,
-  showButtons,
+  onCreate,
+  showButton,
 }: {
-  onUseBase: () => void;
-  onCreateScratch: () => void;
-  showButtons: boolean;
+  onCreate: () => void;
+  showButton: boolean;
 }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
@@ -51,55 +47,30 @@ function TemplatesPageHeader({
           Create and manage reusable setups for submission and card generation.
         </p>
       </div>
-      {showButtons && (
-        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:pt-1">
-          <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
-            Use a base template
-          </Button>
-          <Button
-            variant="outline"
-            className="text-base"
-            size="lg"
-            type="button"
-            onClick={onCreateScratch}
-          >
-            Create from scratch
-          </Button>
-        </div>
+      {showButton && (
+        <Button
+          className="text-base sm:shrink-0 sm:pt-1"
+          size="lg"
+          type="button"
+          onClick={onCreate}
+        >
+          New template
+        </Button>
       )}
     </div>
   );
 }
 
-type CreateDialogState = { kind: "closed" } | { kind: "open"; mode: CreateMode };
-
-function EmptyTemplatesCTA({
-  onUseBase,
-  onCreateScratch,
-}: {
-  onUseBase: () => void;
-  onCreateScratch: () => void;
-}) {
+function EmptyTemplatesCTA({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
       <p className="text-lg font-semibold text-foreground sm:text-xl">No templates yet</p>
       <p className="max-w-md text-sm text-muted-foreground">
-        Start from a base template or an empty template, then add words when you edit.
+        Create a template, then add words from the dictionary or import vocab packs.
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button className="text-base" size="lg" type="button" onClick={onUseBase}>
-          Use a base template
-        </Button>
-        <Button
-          variant="outline"
-          className="text-base"
-          size="lg"
-          type="button"
-          onClick={onCreateScratch}
-        >
-          Create from scratch
-        </Button>
-      </div>
+      <Button className="text-base" size="lg" type="button" onClick={onCreate}>
+        New template
+      </Button>
     </div>
   );
 }
@@ -108,25 +79,13 @@ function Templates() {
   const { orpc } = Route.useRouteContext();
   const { data } = useSuspenseQuery(orpc.template.listForCurrentUser.queryOptions());
   const templates = toTemplateListItems(data);
-  const [dialog, setDialog] = useState<CreateDialogState>({ kind: "closed" });
-  const openFromBase = () => setDialog({ kind: "open", mode: "FromBase" });
-  const openScratch = () => setDialog({ kind: "open", mode: "scratch" });
+  const [createOpen, setCreateOpen] = useState(false);
   const hasTemplates = templates.length > 0;
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
-      <TemplatesPageHeader
-        onUseBase={openFromBase}
-        onCreateScratch={openScratch}
-        showButtons={hasTemplates}
-      />
-      <CreateTemplateDialog
-        open={dialog.kind === "open"}
-        onOpenChange={(open) => {
-          if (!open) setDialog({ kind: "closed" });
-        }}
-        mode={dialog.kind === "open" ? dialog.mode : "scratch"}
-      />
+      <TemplatesPageHeader onCreate={() => setCreateOpen(true)} showButton={hasTemplates} />
+      <CreateTemplateDialog open={createOpen} onOpenChange={setCreateOpen} />
       {hasTemplates ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (
@@ -134,7 +93,7 @@ function Templates() {
           ))}
         </div>
       ) : (
-        <EmptyTemplatesCTA onUseBase={openFromBase} onCreateScratch={openScratch} />
+        <EmptyTemplatesCTA onCreate={() => setCreateOpen(true)} />
       )}
     </div>
   );

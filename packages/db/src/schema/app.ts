@@ -79,7 +79,7 @@ export const templateWordsTable = pgTable(
 
 export const vocabPacksTable = pgTable("vocab_packs", {
   id: uuid().primaryKey(),
-  name: text().notNull(),
+  name: text().notNull().unique(),
   description: text(),
   ...timestamps,
 });

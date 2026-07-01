@@ -5,6 +5,7 @@ import z from "zod";
 import { protectedProcedure, publicProcedure } from "../../index";
 import { getOwnedTemplate } from "../templates/template-use-cases";
 import {
+  createVocabPack,
   getVocabPackWithWords,
   getVocabPacksWithWords,
   getAllVocabPacks,
@@ -17,8 +18,32 @@ const importVocabPacksInputSchema = z.object({
   vocabPackIds: z.array(z.uuid()).min(1).max(MAX_VOCAB_PACK_IMPORT_BATCH_SIZE),
 });
 
+const createVocabPackInputSchema = z.object({
+  importToken: z.string(),
+  name: z.string().trim().min(1),
+  description: z.string().trim().min(1).optional(),
+  words: z
+    .array(
+      z.object({
+        simplifiedHanzi: z.string().trim().min(1),
+        numberedPinyinSearch: z.string().trim().min(1),
+      }),
+    )
+    .min(1),
+  replaceExisting: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, replaces the existing vocab pack with the same name. Vocab pack names are unique.",
+    ),
+});
+
 export const vocabPackRouter = {
   list: publicProcedure.handler(async () => getAllVocabPacks()),
+
+  create: publicProcedure.input(createVocabPackInputSchema).handler(async ({ input }) => {
+    return createVocabPack(input);
+  }),
 
   getWords: protectedProcedure
     .input(z.object({ vocabPackId: z.uuid() }))

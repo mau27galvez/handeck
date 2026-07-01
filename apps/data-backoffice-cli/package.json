@@ -5,7 +5,8 @@
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun run seed.ts",
+    "seed:dictionary": "bun run seed-dictionary.ts",
+    "seed:hsk-vocab-packs": "bun run seed-hsk-vocab-packs.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

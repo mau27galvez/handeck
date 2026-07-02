@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseHskWordList, stripHskHanziSuffix } from "../hsk-vocab-pack-parser";
+import {
+  parseHskWordList,
+  extractHskPinyinFromLine,
+  stripHskHanziSuffix,
+} from "../hsk-vocab-pack-parser";
 
 describe("parseHskWordList", () => {
   test("parses hanzi and tone-aware numbered pinyin columns", () => {
@@ -26,6 +30,21 @@ describe("parseHskWordList", () => {
 
   test("throws for rows without hanzi and pinyin columns", () => {
     expect(() => parseHskWordList("1\t1\t爱")).toThrow("Invalid HSK row 1");
+  });
+
+  test("parses compound vowels with tone on the second vowel", () => {
+    expect(
+      parseHskWordList("6\t1\t白天\tbáitiān\t名\n11\t1\t边\tbiān\t名\n25\t1\t打电话\tdǎ diànhuà\n"),
+    ).toEqual([
+      { simplifiedHanzi: "白天", numberedPinyinSearch: "bai2tian1" },
+      { simplifiedHanzi: "边", numberedPinyinSearch: "bian1" },
+      { simplifiedHanzi: "打电话", numberedPinyinSearch: "da3dian4hua4" },
+    ]);
+  });
+
+  test("extracts pinyin up to the last tone-marked letter and ignores POS tags", () => {
+    expect(extractHskPinyinFromLine("7\t1（4）\t半\tbàn\t数、（副）")).toBe("bàn");
+    expect(extractHskPinyinFromLine("14\t1\t不客气\tbú kèqi")).toBe("bú kèqi");
   });
 });
 

@@ -1,9 +1,11 @@
-import { toNumberedPinyinSearchFromDiacritic } from "./utils";
+import { toNumberedPinyinSearchFromDiacritic } from "./pinyinSearchFromDiacritic";
 
 export type HskVocabPackWord = {
   simplifiedHanzi: string;
   numberedPinyinSearch: string;
 };
+
+const PINYIN_LETTER = /[a-zA-Z\u00c0-\u024f]/;
 
 export function parseHskWordList(contents: string) {
   const words: HskVocabPackWord[] = [];
@@ -16,10 +18,15 @@ export function parseHskWordList(contents: string) {
 
     const columns = line.split("\t");
     const rawHanzi = columns[2]?.trim();
-    const rawPinyin = columns[3]?.trim();
 
-    if (!rawHanzi || !rawPinyin) {
-      throw new Error(`Invalid HSK row ${index + 1}: expected hanzi and pinyin columns.`);
+    if (!rawHanzi) {
+      throw new Error(`Invalid HSK row ${index + 1}: expected hanzi column.`);
+    }
+
+    const rawPinyin = extractHskPinyinFromLine(line);
+
+    if (!rawPinyin) {
+      throw new Error(`Invalid HSK row ${index + 1}: expected pinyin after hanzi.`);
     }
 
     const normalizedPinyin = normalizeHskPinyin(rawPinyin);
@@ -31,6 +38,34 @@ export function parseHskWordList(contents: string) {
   }
 
   return words;
+}
+
+export function extractHskPinyinFromLine(line: string) {
+  const columns = line.split("\t");
+  const afterHanzi = columns.slice(3).join("\t");
+
+  let first = -1;
+  let last = -1;
+
+  for (let index = 0; index < afterHanzi.length; index += 1) {
+    const char = afterHanzi.charAt(index);
+
+    if (!isPinyinLetter(char)) {
+      continue;
+    }
+
+    if (first === -1) {
+      first = index;
+    }
+
+    last = index;
+  }
+
+  if (first === -1 || last === -1) {
+    return null;
+  }
+
+  return afterHanzi.slice(first, last + 1);
 }
 
 export function stripHskHanziSuffix(hanzi: string) {
@@ -49,5 +84,9 @@ export function normalizeHskPinyin(pinyin: string) {
     normalized = "èn";
   }
 
-  return normalized;
+  return normalized.replace(/[\s]+/g, "");
+}
+
+function isPinyinLetter(char: string) {
+  return PINYIN_LETTER.test(char);
 }

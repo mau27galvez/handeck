@@ -10,6 +10,11 @@ export type DictionaryWordCandidate = {
   meaning: string;
 };
 
+export type ResolvedVocabPackWordMatches = {
+  matchingWords: DictionaryWordCandidate[];
+  missingWords: VocabPackWordReference[];
+};
+
 export function wordReferenceKey(
   word: Pick<VocabPackWordReference, "simplifiedHanzi" | "numberedPinyinSearch">,
 ) {
@@ -23,31 +28,74 @@ export function isVariantOfDictionaryEntry(meaning: string) {
 /** Keep in sync with the SQL filter in getMatchingWordsByReferences. */
 export const NON_VARIANT_MEANING_LIKE_PATTERN = "variant of%";
 
-export function pickMatchingWordsByReferences(
+export function resolveReferencesToDictionaryWords(
   candidates: DictionaryWordCandidate[],
   wordReferences: VocabPackWordReference[],
 ) {
   const candidatesByKey = new Map<string, DictionaryWordCandidate[]>();
+  const candidatesByHanzi = new Map<string, DictionaryWordCandidate[]>();
 
   for (const candidate of candidates) {
     const key = wordReferenceKey(candidate);
-    const bucket = candidatesByKey.get(key);
-    if (bucket) {
-      bucket.push(candidate);
+    const keyBucket = candidatesByKey.get(key);
+    if (keyBucket) {
+      keyBucket.push(candidate);
     } else {
       candidatesByKey.set(key, [candidate]);
+    }
+
+    const hanziBucket = candidatesByHanzi.get(candidate.simplifiedHanzi);
+    if (hanziBucket) {
+      hanziBucket.push(candidate);
+    } else {
+      candidatesByHanzi.set(candidate.simplifiedHanzi, [candidate]);
     }
   }
 
   const matchingWords: DictionaryWordCandidate[] = [];
+  const missingWords: VocabPackWordReference[] = [];
 
   for (const reference of wordReferences) {
-    const keyCandidates = candidatesByKey.get(wordReferenceKey(reference)) ?? [];
-    const nonVariantCandidates = keyCandidates.filter(
-      (candidate) => !isVariantOfDictionaryEntry(candidate.meaning),
+    const hanziCandidates = getNonVariantCandidates(
+      candidatesByHanzi.get(reference.simplifiedHanzi) ?? [],
     );
-    matchingWords.push(...nonVariantCandidates);
+
+    if (hanziCandidates.length === 0) {
+      missingWords.push(reference);
+      continue;
+    }
+
+    const uniquePinyinSearch = new Set(
+      hanziCandidates.map((candidate) => candidate.numberedPinyinSearch),
+    );
+
+    if (uniquePinyinSearch.size === 1) {
+      matchingWords.push(hanziCandidates[0]!);
+      continue;
+    }
+
+    const exactMatches = getNonVariantCandidates(
+      candidatesByKey.get(wordReferenceKey(reference)) ?? [],
+    );
+
+    if (exactMatches.length > 0) {
+      matchingWords.push(...exactMatches);
+      continue;
+    }
+
+    missingWords.push(reference);
   }
 
-  return matchingWords;
+  return { matchingWords, missingWords };
+}
+
+export function pickMatchingWordsByReferences(
+  candidates: DictionaryWordCandidate[],
+  wordReferences: VocabPackWordReference[],
+) {
+  return resolveReferencesToDictionaryWords(candidates, wordReferences).matchingWords;
+}
+
+function getNonVariantCandidates(candidates: DictionaryWordCandidate[]) {
+  return candidates.filter((candidate) => !isVariantOfDictionaryEntry(candidate.meaning));
 }

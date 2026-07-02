@@ -30,7 +30,7 @@
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
     "inngest": "catalog:",
-    "pinyin-pro": "^3.28.1",
+    "pinyin-pro": "catalog:",
     "uuid": "catalog:",
     "zod": "catalog:"
   },

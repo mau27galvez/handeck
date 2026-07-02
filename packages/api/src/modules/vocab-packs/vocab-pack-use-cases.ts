@@ -7,6 +7,7 @@ import { v4 } from "uuid";
 import { validateImportToken } from "../words/word-use-cases";
 import {
   NON_VARIANT_MEANING_LIKE_PATTERN,
+  resolveReferencesToDictionaryWords,
   wordReferenceKey,
   type VocabPackWordReference,
 } from "./vocab-pack-word-matching";
@@ -90,10 +91,10 @@ export async function createVocabPack(input: CreateVocabPackInput) {
   validateImportToken(input.importToken);
 
   const wordReferences = dedupeWordReferences(input.words);
-  const matchingWords =
-    wordReferences.length === 0 ? [] : await getMatchingWordsByReferences(wordReferences);
-  const matchedKeys = new Set(matchingWords.map((word) => wordReferenceKey(word)));
-  const missingWords = wordReferences.filter((word) => !matchedKeys.has(wordReferenceKey(word)));
+  const { matchingWords, missingWords } =
+    wordReferences.length === 0
+      ? { matchingWords: [], missingWords: [] }
+      : await getMatchingWordsByReferences(wordReferences);
   const now = new Date();
   const vocabPackId = v4();
 
@@ -152,15 +153,12 @@ export async function createVocabPack(input: CreateVocabPackInput) {
 
 async function getMatchingWordsByReferences(wordReferences: VocabPackWordReference[]) {
   if (wordReferences.length === 0) {
-    return [];
+    return { matchingWords: [], missingWords: [] };
   }
 
-  const referenceTuples = sql.join(
-    wordReferences.map((ref) => sql`(${ref.simplifiedHanzi}, ${ref.numberedPinyinSearch})`),
-    sql`, `,
-  );
+  const uniqueHanzi = [...new Set(wordReferences.map((reference) => reference.simplifiedHanzi))];
 
-  return db
+  const candidates = await db
     .select({
       id: wordsTable.id,
       simplifiedHanzi: wordsTable.simplifiedHanzi,
@@ -170,10 +168,12 @@ async function getMatchingWordsByReferences(wordReferences: VocabPackWordReferen
     .from(wordsTable)
     .where(
       and(
-        sql`(${wordsTable.simplifiedHanzi}, ${wordsTable.numberedPinyinSearch}) in (${referenceTuples})`,
+        inArray(wordsTable.simplifiedHanzi, uniqueHanzi),
         sql`lower(trim(${wordsTable.meaning})) not like ${NON_VARIANT_MEANING_LIKE_PATTERN}`,
       ),
     );
+
+  return resolveReferencesToDictionaryWords(candidates, wordReferences);
 }
 
 function dedupeWordReferences(words: VocabPackWordReference[]) {

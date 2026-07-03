@@ -8,6 +8,7 @@ import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 
 import { env } from "./env";
+import { findKnownUnmatchedHskWord } from "./hsk-known-unmatched";
 import { parseHskWordList, type HskVocabPackWord } from "./hsk-vocab-pack-parser";
 
 type HskPackConfig = {
@@ -66,7 +67,21 @@ if (!importToken) {
 const client = createClient(appOrigin);
 
 for (const pack of hskPacks) {
-  const words = await readHskWords(pack.fileName);
+  const allWords = await readHskWords(pack.fileName);
+  const words: HskVocabPackWord[] = [];
+
+  for (const word of allWords) {
+    const knownUnmatched = findKnownUnmatchedHskWord(word);
+    if (knownUnmatched) {
+      console.warn(
+        `Skipping ${word.simplifiedHanzi} (${word.numberedPinyinSearch}) in ${pack.name}: ${knownUnmatched.reason}`,
+      );
+      continue;
+    }
+
+    words.push(word);
+  }
+
   const result = await client.vocabPack.create({
     importToken,
     name: pack.name,

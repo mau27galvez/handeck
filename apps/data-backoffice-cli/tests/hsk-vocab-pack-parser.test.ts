@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -45,6 +49,82 @@ describe("parseHskWordList", () => {
   test("extracts pinyin up to the last tone-marked letter and ignores POS tags", () => {
     expect(extractHskPinyinFromLine("7\t1（4）\t半\tbàn\t数、（副）")).toBe("bàn");
     expect(extractHskPinyinFromLine("14\t1\t不客气\tbú kèqi")).toBe("bú kèqi");
+  });
+
+  test("keeps only the first slash-separated pinyin alternative", () => {
+    expect(parseHskWordList("181\t1\t谁\tshéi/shuí\t代\n1689\t4\t熟\tshú/shóu\t形")).toEqual([
+      { simplifiedHanzi: "谁", numberedPinyinSearch: "shei2" },
+      { simplifiedHanzi: "熟", numberedPinyinSearch: "shu2" },
+    ]);
+  });
+
+  test("lowercases proper-noun pinyin, including multi-word names", () => {
+    expect(
+      parseHskWordList("69\t1\t汉语\tHànyǔ\t名\n2884\t5\t中华民族\tZhōnghuá Mínzú\t名"),
+    ).toEqual([
+      { simplifiedHanzi: "汉语", numberedPinyinSearch: "han4yu3" },
+      { simplifiedHanzi: "中华民族", numberedPinyinSearch: "zhong1hua2min2zu2" },
+    ]);
+  });
+
+  test("converts uppercase diacritic vowels that pinyin-pro cannot handle directly", () => {
+    expect(parseHskWordList("2809\t5\t欧洲\tŌuzhōu\t名")).toEqual([
+      { simplifiedHanzi: "欧洲", numberedPinyinSearch: "ou1zhou1" },
+    ]);
+  });
+
+  test("folds a trailing erhua r into the previous syllable as r5", () => {
+    expect(parseHskWordList("256\t1\t一点儿\tyīdiǎnr\n175\t2\t一会儿\tyīhuìr\t名")).toEqual([
+      { simplifiedHanzi: "一点儿", numberedPinyinSearch: "yi1dian3r5" },
+      { simplifiedHanzi: "一会儿", numberedPinyinSearch: "yi1hui4r5" },
+    ]);
+  });
+
+  test("splits syllables on apostrophes and hyphens used in HSK 7-9 idioms", () => {
+    expect(
+      parseHskWordList("5742\t7-9\t不言而喻\tbùyán’éryù\n5743\t7-9\t不厌其烦\tbùyàn-qífán"),
+    ).toEqual([
+      { simplifiedHanzi: "不言而喻", numberedPinyinSearch: "bu4yan2er2yu4" },
+      { simplifiedHanzi: "不厌其烦", numberedPinyinSearch: "bu4yan4qi2fan2" },
+    ]);
+  });
+
+  test("maps the interjection ǹg to CC-CEDICT's en reading", () => {
+    expect(parseHskWordList("1534\t4\t嗯\tǹg\t叹")).toEqual([
+      { simplifiedHanzi: "嗯", numberedPinyinSearch: "en4" },
+    ]);
+  });
+
+  test("keeps neutral-tone syllables as tone 5", () => {
+    expect(parseHskWordList("418\t2\t起来\tqǐlai\t动\n1290\t4\t好处\thǎochu\t名")).toEqual([
+      { simplifiedHanzi: "起来", numberedPinyinSearch: "qi3lai5" },
+      { simplifiedHanzi: "好处", numberedPinyinSearch: "hao3chu5" },
+    ]);
+  });
+
+  test("parses every real HSK word file without errors", () => {
+    const hskWordsRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "hsk-words");
+    const files = [
+      "HSK_Level_1_words.txt",
+      "HSK_Level_2_words.txt",
+      "HSK_Level_3_words.txt",
+      "HSK_Level_4_words.txt",
+      "HSK_Level_5_words.txt",
+      "HSK_Level_6_words.txt",
+      "HSK_Level_7-9_words.txt",
+    ];
+
+    for (const file of files) {
+      const contents = readFileSync(resolve(hskWordsRoot, file), "utf8");
+      const nonBlankLines = contents.split(/\r?\n/).filter((line) => line.trim().length > 0);
+      const words = parseHskWordList(contents);
+
+      expect(words.length).toBe(nonBlankLines.length);
+      for (const word of words) {
+        expect(word.simplifiedHanzi.length).toBeGreaterThan(0);
+        expect(word.numberedPinyinSearch).toMatch(/^[a-z1-5]+$/);
+      }
+    }
   });
 });
 

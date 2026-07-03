@@ -8,8 +8,10 @@ export function toNumberedPinyinSearchFromDiacritic(pinyin: string) {
   const withoutSpaces = pinyin.replace(/[\s]+/g, "");
   const parts = withoutSpaces.split(/['\u2019-]+/).filter((part) => part.length > 0);
   const syllables = parts.flatMap(splitDiacriticSyllables);
+  // pinyin-pro's symbolToNum fails on uppercase diacritic vowels (Ōu -> "Ōu0"),
+  // so lowercase before converting; the search form is lowercase anyway.
   const numberedSyllables = syllables.map((syllable) =>
-    convert(syllable, { format: "symbolToNum" }),
+    convert(syllable.toLowerCase(), { format: "symbolToNum" }),
   );
 
   return normalizeCedictNumberedSearch(numberedSyllables);

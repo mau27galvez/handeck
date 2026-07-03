@@ -36,12 +36,13 @@ describe("isSurnameOnlyDictionaryEntry", () => {
 
   test("does not treat regular entries as surname-only", () => {
     expect(isSurnameOnlyDictionaryEntry("hundred; numerous; all kinds of")).toBe(false);
+    expect(isSurnameOnlyDictionaryEntry("surname and given name; full name")).toBe(false);
     expect(isSurnameOnlyDictionaryEntry("(bound form) China; Chinese; surname Zhong")).toBe(false);
   });
 
-  test("matches the SQL not-like pattern used for vocab pack lookup", () => {
+  test("documents the naive surname SQL pattern that must not be used", () => {
     expect(SURNAME_ONLY_MEANING_LIKE_PATTERN).toBe("surname %");
-    expect(isSurnameOnlyDictionaryEntry("surname Bai")).toBe(true);
+    expect(isSurnameOnlyDictionaryEntry("surname and given name; full name")).toBe(false);
   });
 });
 
@@ -211,6 +212,25 @@ describe("resolveReferencesToDictionaryWords", () => {
     ).toEqual({
       matchingWords: [],
       missingWords: [{ simplifiedHanzi: "百", numberedPinyinSearch: "bai3" }],
+    });
+  });
+
+  test("matches lexical surname compounds like 姓名", () => {
+    const fullName = {
+      id: "full-name",
+      simplifiedHanzi: "姓名",
+      numberedPinyinSearch: "xing4ming2",
+      meaning: "surname and given name; full name",
+    };
+
+    expect(
+      resolveReferencesToDictionaryWords(
+        [fullName],
+        [{ simplifiedHanzi: "姓名", numberedPinyinSearch: "xing4ming2" }],
+      ),
+    ).toEqual({
+      matchingWords: [fullName],
+      missingWords: [],
     });
   });
 });

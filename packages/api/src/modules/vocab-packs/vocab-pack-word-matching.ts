@@ -27,15 +27,14 @@ export function isVariantOfDictionaryEntry(meaning: string) {
 
 export function isSurnameOnlyDictionaryEntry(meaning: string) {
   const senses = splitDictionaryMeaningSenses(meaning);
-  return (
-    senses.length > 0 && senses.every((sense) => sense.trim().toLowerCase().startsWith("surname "))
-  );
+  return senses.length > 0 && senses.every(isSurnameSense);
 }
 
 /** Keep in sync with the SQL filter in getMatchingWordsByReferences. */
 export const NON_VARIANT_MEANING_LIKE_PATTERN = "variant of%";
 
-/** Keep in sync with the SQL filter in getMatchingWordsByReferences. */
+/** CC-CEDICT surname readings use "surname <Name>". Not used in SQL because lexical
+ *  senses like "surname and given name" also start with "surname ". */
 export const SURNAME_ONLY_MEANING_LIKE_PATTERN = "surname %";
 
 export function resolveReferencesToDictionaryWords(
@@ -112,6 +111,16 @@ function getVocabPackMatchCandidates(candidates: DictionaryWordCandidate[]) {
       !isVariantOfDictionaryEntry(candidate.meaning) &&
       !isSurnameOnlyDictionaryEntry(candidate.meaning),
   );
+}
+
+function isSurnameSense(sense: string) {
+  const normalized = sense.trim().toLowerCase();
+  if (!normalized.startsWith("surname ")) {
+    return false;
+  }
+
+  const rest = normalized.slice("surname ".length);
+  return !/^(and|of|in|from|for|with|to|the|a|an)\b/.test(rest);
 }
 
 function splitDictionaryMeaningSenses(meaning: string) {

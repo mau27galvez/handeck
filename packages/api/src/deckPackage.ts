@@ -70,7 +70,14 @@ export async function writeDeckPackageToS3({
       deck.addNote(
         new Note({
           model: HANDECK_VOCAB_MODEL,
-          fields: [note.simplifiedHanzi, note.diacriticPinyin, note.meaning, note.sentence],
+          fields: [
+            note.simplifiedHanzi,
+            note.diacriticPinyin,
+            note.meaning,
+            note.sentence,
+            note.sentencePinyin,
+            "", // Sentence Translation
+          ],
           tags: ["handeck"],
           // we may want to review this in the future
           guid: `handeck:${note.id}`,

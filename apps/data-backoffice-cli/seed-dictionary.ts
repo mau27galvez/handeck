@@ -1,6 +1,5 @@
-import { createReadStream } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 import { RPC_PATH } from "@handeck/api/rpc-paths";
@@ -9,7 +8,8 @@ import { env } from "./env";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 
-import { parseCedictLine, type DictionaryEntry } from "./CedictParser";
+import { type DictionaryEntry } from "./CedictParser";
+import { loadDictionaryEntries } from "./cedict-entry-loader";
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 
@@ -46,29 +46,17 @@ if (shouldClear && client) {
   await clearDictionaryEntries();
 }
 
-let parsed = 0;
-let skipped = 0;
 let inserted = 0;
 let previewed = 0;
 let batch: DictionaryEntry[] = [];
 
-const lines = createInterface({
-  input: createReadStream(cedictPath, { encoding: "utf8" }),
-  crlfDelay: Infinity,
+const cedictContents = await readFile(cedictPath, "utf8");
+const { entries, parsed, skipped, customized } = loadDictionaryEntries(cedictContents, {
+  maxEntries,
+  includeCustomizations: maxEntries === undefined,
 });
 
-for await (const line of lines) {
-  if (maxEntries !== undefined && parsed >= maxEntries) {
-    break;
-  }
-
-  const entry = parseCedictLine(line);
-  if (!entry) {
-    skipped += 1;
-    continue;
-  }
-
-  parsed += 1;
+for (const entry of entries) {
   batch.push(entry);
 
   if (batch.length >= batchSize) {
@@ -83,8 +71,8 @@ if (batch.length > 0) {
 
 console.log(
   dryRun
-    ? `Parsed ${parsed} CEDICT entries (${skipped} skipped).`
-    : `Inserted ${inserted} dictionary entries (${skipped} skipped).`,
+    ? `Parsed ${parsed} CEDICT entries and ${customized} custom entries (${skipped} skipped).`
+    : `Inserted ${inserted} dictionary entries, including ${customized} custom entries (${skipped} skipped).`,
 );
 
 async function insertBatch(entries: DictionaryEntry[]): Promise<number> {

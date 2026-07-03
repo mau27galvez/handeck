@@ -16,7 +16,18 @@ export type DictionaryEntry = {
   meaning: string;
 };
 
+export type RawCedictEntry = {
+  simplifiedHanzi: string;
+  numberedPinyin: string;
+  senses: string[];
+};
+
 export function parseCedictLine(line: string) {
+  const rawEntry = parseCedictLineRaw(line);
+  return rawEntry ? finalizeDictionaryEntry(rawEntry) : null;
+}
+
+export function parseCedictLineRaw(line: string) {
   if (!line || line.startsWith("#")) {
     return null;
   }
@@ -33,17 +44,27 @@ export function parseCedictLine(line: string) {
   }
 
   const numberedPinyin = unwrapBracedLiterals(normalizeWhitespace(rawPinyin));
-  const searchPinyinSyllables = collectSearchPinyinSyllables(numberedPinyin);
 
   return {
     simplifiedHanzi: unwrapBracedLiterals(simplifiedHanzi),
+    numberedPinyin,
+    senses: keptSenses,
+  };
+}
+
+export function finalizeDictionaryEntry(rawEntry: RawCedictEntry): DictionaryEntry {
+  const { simplifiedHanzi, numberedPinyin, senses } = rawEntry;
+  const searchPinyinSyllables = collectSearchPinyinSyllables(numberedPinyin);
+
+  return {
+    simplifiedHanzi,
     numberedPinyin,
     diacriticPinyin: toDiacriticPinyin(numberedPinyin),
     normalizedPinyin: searchPinyinSyllables.map((syllable) => syllable.normalized).join(""),
     numberedPinyinSearch: searchPinyinSyllables.map((syllable) => syllable.numbered).join(""),
     pinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.normalized),
     numberedPinyinSyllables: searchPinyinSyllables.map((syllable) => syllable.numbered),
-    meaning: formatDefinitionPinyin(keepSimplifiedHanziInDefinition(keptSenses.join("; "))),
+    meaning: formatDefinitionPinyin(keepSimplifiedHanziInDefinition(senses.join("; "))),
   };
 }
 

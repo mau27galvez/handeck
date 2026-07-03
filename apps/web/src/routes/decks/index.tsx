@@ -2,6 +2,7 @@ import { Button } from "@handeck/ui/components/button";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import DeckCard, { type DeckListItem } from "./-deck-card";
+import { DeckProgressSubscription } from "./-deck-progress-subscription";
 import { requireAuth } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/decks/")({
@@ -45,10 +46,16 @@ function Decks() {
   });
   const decks: DeckListItem[] = data;
   const hasDecks = decks.length > 0;
+  const activeDecks = decks.filter(
+    (deck) => deck.status === "queued" || deck.status === "generating",
+  );
 
   return (
     <div className="px-4 pb-12 pt-4 md:px-12 lg:px-24 xl:px-32">
       <DecksPageHeader />
+      {activeDecks.map((deck) => (
+        <DeckProgressSubscription key={deck.id} deckId={deck.id} />
+      ))}
       {hasDecks ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {decks.map((deck) => (

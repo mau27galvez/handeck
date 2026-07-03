@@ -1,13 +1,6 @@
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@handeck/ui/components/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@handeck/ui/components/card";
 import { Button } from "@handeck/ui/components/button";
-import { BookOpen, Pencil, Hash } from "lucide-react";
+import { Pencil, Hash } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { KuaiBadge } from "@/components/kuai-badge";
 
@@ -16,11 +9,10 @@ export type TemplateListItem = {
   name: string;
   wordCount: number;
   creditCost?: number;
-  baseTemplate?: string;
 };
 
 export default function TemplateCard({ template }: { template: TemplateListItem }) {
-  const { _id, name, wordCount, creditCost, baseTemplate } = template;
+  const { _id, name, wordCount, creditCost } = template;
 
   return (
     <Card size="sm" className="flex flex-col">
@@ -34,12 +26,6 @@ export default function TemplateCard({ template }: { template: TemplateListItem 
             {name}
           </Link>
         </CardTitle>
-        {baseTemplate && (
-          <CardDescription className="mt-0.5 flex items-center gap-1">
-            <BookOpen className="size-3 shrink-0" />
-            {baseTemplate}
-          </CardDescription>
-        )}
       </CardHeader>
 
       <CardContent className="mt-auto flex flex-col gap-2 pt-0">

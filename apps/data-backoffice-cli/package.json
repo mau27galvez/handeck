@@ -5,7 +5,8 @@
   "license": "ISC",
   "author": "",
   "scripts": {
-    "seed": "bun run seed.ts",
+    "seed:dictionary": "bun run seed-dictionary.ts",
+    "seed:hsk-vocab-packs": "bun run seed-hsk-vocab-packs.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
@@ -14,6 +15,7 @@
     "@orpc/client": "catalog:",
     "@t3-oss/env-core": "^0.13.1",
     "dotenv": "catalog:",
+    "pinyin-pro": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

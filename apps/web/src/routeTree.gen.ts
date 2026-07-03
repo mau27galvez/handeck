@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TemplatesIndexRouteImport } from './routes/templates/index'
+import { Route as StoreIndexRouteImport } from './routes/store/index'
 import { Route as DictionaryIndexRouteImport } from './routes/dictionary/index'
 import { Route as DecksIndexRouteImport } from './routes/decks/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as StoreSuccessRouteImport } from './routes/store/success'
 import { Route as SettingsPathRouteImport } from './routes/settings/$path'
 import { Route as AuthPathRouteImport } from './routes/auth/$path'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
@@ -31,6 +33,11 @@ const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
   path: '/templates/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreIndexRoute = StoreIndexRouteImport.update({
+  id: '/store/',
+  path: '/store/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DictionaryIndexRoute = DictionaryIndexRouteImport.update({
   id: '/dictionary/',
   path: '/dictionary/',
@@ -44,6 +51,11 @@ const DecksIndexRoute = DecksIndexRouteImport.update({
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/auth/',
   path: '/auth/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreSuccessRoute = StoreSuccessRouteImport.update({
+  id: '/store/success',
+  path: '/store/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsPathRoute = SettingsPathRouteImport.update({
@@ -82,9 +94,11 @@ export interface FileRoutesByFullPath {
   '/api/inngest': typeof ApiInngestRoute
   '/auth/$path': typeof AuthPathRoute
   '/settings/$path': typeof SettingsPathRoute
+  '/store/success': typeof StoreSuccessRoute
   '/auth/': typeof AuthIndexRoute
   '/decks/': typeof DecksIndexRoute
   '/dictionary/': typeof DictionaryIndexRoute
+  '/store/': typeof StoreIndexRoute
   '/templates/': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -95,9 +109,11 @@ export interface FileRoutesByTo {
   '/api/inngest': typeof ApiInngestRoute
   '/auth/$path': typeof AuthPathRoute
   '/settings/$path': typeof SettingsPathRoute
+  '/store/success': typeof StoreSuccessRoute
   '/auth': typeof AuthIndexRoute
   '/decks': typeof DecksIndexRoute
   '/dictionary': typeof DictionaryIndexRoute
+  '/store': typeof StoreIndexRoute
   '/templates': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -109,9 +125,11 @@ export interface FileRoutesById {
   '/api/inngest': typeof ApiInngestRoute
   '/auth/$path': typeof AuthPathRoute
   '/settings/$path': typeof SettingsPathRoute
+  '/store/success': typeof StoreSuccessRoute
   '/auth/': typeof AuthIndexRoute
   '/decks/': typeof DecksIndexRoute
   '/dictionary/': typeof DictionaryIndexRoute
+  '/store/': typeof StoreIndexRoute
   '/templates/': typeof TemplatesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -124,9 +142,11 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/auth/$path'
     | '/settings/$path'
+    | '/store/success'
     | '/auth/'
     | '/decks/'
     | '/dictionary/'
+    | '/store/'
     | '/templates/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -137,9 +157,11 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/auth/$path'
     | '/settings/$path'
+    | '/store/success'
     | '/auth'
     | '/decks'
     | '/dictionary'
+    | '/store'
     | '/templates'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -150,9 +172,11 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/auth/$path'
     | '/settings/$path'
+    | '/store/success'
     | '/auth/'
     | '/decks/'
     | '/dictionary/'
+    | '/store/'
     | '/templates/'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -164,9 +188,11 @@ export interface RootRouteChildren {
   ApiInngestRoute: typeof ApiInngestRoute
   AuthPathRoute: typeof AuthPathRoute
   SettingsPathRoute: typeof SettingsPathRoute
+  StoreSuccessRoute: typeof StoreSuccessRoute
   AuthIndexRoute: typeof AuthIndexRoute
   DecksIndexRoute: typeof DecksIndexRoute
   DictionaryIndexRoute: typeof DictionaryIndexRoute
+  StoreIndexRoute: typeof StoreIndexRoute
   TemplatesIndexRoute: typeof TemplatesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -189,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store/': {
+      id: '/store/'
+      path: '/store'
+      fullPath: '/store/'
+      preLoaderRoute: typeof StoreIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dictionary/': {
       id: '/dictionary/'
       path: '/dictionary'
@@ -208,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth/'
       preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/success': {
+      id: '/store/success'
+      path: '/store/success'
+      fullPath: '/store/success'
+      preLoaderRoute: typeof StoreSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/$path': {
@@ -260,9 +300,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInngestRoute: ApiInngestRoute,
   AuthPathRoute: AuthPathRoute,
   SettingsPathRoute: SettingsPathRoute,
+  StoreSuccessRoute: StoreSuccessRoute,
   AuthIndexRoute: AuthIndexRoute,
   DecksIndexRoute: DecksIndexRoute,
   DictionaryIndexRoute: DictionaryIndexRoute,
+  StoreIndexRoute: StoreIndexRoute,
   TemplatesIndexRoute: TemplatesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,

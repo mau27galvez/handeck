@@ -12,6 +12,7 @@
   "dependencies": {
     "@better-auth-ui/core": "catalog:",
     "@better-auth-ui/react": "catalog:",
+    "@dodopayments/better-auth": "^1.6.3",
     "@handeck/api": "workspace:*",
     "@handeck/auth": "workspace:*",
     "@handeck/env": "workspace:*",

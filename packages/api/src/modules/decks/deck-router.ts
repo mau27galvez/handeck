@@ -1,13 +1,16 @@
 import { db } from "@handeck/db";
 import { decksTable } from "@handeck/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { getClientSubscriptionToken } from "inngest/react";
 import { z } from "zod";
 
 import { buildDeckFromTemplate } from "../../buildDeckFromTemplate";
 import { getDeckDownloadFilename, getDeckDownloadUrl, getDeckObjectKey } from "../../deckStorage";
+import { deckGenerationChannel } from "../../inngest/channels";
+import { inngest } from "../../inngest/inngest-client";
 import { protectedProcedure } from "../../index";
-import { getDeckGenerationProgressRatio } from "./deck-progress";
-import { getOwnedDeckWithTemplate } from "./deck-use-cases";
+import { toDeckGenerationProgressPayload } from "./deck-progress";
+import { getOwnedDeck, getOwnedDeckWithTemplate } from "./deck-use-cases";
 
 export const deckRouter = {
   listForCurrentUser: protectedProcedure.handler(async ({ context }) => {
@@ -21,6 +24,19 @@ export const deckRouter = {
     });
 
     return decks.map((deck) => {
+      const progress = toDeckGenerationProgressPayload({
+        deckId: deck.id,
+        status: deck.status,
+        sentenceBatchTotal: deck.generationJob?.sentenceBatchTotal ?? 0,
+        sentenceBatchCompleted: deck.generationJob?.sentenceBatchCompleted ?? 0,
+        sentenceAudioTotal: deck.generationJob?.sentenceAudioTotal ?? 0,
+        sentenceAudioCompleted: deck.generationJob?.sentenceAudioCompleted ?? 0,
+        wordAudioTotal: deck.generationJob?.wordAudioTotal ?? 0,
+        wordAudioCompleted: deck.generationJob?.wordAudioCompleted ?? 0,
+        error: deck.error,
+        updatedAt: deck.generationJob?.updatedAt ?? deck.updatedAt,
+      });
+
       return {
         id: deck.id,
         templateId: deck.templateId,
@@ -28,13 +44,7 @@ export const deckRouter = {
         createdAt: deck.createdAt,
         status: deck.status,
         error: deck.error,
-        progress: getDeckGenerationProgressRatio({
-          status: deck.status,
-          sentenceBatchTotal: deck.generationJob?.sentenceBatchTotal ?? 0,
-          sentenceBatchCompleted: deck.generationJob?.sentenceBatchCompleted ?? 0,
-          wordAudioTotal: deck.generationJob?.wordAudioTotal ?? 0,
-          wordAudioCompleted: deck.generationJob?.wordAudioCompleted ?? 0,
-        }),
+        progress: progress.progress,
       };
     });
   }),
@@ -46,6 +56,19 @@ export const deckRouter = {
         deckId: input.deckId,
         templateId: input.templateId,
         userId: context.session.user.id,
+        userEmail: context.session.user.email,
+        userName: context.session.user.name,
+      });
+    }),
+
+  getProgressSubscriptionToken: protectedProcedure
+    .input(z.object({ deckId: z.uuid() }))
+    .handler(async ({ input, context }) => {
+      await getOwnedDeck(input.deckId, context.session.user.id);
+
+      return getClientSubscriptionToken(inngest, {
+        channel: deckGenerationChannel(input.deckId),
+        topics: ["progress"],
       });
     }),
 

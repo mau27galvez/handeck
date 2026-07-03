@@ -63,6 +63,10 @@ export function getWordAudioObjectKey(wordId: string) {
   return `${env.S3_KEY_PREFIX}/word-audios/${wordId}.wav`;
 }
 
+export function getSentenceAudioObjectKey(sentenceId: string) {
+  return `${env.S3_KEY_PREFIX}/sentence-audios/${sentenceId}.wav`;
+}
+
 export async function uploadAudioFile(objectKey: string, body: Buffer) {
   const s3Client = createS3Client();
 

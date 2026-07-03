@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import AddWordsFromDictionaryDialog from "./-add-words-from-dictionary-dialog";
 import DeleteTemplateDialog from "./-delete-template-dialog";
 import GenerateDeckDialog from "./-generate-deck-dialog";
+import ImportVocabPackDialog from "./-import-vocab-pack-dialog";
 import TemplateEmptyPanel from "./-template-empty-panel";
 import TemplateWordsPanel from "./-template-words-panel";
 
@@ -43,6 +44,7 @@ function TemplateDetail() {
   const { data: words } = useQuery(orpc.template.getWords.queryOptions({ input: { templateId } }));
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addWordsOpen, setAddWordsOpen] = useState(false);
+  const [importPackOpen, setImportPackOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
 
   const existingWordKeys = useMemo(() => {
@@ -97,6 +99,7 @@ function TemplateDetail() {
           templateId={templateId}
           words={words}
           onAddWords={() => setAddWordsOpen(true)}
+          onImportPack={() => setImportPackOpen(true)}
           onGenerate={() => setGenerateOpen(true)}
         />
       </div>
@@ -112,6 +115,11 @@ function TemplateDetail() {
         onOpenChange={setAddWordsOpen}
         templateId={templateId}
         existingWordKeys={existingWordKeys}
+      />
+      <ImportVocabPackDialog
+        open={importPackOpen}
+        onOpenChange={setImportPackOpen}
+        templateId={templateId}
       />
       <GenerateDeckDialog
         open={generateOpen}

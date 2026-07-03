@@ -5,6 +5,28 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { v4 } from "uuid";
+import { dodopayments, checkout, portal, usage } from "@dodopayments/better-auth";
+import DodoPayments from "dodopayments";
+
+const kuaiProducts = [
+  {
+    productId: env.DODO_PAYMENTS_MINI_PRODUCT_ID,
+    slug: "kuai-mini",
+  },
+  {
+    productId: env.DODO_PAYMENTS_REGULAR_PRODUCT_ID,
+    slug: "kuai-regular",
+  },
+  {
+    productId: env.DODO_PAYMENTS_IMPERIAL_PRODUCT_ID,
+    slug: "kuai-imperial",
+  },
+];
+
+export const dodoPayments = new DodoPayments({
+  bearerToken: env.DODO_PAYMENTS_API_KEY,
+  environment: "test_mode", // or "live_mode" for production
+});
 
 export function createAuth() {
   const db = createDb();
@@ -21,7 +43,22 @@ export function createAuth() {
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: getAppOrigin(),
-    plugins: [tanstackStartCookies()],
+    plugins: [
+      tanstackStartCookies(),
+      dodopayments({
+        client: dodoPayments,
+        createCustomerOnSignUp: true,
+        use: [
+          checkout({
+            products: kuaiProducts,
+            successUrl: "/store/success",
+            authenticatedUsersOnly: true,
+          }),
+          portal(),
+          usage(),
+        ],
+      }),
+    ],
     advanced: {
       database: {
         generateId: () => v4(),

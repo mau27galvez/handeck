@@ -30,7 +30,7 @@ export const DICT_CUSTOMIZATIONS: DictCustomization[] = [
     reason: "HSK 7-9 word with no standalone CC-CEDICT entry.",
   },
   {
-    line: "口哨兒 口哨儿 [[kou3shao4r5]] /whistle; whistling (erhua form of 口哨)/",
+    line: "口哨兒 口哨儿 [[kou3shao4r5]] /whistle; whistling/erhua form of 口哨[kou3shao4]/",
     reason: "HSK 7-9 erhua word; CC-CEDICT only has non-erhua 口哨.",
   },
   {

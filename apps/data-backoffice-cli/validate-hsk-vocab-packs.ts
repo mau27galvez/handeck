@@ -11,6 +11,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  isSurnameOnlyDictionaryEntry,
   isVariantOfDictionaryEntry,
   resolveReferencesToDictionaryWords,
   type DictionaryWordCandidate,
@@ -45,7 +46,11 @@ for (const fileName of hskFiles) {
 
   for (const missing of missingWords) {
     const readings = (candidatesByHanzi.get(missing.simplifiedHanzi) ?? [])
-      .filter((candidate) => !isVariantOfDictionaryEntry(candidate.meaning))
+      .filter(
+        (candidate) =>
+          !isVariantOfDictionaryEntry(candidate.meaning) &&
+          !isSurnameOnlyDictionaryEntry(candidate.meaning),
+      )
       .map((candidate) => candidate.numberedPinyinSearch);
     console.log(
       `  MISSING ${missing.simplifiedHanzi} (${missing.numberedPinyinSearch}) cedict readings: [${[...new Set(readings)].join(", ")}]`,
@@ -68,7 +73,7 @@ function loadCedictCandidatesByHanzi() {
 
   for (const entry of entries) {
     // Mirrors the SQL pre-filter in getMatchingWordsByReferences.
-    if (entry.meaning.trim().toLowerCase().startsWith("variant of")) {
+    if (isVariantOfDictionaryEntry(entry.meaning) || isSurnameOnlyDictionaryEntry(entry.meaning)) {
       continue;
     }
 

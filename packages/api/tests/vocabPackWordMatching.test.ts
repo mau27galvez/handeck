@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  isSurnameOnlyDictionaryEntry,
   isVariantOfDictionaryEntry,
   NON_VARIANT_MEANING_LIKE_PATTERN,
   pickMatchingWordsByReferences,
   resolveReferencesToDictionaryWords,
+  SURNAME_ONLY_MEANING_LIKE_PATTERN,
 } from "../src/modules/vocab-packs/vocab-pack-word-matching";
 
 describe("isVariantOfDictionaryEntry", () => {
@@ -22,6 +24,24 @@ describe("isVariantOfDictionaryEntry", () => {
     expect(NON_VARIANT_MEANING_LIKE_PATTERN).toBe("variant of%");
     expect(isVariantOfDictionaryEntry("variant of 岸[àn]")).toBe(true);
     expect(isVariantOfDictionaryEntry("  Variant of 参[cān]")).toBe(true);
+  });
+});
+
+describe("isSurnameOnlyDictionaryEntry", () => {
+  test("detects surname-only dictionary entries", () => {
+    expect(isSurnameOnlyDictionaryEntry("surname Bai")).toBe(true);
+    expect(isSurnameOnlyDictionaryEntry("  Surname Zhong")).toBe(true);
+    expect(isSurnameOnlyDictionaryEntry("surname San; surname Shan")).toBe(true);
+  });
+
+  test("does not treat regular entries as surname-only", () => {
+    expect(isSurnameOnlyDictionaryEntry("hundred; numerous; all kinds of")).toBe(false);
+    expect(isSurnameOnlyDictionaryEntry("(bound form) China; Chinese; surname Zhong")).toBe(false);
+  });
+
+  test("matches the SQL not-like pattern used for vocab pack lookup", () => {
+    expect(SURNAME_ONLY_MEANING_LIKE_PATTERN).toBe("surname %");
+    expect(isSurnameOnlyDictionaryEntry("surname Bai")).toBe(true);
   });
 });
 
@@ -147,6 +167,50 @@ describe("resolveReferencesToDictionaryWords", () => {
     ).toEqual({
       matchingWords: [],
       missingWords: [{ simplifiedHanzi: "岸", numberedPinyinSearch: "an4" }],
+    });
+  });
+
+  test("rejects surname-only entries when a main entry exists", () => {
+    const surname = {
+      id: "surname",
+      simplifiedHanzi: "百",
+      numberedPinyinSearch: "bai3",
+      meaning: "surname Bai",
+    };
+    const main = {
+      id: "main",
+      simplifiedHanzi: "百",
+      numberedPinyinSearch: "bai3",
+      meaning: "hundred; numerous; all kinds of",
+    };
+
+    expect(
+      resolveReferencesToDictionaryWords(
+        [surname, main],
+        [{ simplifiedHanzi: "百", numberedPinyinSearch: "bai3" }],
+      ),
+    ).toEqual({
+      matchingWords: [main],
+      missingWords: [],
+    });
+  });
+
+  test("returns no matches when only surname-only entries match", () => {
+    expect(
+      resolveReferencesToDictionaryWords(
+        [
+          {
+            id: "surname",
+            simplifiedHanzi: "百",
+            numberedPinyinSearch: "bai3",
+            meaning: "surname Bai",
+          },
+        ],
+        [{ simplifiedHanzi: "百", numberedPinyinSearch: "bai3" }],
+      ),
+    ).toEqual({
+      matchingWords: [],
+      missingWords: [{ simplifiedHanzi: "百", numberedPinyinSearch: "bai3" }],
     });
   });
 });

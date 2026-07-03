@@ -25,8 +25,18 @@ export function isVariantOfDictionaryEntry(meaning: string) {
   return meaning.trim().toLowerCase().startsWith("variant of");
 }
 
+export function isSurnameOnlyDictionaryEntry(meaning: string) {
+  const senses = splitDictionaryMeaningSenses(meaning);
+  return (
+    senses.length > 0 && senses.every((sense) => sense.trim().toLowerCase().startsWith("surname "))
+  );
+}
+
 /** Keep in sync with the SQL filter in getMatchingWordsByReferences. */
 export const NON_VARIANT_MEANING_LIKE_PATTERN = "variant of%";
+
+/** Keep in sync with the SQL filter in getMatchingWordsByReferences. */
+export const SURNAME_ONLY_MEANING_LIKE_PATTERN = "surname %";
 
 export function resolveReferencesToDictionaryWords(
   candidates: DictionaryWordCandidate[],
@@ -56,7 +66,7 @@ export function resolveReferencesToDictionaryWords(
   const missingWords: VocabPackWordReference[] = [];
 
   for (const reference of wordReferences) {
-    const hanziCandidates = getNonVariantCandidates(
+    const hanziCandidates = getVocabPackMatchCandidates(
       candidatesByHanzi.get(reference.simplifiedHanzi) ?? [],
     );
 
@@ -74,7 +84,7 @@ export function resolveReferencesToDictionaryWords(
       continue;
     }
 
-    const exactMatches = getNonVariantCandidates(
+    const exactMatches = getVocabPackMatchCandidates(
       candidatesByKey.get(wordReferenceKey(reference)) ?? [],
     );
 
@@ -96,6 +106,17 @@ export function pickMatchingWordsByReferences(
   return resolveReferencesToDictionaryWords(candidates, wordReferences).matchingWords;
 }
 
-function getNonVariantCandidates(candidates: DictionaryWordCandidate[]) {
-  return candidates.filter((candidate) => !isVariantOfDictionaryEntry(candidate.meaning));
+function getVocabPackMatchCandidates(candidates: DictionaryWordCandidate[]) {
+  return candidates.filter(
+    (candidate) =>
+      !isVariantOfDictionaryEntry(candidate.meaning) &&
+      !isSurnameOnlyDictionaryEntry(candidate.meaning),
+  );
+}
+
+function splitDictionaryMeaningSenses(meaning: string) {
+  return meaning
+    .split("; ")
+    .map((sense) => sense.trim())
+    .filter(Boolean);
 }

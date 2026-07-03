@@ -8,6 +8,7 @@ import { validateImportToken } from "../words/word-use-cases";
 import {
   NON_VARIANT_MEANING_LIKE_PATTERN,
   resolveReferencesToDictionaryWords,
+  SURNAME_ONLY_MEANING_LIKE_PATTERN,
   wordReferenceKey,
   type VocabPackWordReference,
 } from "./vocab-pack-word-matching";
@@ -170,6 +171,7 @@ async function getMatchingWordsByReferences(wordReferences: VocabPackWordReferen
       and(
         inArray(wordsTable.simplifiedHanzi, uniqueHanzi),
         sql`lower(trim(${wordsTable.meaning})) not like ${NON_VARIANT_MEANING_LIKE_PATTERN}`,
+        sql`lower(trim(${wordsTable.meaning})) not like ${SURNAME_ONLY_MEANING_LIKE_PATTERN}`,
       ),
     );
 

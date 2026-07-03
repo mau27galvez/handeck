@@ -1,34 +1,36 @@
+import { readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Deck, Model, Note, Package } from "@handeck/genanki-ts";
 
 import { getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
+
+const templatesDir = join(dirname(fileURLToPath(import.meta.url)), "anki", "templates");
+const frontTemplate = readFileSync(join(templatesDir, "front.html"), "utf8");
+const backTemplate = readFileSync(join(templatesDir, "back.html"), "utf8");
+const cardStyles = readFileSync(join(templatesDir, "style.css"), "utf8");
 
 const HANDECK_VOCAB_MODEL = new Model({
   id: 1760000000,
   name: "Handeck Vocabulary (genanki)",
   fields: [
-    { name: "Hanzi", font: "Arial" },
-    { name: "Pinyin", font: "Arial" },
-    { name: "Meaning", font: "Arial" },
-    { name: "Sentence", font: "Arial" },
+    { name: "Word Hanzi", font: "Noto Sans SC" },
+    { name: "Word Pinyin", font: "Noto Sans SC" },
+    { name: "Word Translations", font: "Noto Sans SC" },
+    { name: "Sentence Hanzi", font: "Noto Sans SC" },
+    { name: "Sentence Pinyin", font: "Noto Sans SC" },
+    { name: "Sentence Translation", font: "Noto Sans SC" },
   ],
   templates: [
     {
       name: "Card 1",
-      qfmt: "{{Hanzi}}",
-      afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Pinyin}}\n\n{{Meaning}}\n\n{{#Sentence}}{{Sentence}}{{/Sentence}}",
+      qfmt: frontTemplate,
+      afmt: backTemplate,
     },
   ],
-  css: `.card {
-  font-family: arial;
-  font-size: 20px;
-  text-align: center;
-  color: black;
-  background-color: white;
-}
-`,
+  css: cardStyles,
 });
 
 type NoteData = {
@@ -37,6 +39,7 @@ type NoteData = {
   diacriticPinyin: string;
   meaning: string;
   sentence: string;
+  sentencePinyin: string;
 };
 
 type DeckPackageInput = {
@@ -67,7 +70,14 @@ export async function writeDeckPackageToS3({
       deck.addNote(
         new Note({
           model: HANDECK_VOCAB_MODEL,
-          fields: [note.simplifiedHanzi, note.diacriticPinyin, note.meaning, note.sentence],
+          fields: [
+            note.simplifiedHanzi,
+            note.diacriticPinyin,
+            note.meaning,
+            note.sentence,
+            note.sentencePinyin,
+            "", // Sentence Translation
+          ],
           tags: ["handeck"],
           // we may want to review this in the future
           guid: `handeck:${note.id}`,

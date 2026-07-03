@@ -40,7 +40,10 @@ function EmptyDecksCTA() {
 
 function Decks() {
   const { orpc } = Route.useRouteContext();
-  const { data } = useSuspenseQuery(orpc.deck.listForCurrentUser.queryOptions());
+  const { data } = useSuspenseQuery({
+    ...orpc.deck.listForCurrentUser.queryOptions(),
+    refetchInterval: 5_000,
+  });
   const decks: DeckListItem[] = data;
   const hasDecks = decks.length > 0;
   const activeDecks = decks.filter(

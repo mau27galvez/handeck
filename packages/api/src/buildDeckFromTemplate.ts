@@ -996,6 +996,7 @@ async function getDeckPackageNotes(deckId: string) {
       diacriticPinyin: wordsTable.diacriticPinyin,
       meaning: wordsTable.meaning,
       sentence: sentencesTable.simplifiedHanzi,
+      sentencePinyin: sentencesTable.diacriticPinyin,
       sentenceAudioUrl: sentencesTable.audioUrl,
     })
     .from(notesTable)

@@ -1,6 +1,12 @@
 export type VocabPackWordReference = {
   simplifiedHanzi: string;
   numberedPinyinSearch: string;
+  matchSelector?: VocabPackWordMatchSelector;
+};
+
+export type VocabPackWordMatchSelector = {
+  meaningStartsWith?: string;
+  meaningIncludes?: string;
 };
 
 export type DictionaryWordCandidate = {
@@ -19,6 +25,10 @@ export function wordReferenceKey(
   word: Pick<VocabPackWordReference, "simplifiedHanzi" | "numberedPinyinSearch">,
 ) {
   return `${word.simplifiedHanzi}\t${word.numberedPinyinSearch}`;
+}
+
+export function wordReferenceDedupeKey(word: VocabPackWordReference) {
+  return `${wordReferenceKey(word)}\t${JSON.stringify(word.matchSelector ?? null)}`;
 }
 
 export function isVariantOfDictionaryEntry(meaning: string) {
@@ -65,8 +75,9 @@ export function resolveReferencesToDictionaryWords(
   const missingWords: VocabPackWordReference[] = [];
 
   for (const reference of wordReferences) {
-    const hanziCandidates = getVocabPackMatchCandidates(
-      candidatesByHanzi.get(reference.simplifiedHanzi) ?? [],
+    const hanziCandidates = applyMatchSelector(
+      getVocabPackMatchCandidates(candidatesByHanzi.get(reference.simplifiedHanzi) ?? []),
+      reference.matchSelector,
     );
 
     if (hanziCandidates.length === 0) {
@@ -83,8 +94,9 @@ export function resolveReferencesToDictionaryWords(
       continue;
     }
 
-    const exactMatches = getVocabPackMatchCandidates(
-      candidatesByKey.get(wordReferenceKey(reference)) ?? [],
+    const exactMatches = applyMatchSelector(
+      getVocabPackMatchCandidates(candidatesByKey.get(wordReferenceKey(reference)) ?? []),
+      reference.matchSelector,
     );
 
     if (exactMatches.length > 0) {
@@ -103,6 +115,27 @@ export function pickMatchingWordsByReferences(
   wordReferences: VocabPackWordReference[],
 ) {
   return resolveReferencesToDictionaryWords(candidates, wordReferences).matchingWords;
+}
+
+function applyMatchSelector(
+  candidates: DictionaryWordCandidate[],
+  selector: VocabPackWordMatchSelector | undefined,
+) {
+  if (!selector) {
+    return candidates;
+  }
+
+  return candidates.filter((candidate) => {
+    if (selector.meaningStartsWith && !candidate.meaning.startsWith(selector.meaningStartsWith)) {
+      return false;
+    }
+
+    if (selector.meaningIncludes && !candidate.meaning.includes(selector.meaningIncludes)) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 function getVocabPackMatchCandidates(candidates: DictionaryWordCandidate[]) {

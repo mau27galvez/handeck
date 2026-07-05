@@ -5,10 +5,23 @@ export type HskVocabPackWord = {
   numberedPinyinSearch: string;
 };
 
+export type HskVocabPackWordWithMetadata = HskVocabPackWord & {
+  hskHanzi: string;
+};
+
 const PINYIN_LETTER = /[a-zA-Z\u00c0-\u024f]/;
 
 export function parseHskWordList(contents: string) {
-  const words: HskVocabPackWord[] = [];
+  return parseHskWordListWithMetadata(contents).map(
+    ({ simplifiedHanzi, numberedPinyinSearch }) => ({
+      simplifiedHanzi,
+      numberedPinyinSearch,
+    }),
+  );
+}
+
+export function parseHskWordListWithMetadata(contents: string) {
+  const words: HskVocabPackWordWithMetadata[] = [];
   const lines = contents.split(/\r?\n/);
 
   for (const [index, line] of lines.entries()) {
@@ -32,6 +45,7 @@ export function parseHskWordList(contents: string) {
     const normalizedPinyin = normalizeHskPinyin(rawPinyin);
 
     words.push({
+      hskHanzi: rawHanzi,
       simplifiedHanzi: stripHskHanziSuffix(rawHanzi),
       numberedPinyinSearch: toNumberedPinyinSearchFromDiacritic(normalizedPinyin),
     });

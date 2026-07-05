@@ -233,6 +233,68 @@ describe("resolveReferencesToDictionaryWords", () => {
       missingWords: [],
     });
   });
+
+  test("uses match selectors to choose one same-hanzi same-pinyin sense", () => {
+    const interjection = {
+      id: "interjection",
+      simplifiedHanzi: "喂",
+      numberedPinyinSearch: "wei4",
+      meaning: "hey; to feed (an animal, baby, invalid etc)",
+    };
+    const verb = {
+      id: "verb",
+      simplifiedHanzi: "喂",
+      numberedPinyinSearch: "wei4",
+      meaning: "to feed",
+    };
+
+    expect(
+      resolveReferencesToDictionaryWords(
+        [interjection, verb],
+        [
+          {
+            simplifiedHanzi: "喂",
+            numberedPinyinSearch: "wei4",
+            matchSelector: { meaningStartsWith: "to feed" },
+          },
+        ],
+      ),
+    ).toEqual({
+      matchingWords: [verb],
+      missingWords: [],
+    });
+  });
+
+  test("reports missing words when a match selector finds no candidate", () => {
+    expect(
+      resolveReferencesToDictionaryWords(
+        [
+          {
+            id: "belgium",
+            simplifiedHanzi: "比",
+            numberedPinyinSearch: "bi3",
+            meaning: "Belgium; Belgian; abbr. for 比利时[Bǐlìshí]",
+          },
+        ],
+        [
+          {
+            simplifiedHanzi: "比",
+            numberedPinyinSearch: "bi3",
+            matchSelector: { meaningStartsWith: "to compare" },
+          },
+        ],
+      ),
+    ).toEqual({
+      matchingWords: [],
+      missingWords: [
+        {
+          simplifiedHanzi: "比",
+          numberedPinyinSearch: "bi3",
+          matchSelector: { meaningStartsWith: "to compare" },
+        },
+      ],
+    });
+  });
 });
 
 describe("pickMatchingWordsByReferences", () => {

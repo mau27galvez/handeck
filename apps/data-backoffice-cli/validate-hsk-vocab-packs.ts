@@ -18,7 +18,8 @@ import {
 } from "@handeck/api/modules/vocab-packs/vocab-pack-word-matching";
 
 import { loadDictionaryEntries } from "./cedict-entry-loader";
-import { parseHskWordList } from "./hsk-vocab-pack-parser";
+import { applyHskVocabPackMatchOverrides } from "./hsk-vocab-pack-match-overrides";
+import { parseHskWordListWithMetadata } from "./hsk-vocab-pack-parser";
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 
@@ -37,7 +38,7 @@ let totalMissing = 0;
 
 for (const fileName of hskFiles) {
   const contents = readFileSync(resolve(packageRoot, "hsk-words", fileName), "utf8");
-  const words = parseHskWordList(contents);
+  const words = applyHskVocabPackMatchOverrides(parseHskWordListWithMetadata(contents));
   const candidates = words.flatMap((word) => candidatesByHanzi.get(word.simplifiedHanzi) ?? []);
   const { missingWords } = resolveReferencesToDictionaryWords(candidates, words);
 

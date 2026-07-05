@@ -8,7 +8,8 @@ import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 
 import { env } from "./env";
-import { parseHskWordList, type HskVocabPackWord } from "./hsk-vocab-pack-parser";
+import { applyHskVocabPackMatchOverrides } from "./hsk-vocab-pack-match-overrides";
+import { parseHskWordListWithMetadata, type HskVocabPackWord } from "./hsk-vocab-pack-parser";
 
 type HskPackConfig = {
   fileName: string;
@@ -93,7 +94,7 @@ for (const pack of hskPacks) {
 
 async function readHskWords(fileName: string): Promise<HskVocabPackWord[]> {
   const contents = await readFile(resolve(hskWordsRoot, fileName), "utf8");
-  return parseHskWordList(contents);
+  return applyHskVocabPackMatchOverrides(parseHskWordListWithMetadata(contents));
 }
 
 function createClient(origin: string): AppRouterClient {

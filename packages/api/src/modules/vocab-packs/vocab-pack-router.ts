@@ -27,6 +27,12 @@ const createVocabPackInputSchema = z.object({
       z.object({
         simplifiedHanzi: z.string().trim().min(1),
         numberedPinyinSearch: z.string().trim().min(1),
+        matchSelector: z
+          .object({
+            meaningStartsWith: z.string().trim().min(1).optional(),
+            meaningIncludes: z.string().trim().min(1).optional(),
+          })
+          .optional(),
       }),
     )
     .min(1),

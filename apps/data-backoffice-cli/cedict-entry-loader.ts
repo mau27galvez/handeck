@@ -51,7 +51,9 @@ export function loadDictionaryEntries(
 
   const rawEntriesByHanzi = indexRawEntriesByHanzi(rawEntries);
   const resolvedRawEntries = rawEntries.map((entry) =>
-    resolveVariantOnlyEntry(entry, rawEntriesByHanzi, new Set(), warn),
+    moveSameSimplifiedVariantSenseToFront(
+      resolveVariantOnlyEntry(entry, rawEntriesByHanzi, new Set(), warn),
+    ),
   );
   const entries = resolvedRawEntries.map(finalizeDictionaryEntry);
   const customized =
@@ -114,6 +116,10 @@ function resolveVariantOnlyEntry(
       return entry;
     }
 
+    if (isSameSimplifiedReadingVariant(entry, reference)) {
+      return entry;
+    }
+
     const resolvedTarget = resolveVariantOnlyEntry(
       target,
       rawEntriesByHanzi,
@@ -145,6 +151,55 @@ function isVariantSense(sense: string) {
 
 function rawEntryKey(entry: RawCedictEntry) {
   return `${entry.simplifiedHanzi}\t${numberedPinyinSearch(entry.numberedPinyin)}`;
+}
+
+function isSameSimplifiedReadingVariant(entry: RawCedictEntry, reference: VariantReference) {
+  return (
+    entry.simplifiedHanzi === reference.simplifiedHanzi &&
+    numberedPinyinSearch(entry.numberedPinyin) === reference.numberedPinyinSearch
+  );
+}
+
+function moveSameSimplifiedVariantSenseToFront(entry: RawCedictEntry): RawCedictEntry {
+  if (isVariantOnlyEntry(entry)) {
+    return entry;
+  }
+
+  const entryPinyinSearch = numberedPinyinSearch(entry.numberedPinyin);
+
+  for (const sense of entry.senses) {
+    const reference = parseEmbeddedVariantReference(sense);
+    if (
+      reference &&
+      entry.simplifiedHanzi === reference.simplifiedHanzi &&
+      entryPinyinSearch === reference.numberedPinyinSearch
+    ) {
+      return {
+        ...entry,
+        senses: [
+          formatRawVariantNote(reference),
+          ...entry.senses.filter((entrySense) => entrySense !== sense),
+          sense,
+        ],
+      };
+    }
+  }
+
+  return entry;
+}
+
+function parseEmbeddedVariantReference(sense: string) {
+  const variantIndex = sense.indexOf("variant of ");
+  if (variantIndex === -1) {
+    return null;
+  }
+
+  let referenceText = sense.slice(variantIndex);
+  if (referenceText.endsWith(")")) {
+    referenceText = referenceText.slice(0, -1);
+  }
+
+  return parseVariantReference(referenceText);
 }
 
 function parseVariantReference(sense: string): VariantReference | null {
@@ -218,6 +273,12 @@ function findVariantTarget(
 
 function formatVariantNote(reference: VariantReference) {
   const pinyin = reference.notePinyin ? `[${toDiacriticPinyin(reference.notePinyin)}]` : "";
+  const qualifier = reference.qualifier ? ` ${reference.qualifier}` : "";
+  return `variant of ${reference.simplifiedHanzi}${pinyin}${qualifier}`;
+}
+
+function formatRawVariantNote(reference: VariantReference) {
+  const pinyin = reference.notePinyin ? `[${reference.notePinyin}]` : "";
   const qualifier = reference.qualifier ? ` ${reference.qualifier}` : "";
   return `variant of ${reference.simplifiedHanzi}${pinyin}${qualifier}`;
 }

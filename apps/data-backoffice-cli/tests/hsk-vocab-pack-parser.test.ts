@@ -6,6 +6,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   parseHskWordList,
+  parseHskWordListWithMetadata,
   extractHskPinyinFromLine,
   stripHskHanziSuffix,
 } from "../hsk-vocab-pack-parser";
@@ -22,6 +23,13 @@ describe("parseHskWordList", () => {
     expect(parseHskWordList("10\t1\t本1\tběn\t量\n1646\t4（7-9）\t生2\tshēng\t形")).toEqual([
       { simplifiedHanzi: "本", numberedPinyinSearch: "ben3" },
       { simplifiedHanzi: "生", numberedPinyinSearch: "sheng1" },
+    ]);
+  });
+
+  test("preserves raw HSK disambiguation suffixes as metadata", () => {
+    expect(parseHskWordListWithMetadata("218\t1\t喂1\twèi\t叹\n3183\t5\t喂2\twèi\t动")).toEqual([
+      { hskHanzi: "喂1", simplifiedHanzi: "喂", numberedPinyinSearch: "wei4" },
+      { hskHanzi: "喂2", simplifiedHanzi: "喂", numberedPinyinSearch: "wei4" },
     ]);
   });
 

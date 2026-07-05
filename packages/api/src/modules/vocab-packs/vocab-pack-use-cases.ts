@@ -8,7 +8,7 @@ import { validateImportToken } from "../words/word-use-cases";
 import {
   NON_VARIANT_MEANING_LIKE_PATTERN,
   resolveReferencesToDictionaryWords,
-  wordReferenceKey,
+  wordReferenceDedupeKey,
   type VocabPackWordReference,
 } from "./vocab-pack-word-matching";
 
@@ -181,7 +181,7 @@ function dedupeWordReferences(words: VocabPackWordReference[]) {
   const deduped: VocabPackWordReference[] = [];
 
   for (const word of words) {
-    const key = wordReferenceKey(word);
+    const key = wordReferenceDedupeKey(word);
     if (seen.has(key)) {
       continue;
     }

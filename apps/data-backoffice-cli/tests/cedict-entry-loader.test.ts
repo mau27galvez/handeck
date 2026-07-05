@@ -54,6 +54,50 @@ describe("loadDictionaryEntries", () => {
     });
   });
 
+  test("does not resolve variants that collapse to the same simplified reading as their target", () => {
+    const { entries } = loadDictionaryEntries(
+      [
+        "個 个 [[ge4]] /classifier for people or objects in general/individual/this/that/",
+        "箇 个 [[ge4]] /variant of 個|个[ge4]/",
+      ].join("\n"),
+      { includeCustomizations: false },
+    );
+
+    const ge4Entries = entries.filter(
+      (entry) => entry.simplifiedHanzi === "个" && entry.numberedPinyinSearch === "ge4",
+    );
+
+    expect(ge4Entries).toHaveLength(2);
+    expect(ge4Entries).toEqual([
+      expect.objectContaining({
+        meaning: "classifier for people or objects in general; individual; this; that",
+      }),
+      expect.objectContaining({ meaning: "variant of 个[gè]" }),
+    ]);
+  });
+
+  test("keeps mixed-sense same-simplified variants excluded from vocab-pack matching", () => {
+    const { entries } = loadDictionaryEntries(
+      [
+        "和 和 [[he2]] /(joining two nouns) and; together with; with/(bound form) harmonious/",
+        "龢 和 [[he2]] /(literary) harmonious (variant of 和[he2])/",
+      ].join("\n"),
+      { includeCustomizations: false },
+    );
+
+    const he2Variant = entries.find(
+      (entry) =>
+        entry.simplifiedHanzi === "和" &&
+        entry.numberedPinyinSearch === "he2" &&
+        entry.meaning.includes("(literary) harmonious"),
+    );
+
+    expect(he2Variant).toMatchObject({
+      meaning: "variant of 和[hé]; (literary) harmonious (variant of 和[hé])",
+    });
+    expect(isVariantOfDictionaryEntry(he2Variant!.meaning)).toBe(true);
+  });
+
   test("resolves chained variants with a cycle guard", () => {
     const { entries } = loadDictionaryEntries(
       [

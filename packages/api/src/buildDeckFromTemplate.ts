@@ -1129,6 +1129,8 @@ function windowSettlement(
 }
 
 const SENTENCE_GENERATION_PROMPT_BATCH_SIZE = 10;
+const SENTENCE_GENERATION_PREFERRED_MAX_CHARS = 25;
+const SENTENCE_GENERATION_PREFERRED_MAX_PUNCTUATION_MARKS = 1;
 const OPENROUTER_MODEL = "deepseek/deepseek-v4-flash";
 const generationResponseSchema = z.object({
   words: z.array(
@@ -1159,7 +1161,7 @@ async function generateSentences(words: string[]) {
         {
           role: "system",
           content: `
-                You generate natural Mandarin Chinese sentences for foreign students learning Chinese. Prefer standard, clear, and slightly formal Chinese over slang, dialect, or overly casual phrasing. Avoid generic textbook sentences and very common facts unless they are the most natural choice. Vary sentence structure, setting, verb choice, and perspective across generations. Every generated Chinese sentence must contain the provided word exactly. Return only JSON matching the provided schema.
+                You generate natural Mandarin Chinese sentences for foreign students learning Chinese. Use short sentences: ${SENTENCE_GENERATION_PREFERRED_MAX_CHARS} characters or fewer, with at most ${SENTENCE_GENERATION_PREFERRED_MAX_PUNCTUATION_MARKS} punctuation mark. Avoid long or compound sentences, clauses joined by commas, lists, semicolons, and conjunction-heavy phrasing. Prefer one clear action or state. Prefer standard, clear, and slightly formal Chinese over slang, dialect, or overly casual phrasing. Avoid generic textbook sentences and very common facts unless they are the most natural choice. Vary sentence structure, setting, verb choice, and perspective across generations. Every generated Chinese sentence must contain the provided word exactly. Return only JSON matching the provided schema.
                 `,
         },
         { role: "user", content: JSON.stringify(words) },
@@ -1171,7 +1173,9 @@ async function generateSentences(words: string[]) {
   if (!content) throw new Error("No response from OpenRouter");
 
   const parsed = generationResponseSchema.parse(JSON.parse(content));
-  const cleanResponse = new Map(parsed.words.map((word) => [word.word, word.sentence]));
+  const cleanResponse = new Map(
+    parsed.words.map((word) => [word.word.trim(), word.sentence.trim()]),
+  );
 
   return cleanResponse;
 }

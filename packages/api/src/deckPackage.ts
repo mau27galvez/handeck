@@ -40,6 +40,7 @@ type NoteData = {
   meaning: string;
   sentence: string;
   sentencePinyin: string;
+  sentenceTranslation: string;
 };
 
 type DeckPackageInput = {
@@ -76,7 +77,7 @@ export async function writeDeckPackageToS3({
             note.meaning,
             note.sentence,
             note.sentencePinyin,
-            "", // Sentence Translation
+            note.sentenceTranslation,
           ],
           tags: ["handeck"],
           // we may want to review this in the future

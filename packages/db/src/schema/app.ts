@@ -124,6 +124,7 @@ export const sentencesTable = pgTable("sentences", {
   id: uuid().primaryKey(),
   simplifiedHanzi: text().notNull(),
   diacriticPinyin: text().notNull(),
+  translation: text().notNull(),
   audioUrl: text(),
   ...timestamps,
 });

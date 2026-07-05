@@ -560,18 +560,19 @@ export async function generateAndPersistSentenceBatch({
       if (existingSentenceNote) continue;
 
       // What if there are polyphonic characters? Shouldn't we use id?
-      const sentence = generatedSentences.get(note.simplifiedHanzi);
-      if (!sentence) {
+      const generatedSentence = generatedSentences.get(note.simplifiedHanzi);
+      if (!generatedSentence) {
         throw new Error(`No sentence generated for ${note.simplifiedHanzi}`);
       }
 
       const sentenceId = v4();
       await tx.insert(sentencesTable).values({
         id: sentenceId,
-        simplifiedHanzi: sentence,
-        diacriticPinyin: segment(sentence, {
+        simplifiedHanzi: generatedSentence.sentence,
+        diacriticPinyin: segment(generatedSentence.sentence, {
           format: OutputFormat.PinyinString,
         }),
+        translation: generatedSentence.translation,
         createdAt: now,
         updatedAt: now,
       });
@@ -997,6 +998,7 @@ async function getDeckPackageNotes(deckId: string) {
       meaning: wordsTable.meaning,
       sentence: sentencesTable.simplifiedHanzi,
       sentencePinyin: sentencesTable.diacriticPinyin,
+      sentenceTranslation: sentencesTable.translation,
       sentenceAudioUrl: sentencesTable.audioUrl,
     })
     .from(notesTable)
@@ -1137,6 +1139,7 @@ const generationResponseSchema = z.object({
     z.object({
       word: z.string(),
       sentence: z.string(),
+      translation: z.string(),
     }),
   ),
 });
@@ -1161,7 +1164,7 @@ async function generateSentences(words: string[]) {
         {
           role: "system",
           content: `
-                You generate natural Mandarin Chinese sentences for foreign students learning Chinese. Use short sentences: ${SENTENCE_GENERATION_PREFERRED_MAX_CHARS} characters or fewer, with at most ${SENTENCE_GENERATION_PREFERRED_MAX_PUNCTUATION_MARKS} punctuation mark. Avoid long or compound sentences, clauses joined by commas, lists, semicolons, and conjunction-heavy phrasing. Prefer one clear action or state. Prefer standard, clear, and slightly formal Chinese over slang, dialect, or overly casual phrasing. Avoid generic textbook sentences and very common facts unless they are the most natural choice. Vary sentence structure, setting, verb choice, and perspective across generations. Every generated Chinese sentence must contain the provided word exactly. Return only JSON matching the provided schema.
+                You generate natural Mandarin Chinese sentences for foreign students learning Chinese. Use short sentences: ${SENTENCE_GENERATION_PREFERRED_MAX_CHARS} characters or fewer, with at most ${SENTENCE_GENERATION_PREFERRED_MAX_PUNCTUATION_MARKS} punctuation mark. Avoid long or compound sentences, clauses joined by commas, lists, semicolons, and conjunction-heavy phrasing. Prefer one clear action or state. Prefer standard, clear, and slightly formal Chinese over slang, dialect, or overly casual phrasing. Avoid generic textbook sentences and very common facts unless they are the most natural choice. Vary sentence structure, setting, verb choice, and perspective across generations. Every generated Chinese sentence must contain the provided word exactly. For each sentence, also provide a natural English translation. Return only JSON matching the provided schema.
                 `,
         },
         { role: "user", content: JSON.stringify(words) },
@@ -1174,7 +1177,13 @@ async function generateSentences(words: string[]) {
 
   const parsed = generationResponseSchema.parse(JSON.parse(content));
   const cleanResponse = new Map(
-    parsed.words.map((word) => [word.word.trim(), word.sentence.trim()]),
+    parsed.words.map((word) => [
+      word.word.trim(),
+      {
+        sentence: word.sentence.trim(),
+        translation: word.translation.trim(),
+      },
+    ]),
   );
 
   return cleanResponse;

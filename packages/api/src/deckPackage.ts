@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Deck, Model, Note, Package } from "@handeck/genanki-ts";
 
-import { getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
+import { downloadS3Object, getDeckObjectKey, uploadDeckPackage } from "./deckStorage";
 
 const templatesDir = join(dirname(fileURLToPath(import.meta.url)), "anki", "templates");
 const frontTemplate = readFileSync(join(templatesDir, "front.html"), "utf8");
@@ -22,6 +22,8 @@ const HANDECK_VOCAB_MODEL = new Model({
     { name: "Sentence Hanzi", font: "Noto Sans SC" },
     { name: "Sentence Pinyin", font: "Noto Sans SC" },
     { name: "Sentence Translation", font: "Noto Sans SC" },
+    { name: "Word Audio", font: "Noto Sans SC" },
+    { name: "Sentence Audio", font: "Noto Sans SC" },
   ],
   templates: [
     {
@@ -35,12 +37,16 @@ const HANDECK_VOCAB_MODEL = new Model({
 
 type NoteData = {
   id: string;
+  wordId: string;
+  sentenceId: string;
   simplifiedHanzi: string;
   diacriticPinyin: string;
   meaning: string;
   sentence: string;
   sentencePinyin: string;
   sentenceTranslation: string;
+  wordAudioUrl: string;
+  sentenceAudioUrl: string;
 };
 
 type DeckPackageInput = {
@@ -50,6 +56,14 @@ type DeckPackageInput = {
   notes: NoteData[];
 };
 
+function getWordAudioFilename(wordId: string) {
+  return `${wordId}.wav`;
+}
+
+function getSentenceAudioFilename(sentenceId: string) {
+  return `${sentenceId}.wav`;
+}
+
 export async function writeDeckPackageToS3({
   deckId,
   userId,
@@ -58,9 +72,32 @@ export async function writeDeckPackageToS3({
 }: DeckPackageInput) {
   const objectKey = getDeckObjectKey(userId, deckId);
   const tempDir = await mkdtemp(join(tmpdir(), "handeck-deck-package-"));
+  const mediaDir = join(tempDir, "media");
   const apkgPath = join(tempDir, "deck.apkg");
 
   try {
+    await mkdir(mediaDir, { recursive: true });
+
+    const mediaFilesByBasename = new Map<string, string>();
+
+    for (const note of notes) {
+      const wordAudioFilename = getWordAudioFilename(note.wordId);
+      if (!mediaFilesByBasename.has(wordAudioFilename)) {
+        const localPath = join(mediaDir, wordAudioFilename);
+        const body = await downloadS3Object(note.wordAudioUrl);
+        await writeFile(localPath, body);
+        mediaFilesByBasename.set(wordAudioFilename, localPath);
+      }
+
+      const sentenceAudioFilename = getSentenceAudioFilename(note.sentenceId);
+      if (!mediaFilesByBasename.has(sentenceAudioFilename)) {
+        const localPath = join(mediaDir, sentenceAudioFilename);
+        const body = await downloadS3Object(note.sentenceAudioUrl);
+        await writeFile(localPath, body);
+        mediaFilesByBasename.set(sentenceAudioFilename, localPath);
+      }
+    }
+
     const deck = new Deck({
       id: deckNumberFromUuid(deckId),
       name: templateName,
@@ -68,6 +105,9 @@ export async function writeDeckPackageToS3({
     });
 
     for (const note of notes) {
+      const wordAudioFilename = getWordAudioFilename(note.wordId);
+      const sentenceAudioFilename = getSentenceAudioFilename(note.sentenceId);
+
       deck.addNote(
         new Note({
           model: HANDECK_VOCAB_MODEL,
@@ -78,6 +118,8 @@ export async function writeDeckPackageToS3({
             note.sentence,
             note.sentencePinyin,
             note.sentenceTranslation,
+            `[sound:${wordAudioFilename}]`,
+            `[sound:${sentenceAudioFilename}]`,
           ],
           tags: ["handeck"],
           // we may want to review this in the future
@@ -86,7 +128,9 @@ export async function writeDeckPackageToS3({
       );
     }
 
-    await new Package(deck).writeToFile(apkgPath);
+    await new Package(deck, { mediaFiles: [...mediaFilesByBasename.values()] }).writeToFile(
+      apkgPath,
+    );
     const body = await readFile(apkgPath);
     await uploadDeckPackage(objectKey, body);
 

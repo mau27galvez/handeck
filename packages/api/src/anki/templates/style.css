@@ -191,5 +191,20 @@
 }
 
 .audio-controls {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-inline);
+  margin-top: var(--space-block);
+}
+
+.audio-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-inline);
+}
+
+.audio-label {
+  font-size: 0.85em;
+  color: var(--pinyin-color);
+  min-width: 4.5em;
 }

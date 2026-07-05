@@ -79,3 +79,18 @@ export async function uploadAudioFile(objectKey: string, body: Buffer) {
     }),
   );
 }
+
+export async function downloadS3Object(objectKey: string) {
+  const response = await createS3Client().send(
+    new GetObjectCommand({
+      Bucket: env.S3_BUCKET,
+      Key: objectKey,
+    }),
+  );
+
+  if (!response.Body) {
+    throw new Error(`S3 object not found: ${objectKey}`);
+  }
+
+  return Buffer.from(await response.Body.transformToByteArray());
+}

@@ -6,7 +6,18 @@
     <p class="answer-sentence-translation">{{Sentence Translation}}</p>
     {{/Sentence Translation}}
 
-    <!-- Reserved for word + sentence audio controls -->
-    <div class="audio-controls" hidden aria-hidden="true"></div>
+    <div class="audio-controls">
+      {{#Word Audio}}
+      <div class="audio-control">
+        <span class="audio-label">Word</span>
+        {{Word Audio}}
+      </div>
+      {{/Word Audio}} {{#Sentence Audio}}
+      <div class="audio-control">
+        <span class="audio-label">Sentence</span>
+        {{Sentence Audio}}
+      </div>
+      {{/Sentence Audio}}
+    </div>
   </div>
 </div>

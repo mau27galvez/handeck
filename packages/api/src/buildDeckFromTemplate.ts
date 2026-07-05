@@ -993,12 +993,15 @@ async function getDeckPackageNotes(deckId: string) {
   const rows = await db
     .select({
       id: notesTable.id,
+      wordId: wordsTable.id,
+      sentenceId: sentencesTable.id,
       simplifiedHanzi: wordsTable.simplifiedHanzi,
       diacriticPinyin: wordsTable.diacriticPinyin,
       meaning: wordsTable.meaning,
       sentence: sentencesTable.simplifiedHanzi,
       sentencePinyin: sentencesTable.diacriticPinyin,
       sentenceTranslation: sentencesTable.translation,
+      wordAudioUrl: wordsTable.audioUrl,
       sentenceAudioUrl: sentencesTable.audioUrl,
     })
     .from(notesTable)
@@ -1017,11 +1020,18 @@ async function getDeckPackageNotes(deckId: string) {
   if (rows.length !== noteCount) {
     throw new Error("Deck has incomplete sentence generation");
   }
+  if (rows.some((row) => row.wordAudioUrl == null)) {
+    throw new Error("Deck has incomplete word audio generation");
+  }
   if (rows.some((row) => row.sentenceAudioUrl == null)) {
     throw new Error("Deck has incomplete sentence audio generation");
   }
 
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    wordAudioUrl: row.wordAudioUrl!,
+    sentenceAudioUrl: row.sentenceAudioUrl!,
+  }));
 }
 
 async function generateAndUploadWordAudio({
